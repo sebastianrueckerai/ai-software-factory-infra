@@ -46,7 +46,8 @@ portSelector:
   ports:
     - 8472
     - 6081
-    - 51820
+    # Cilium wireguard default; the 1.20 helm chart offers no listenPort override
+    - 51871
   protocol: udp
 ingress:
   - subnet: 10.0.1.0/24
