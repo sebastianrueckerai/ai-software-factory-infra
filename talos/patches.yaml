@@ -35,11 +35,13 @@ portSelector:
     - 10250
     - 4240
     - 50000
-    # Kubernetes NodePort range; the connectivity suite probes it node to node
+    # Kubernetes NodePort range; pods reach the local node IP unmasqueraded,
+    # so the pod subnet needs entry too, not just the node mesh
     - 30000-32767
   protocol: tcp
 ingress:
   - subnet: 10.0.1.0/24
+  - subnet: 10.244.0.0/16
 ---
 apiVersion: v1alpha1
 kind: NetworkRuleConfig
