@@ -1,3 +1,2 @@
-home_cidr               = "203.0.113.10/32"
-hetzner_robot_user      = "not-in-git"
-hetzner_robot_password  = "not-in-git"
+hcloud_token = "not-in-git"
+home_cidr    = "203.0.113.10/32"

@@ -4,8 +4,8 @@ The bundle lives in the offline password manager plus a printed copy.
 No value below ever enters Git. Re-seed restores from Git plus S3 plus
 this bundle.
 
-- [ ] Hetzner Robot API user and password (account has API access on,
-      home IP whitelisted in the Robot panel)
+- [ ] Hetzner Cloud API token (lives in terraform.tfvars on the seed
+      machine, never in Git)
 - [ ] Hetzner Object Storage access keys (S3)
 - [ ] Namecheap account access, registrar and DNS for
       aisoftwarefactory.world

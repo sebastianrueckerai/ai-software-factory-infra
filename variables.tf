@@ -14,20 +14,20 @@ variable "node_count" {
 
 variable "server_type" {
   type    = string
-  default = "AX41"
+  default = "cax31"
+}
+
+variable "location" {
+  type    = string
+  default = "fsn1"
+}
+
+variable "hcloud_token" {
+  type      = string
+  sensitive = true
 }
 
 variable "home_cidr" {
   description = "Home address allowlisted for the Talos and Kubernetes APIs"
   type        = string
-}
-
-variable "hetzner_robot_user" {
-  type      = string
-  sensitive = true
-}
-
-variable "hetzner_robot_password" {
-  type      = string
-  sensitive = true
 }
