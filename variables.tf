@@ -13,18 +13,21 @@ variable "node_count" {
 }
 
 variable "server_type" {
-  type    = string
-  default = "cax31"
+  description = "Hetzner Cloud server type for every node"
+  type        = string
+  default     = "cax31"
 }
 
 variable "location" {
-  type    = string
-  default = "fsn1"
+  description = "Hetzner Cloud location for every node"
+  type        = string
+  default     = "fsn1"
 }
 
 variable "hcloud_token" {
-  type      = string
-  sensitive = true
+  description = "Hetzner Cloud API token, from the seed bundle, never in Git"
+  type        = string
+  sensitive   = true
 }
 
 variable "home_cidr" {
