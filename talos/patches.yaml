@@ -9,6 +9,7 @@ apiVersion: v1alpha1
 kind: UnattendedInstallConfig
 provisioning:
   diskSelector:
+    # cpx42: nominal 320 GB disk reports about 300 GiB; match by size, not path
     match: disk.size > 100000000000u
   wipe: true
 ---
