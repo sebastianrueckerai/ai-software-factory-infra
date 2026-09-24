@@ -72,7 +72,7 @@ resource "hcloud_server_network" "node" {
 }
 
 data "hcloud_image" "talos" {
-  with_selector     = "os=talos,version=1.14.1,arch=arm64"
-  with_architecture = "arm"
+  with_selector     = "os=talos,version=1.14.1,arch=amd64"
+  with_architecture = "x86"
   most_recent       = true
 }

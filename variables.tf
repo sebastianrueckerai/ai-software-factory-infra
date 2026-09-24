@@ -15,7 +15,7 @@ variable "node_count" {
 variable "server_type" {
   description = "Hetzner Cloud server type for every node"
   type        = string
-  default     = "cax31"
+  default     = "cpx42"
 }
 
 variable "location" {
