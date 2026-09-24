@@ -1,13 +1,16 @@
 cluster:
   etcd:
-    advertiseSubnet: 10.0.1.0/24
+    listenSubnets:
+      - 10.0.1.0/24
+    advertisedSubnets:
+      - 10.0.1.0/24
 ---
 apiVersion: v1alpha1
 kind: UnattendedInstallConfig
-name: unattended-install
 provisioning:
   diskSelector:
-    size: 100GB
+    match: disk.size > 100000000000u
+  wipe: true
 ---
 apiVersion: v1alpha1
 kind: NetworkRuleConfig

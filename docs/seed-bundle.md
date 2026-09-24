@@ -12,4 +12,4 @@ this bundle.
 - [ ] Model provider keys: DeepSeek, Alibaba, z.ai, Groq
 - [ ] Tool provider keys: Replicate, Firecrawl, fal.ai
 - [ ] OpenBao unseal keys (created in Stage 2)
-- [ ] Talos secrets bundle (created in Stage 1, secrets.yaml)
+- [x] Talos secrets bundle (created in Stage 1, secrets.yaml)
