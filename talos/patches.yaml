@@ -35,6 +35,8 @@ portSelector:
     - 10250
     - 4240
     - 50000
+    # Kubernetes NodePort range; the connectivity suite probes it node to node
+    - 30000-32767
   protocol: tcp
 ingress:
   - subnet: 10.0.1.0/24
