@@ -5,6 +5,6 @@ terraform.tfvars
 *.auto.tfvars
 crash.log
 secrets.yaml
-talos/controlplane.yaml
+talos/controlplane*.yaml
 talos/worker.yaml
 talos/talosconfig

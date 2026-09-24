@@ -1,0 +1,7 @@
+apiVersion: v1alpha1
+kind: KubeletConfig
+name: node-ip
+kubelet:
+  nodeIP:
+    validSubnets:
+      - 10.0.1.11/32
