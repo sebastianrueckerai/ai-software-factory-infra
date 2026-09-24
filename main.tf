@@ -43,12 +43,11 @@ resource "hcloud_firewall" "cluster" {
 }
 
 resource "hcloud_primary_ip" "node" {
-  count         = var.node_count
-  name          = "${var.cluster_name}-${count.index}"
-  location      = var.location
-  type          = "ipv4"
-  assignee_type = "server"
-  auto_delete   = false
+  count       = var.node_count
+  name        = "${var.cluster_name}-${count.index}"
+  location    = var.location
+  type        = "ipv4"
+  auto_delete = false
 }
 
 resource "hcloud_server" "node" {
