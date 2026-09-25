@@ -14,3 +14,4 @@ this bundle.
 - [ ] OpenBao unseal keys (created in Stage 2)
 - [x] Talos secrets bundle (created in Stage 1, secrets.yaml)
 - [ ] CNPG passwords (superuser, app, forgejo, litellm, temporal)
+- [x] Forgejo admin password
