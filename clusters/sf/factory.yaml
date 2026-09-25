@@ -1,0 +1,20 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata: {name: factory-code, namespace: flux-system}
+spec:
+  interval: 1m
+  url: https://git.aisoftwarefactory.world/sf/ai-software-factory-code
+  ref: {branch: main}
+  secretRef: {name: forgejo-pat}
+  timeout: 60s
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: factory, namespace: flux-system}
+spec:
+  interval: 10m
+  path: ./k8s
+  prune: true
+  sourceRef: {kind: GitRepository, name: factory-code}
+  dependsOn:
+  - name: platform

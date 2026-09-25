@@ -6,6 +6,11 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: factory
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: forgejo
   labels:
     pod-security.kubernetes.io/enforce: privileged

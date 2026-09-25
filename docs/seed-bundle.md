@@ -14,7 +14,8 @@ this bundle.
 - [x] OpenBao unseal keys (created in Stage 2, one key per OpenBao's
       threshold-1 init; values in the Stage 2 task reports, task 17)
 - [x] Talos secrets bundle (created in Stage 1, secrets.yaml)
-- [x] CNPG passwords (superuser, app, forgejo, litellm, temporal)
+- [x] CNPG passwords (superuser, app, forgejo, litellm, temporal,
+      gateway — `SF_PG_GATEWAY_PASSWORD`, the imperative `gateway` role)
 - [x] Forgejo admin password
 - [x] LiteLLM master key (created in Stage 2, secret litellm-master-key
       in namespace platform)
