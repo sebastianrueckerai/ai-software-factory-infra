@@ -23,7 +23,11 @@ sync path `clusters/sf`:
   nothing is applied by hand.
 - Seeded secrets (`sf-cluster-superuser`, `app-secret`, `pg-*`,
   `cnpg-s3-creds`, `forgejo-admin-secret`, `forgejo-db-creds`,
-  `hetzner-s3-creds`) are imperative and stay out of the tree.
+  `hetzner-s3-creds`, `runner-init`, `litellm-master-key`,
+  `litellm-deepseek`) are imperative and stay out of the tree. The S3
+  keys exist in two namespaces — `cnpg-s3-creds` in `platform` for CNPG
+  backups, `hetzner-s3-creds` in `forgejo` for the nightly dump — and
+  rotation must replace both.
 
 ## Cilium stays outside Flux
 
