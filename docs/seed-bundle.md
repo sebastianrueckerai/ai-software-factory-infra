@@ -11,7 +11,10 @@ this bundle.
       aisoftwarefactory.world
 - [ ] Model provider keys: DeepSeek, Alibaba, z.ai, Groq
 - [ ] Tool provider keys: Replicate, Firecrawl, fal.ai
-- [ ] OpenBao unseal keys (created in Stage 2)
+- [x] OpenBao unseal keys (created in Stage 2, one key per OpenBao's
+      threshold-1 init; values in the Stage 2 task reports, task 17)
 - [x] Talos secrets bundle (created in Stage 1, secrets.yaml)
-- [ ] CNPG passwords (superuser, app, forgejo, litellm, temporal)
+- [x] CNPG passwords (superuser, app, forgejo, litellm, temporal)
 - [x] Forgejo admin password
+- [x] LiteLLM master key (created in Stage 2, secret litellm-master-key
+      in namespace platform)
