@@ -8,6 +8,9 @@ spec:
   superuserSecret:
     name: sf-cluster-superuser
   enableSuperuserAccess: true
+  postgresql:
+    parameters:
+      max_connections: "200"
   storage:
     storageClass: local-path
     size: 20Gi
