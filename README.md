@@ -27,7 +27,9 @@ sync path `clusters/sf`:
   `litellm-deepseek`) are imperative and stay out of the tree. The S3
   keys exist in two namespaces — `cnpg-s3-creds` in `platform` for CNPG
   backups, `hetzner-s3-creds` in `forgejo` for the nightly dump — and
-  rotation must replace both.
+  rotation must replace both. Rotating `litellm-master-key` or
+  `litellm-deepseek` also requires `kubectl -n platform rollout restart
+  deployment/litellm`, because no reloader watches those secrets.
 
 ## Cilium stays outside Flux
 

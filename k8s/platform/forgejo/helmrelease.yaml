@@ -1,3 +1,15 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata: {name: forgejo, namespace: flux-system}
+spec:
+  interval: 10m
+  url: oci://code.forgejo.org/forgejo-helm/forgejo
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    semver: ">=17.1.7 <17.1.8"
+---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata: {name: forgejo, namespace: forgejo}
