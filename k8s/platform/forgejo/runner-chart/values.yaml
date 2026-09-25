@@ -1,0 +1,290 @@
+global:
+  image:
+    # -- if set it will overwrite all registry entries
+    registry:
+    # -- if set it will overwrite all pullPolicy
+    pullPolicy:
+
+
+# -- replicas
+replicaCount: 1
+
+
+image:
+  # -- image registry (could be overwritten by global.image.registry)
+  registry: code.forgejo.org
+  # -- image repository
+  repository: forgejo/runner
+  # -- This sets the pull policy for images. (could be overwritten by global.image.pullPolicy)
+  pullPolicy: IfNotPresent
+  # -- image tag - Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+runner:
+  config:
+    # -- create a secret by run: forgejo-runner register --no-interactive --token {TOKEN} --name runner --instance https://next.forgejo.org
+    create: true
+    # -- use existingSecret instatt
+    existingSecret: ""
+
+    # -- Secret with Environment variables CONFIG_NAME, CONFIG_INSTANCE and CONFIG_TOKEN that should be used on initial runner configuration.
+    # If set instance, name, and token are ignored.
+    existingInitSecret: ""
+
+    instance: https://codeberg.org
+    name:
+    token:
+    # based on https://code.forgejo.org/forgejo/runner/commit/1139bb7d12ff7889694b24731707e153678ab960
+    file:
+      log:
+        # -- The level of logging, can be trace, debug, info, warn, error, fatal
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        level: "info"
+        # -- The level of logging for jobs, can be trace, debug, info, earn, error, fatal
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        job_level: info
+      runner:
+        # -- Runner config which contains id and token of this runner (autogenerate with create)
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        file: ".runner"
+        # -- Execute how many tasks concurrently at the same time.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        capacity: 1
+        # -- Extra environment variables to run jobs.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        envs:
+          A_TEST_ENV_NAME_1: a_test_env_value_1
+          A_TEST_ENV_NAME_2: a_test_env_value_2
+        # -- Extra environment variables to run jobs from a file.
+        # It will be ignored if it's empty or the file doesn't exist.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        env_file: .env
+        # -- The timeout for a job to be finished.
+        # Please note that the Forgejo instance also has a timeout (3h by default) for the job.
+        # So the job could be stopped by the Forgejo instance if it's timeout is shorter than this.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        timeout: 3h
+        # -- Whether skip verifying the TLS certificate of the Forgejo instance.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        insecure: false
+        # -- The timeout for fetching the job from the Forgejo instance.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        fetch_timeout: 5s
+        # -- The interval for fetching the job from the Forgejo instance.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        fetch_interval: 2s
+        # -- The labels of a runner are used to determine which jobs the runner can run, and how to run them.
+        # Like: ["macos-arm64:host", "ubuntu-latest:docker://node:16-bullseye", "ubuntu-22.04:docker://node:16-bullseye"]
+        # If it's empty when registering, it will ask for inputting labels.
+        # If it's empty when execute `deamon`, will use labels in `.runner` file.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        labels: []
+
+      cache:
+        # -- Enable cache server to use actions/cache.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        enabled: true
+        # -- The directory to store the cache data.
+        # If it's empty, the cache data will be stored in $HOME/.cache/actcache.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        dir: ""
+        # -- The host of the cache server.
+        # It's not for the address to listen, but the address to connect from job containers.
+        # So 0.0.0.0 is a bad choice, leave it empty to detect automatically.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        host: ""
+        # -- The port of the cache server.
+        # 0 means to use a random available port.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        port: 0
+        # -- The external cache server URL. Valid only when enable is true.
+        # If it's specified, act_runner will use this URL as the ACTIONS_CACHE_URL rather than start a server by itself.
+        # The URL should generally end with "/".
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        external_server: ""
+
+      container:
+        # -- Specifies the network to which the container will connect.
+        # Could be host, bridge or the name of a custom network.
+        # If it's empty, create a network automatically.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        network: ""
+        # -- Whether to create networks with IPv6 enabled. Requires the Docker daemon to be set up accordingly.
+        # Only takes effect if "network" is set to "".
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        enable_ipv6: false
+        # -- And other options to be used when the container is started (eg, `--add-host=my.forgejo.url:host-gateway`).
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        privileged: false
+        # -- And other options to be used when the container is started (eg, `--add-host=my.forgejo.url:host-gateway`).
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        options:
+        # -- The parent directory of a job's working directory.
+        # If it's empty, /workspace will be used.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        workdir_parent:
+        # -- Volumes (including bind mounts) can be mounted to containers. Glob syntax is supported, see https://github.com/gobwas/glob
+        # You can specify multiple volumes. If the sequence is empty, no volumes can be mounted.
+        # For example, if you only allow containers to mount the `data` volume and all the json files in `/src`, you should change the config to:
+        # valid_volumes:
+        #   - data
+        #   - /src/*.json
+        # If you want to allow any volume, please use the following configuration:
+        # valid_volumes:
+        #   - '**'
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        valid_volumes: []
+        # -- overrides the docker client host with the specified one.
+        # If "-", an available docker host will automatically be found.
+        # If empty, an available docker host will automatically be found and mounted in the job container (e.g. /var/run/docker.sock).
+        # Otherwise the specified docker host will be used and an error will be returned if it doesn't work.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        docker_host: "-"
+        # -- Pull docker image(s) even if already present
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        force_pull: false
+
+      host:
+        # -- The parent directory of a job's working directory.
+        # If it's empty, $HOME/.cache/act/ will be used.
+        # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
+        workdir_parent:
+dind:
+  image:
+    # -- image registry (could be overwritten by global.image.registry)
+    # @section -- Docker in Docker
+    registry: docker.io
+    # -- image repository
+    # @section -- Docker in Docker
+    repository: library/docker
+    # -- This sets the pull policy for images. (could be overwritten by global.image.pullPolicy)
+    # @section -- Docker in Docker
+    pullPolicy: IfNotPresent
+    # -- image tag
+    # @section -- Docker in Docker
+    tag: 29.5.2-dind@sha256:6b9cd914eb9c6b342c040a49a27a5eb3804453bae6ecc90f7ff96133595a95e8
+  # -- We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # @section -- Docker in Docker
+  resources: {}
+
+kubectl:
+  image:
+    registry: docker.io
+    repository: alpine/kubectl
+    pullPolicy: IfNotPresent
+    tag: 1.36.1@sha256:f4bd6bf118f8f91a94e63496030eb6e446a88ee6a90b793f695a287dda02be13
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  privileged: true
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# -- We usually recommend not to specify default resources and to leave this as a conscious
+# choice for the user. This also increases chances charts run on environments with little
+# resources, such as Minikube. If you do want to specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+# limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  # -- behavior of HPA
+  # Example:
+  #  scaleDown:
+  #    stabilizationWindowSeconds: 300
+  #    policies:
+  #      - type: Pods
+  #        value: 1
+  #        periodSeconds: 60
+  #  scaleUp:
+  #    stabilizationWindowSeconds: 0
+  #    policies:
+  #      - type: Pods
+  #        value: 1
+  #        periodSeconds: 60
+  behavior: {}
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# -- Optional Kubernetes dnsConfig for the pods. When empty, no dnsConfig is rendered.
+# Example:
+# dnsConfig:
+#   nameservers:
+#     - 1.1.1.1
+#   searches:
+#     - example.com
+#   options:
+#     - name: ndots
+#       value: "2"
+dnsConfig: {}
+
+# -- Additional environment variables to be set on runner container
+# Example:
+# extraEnvVars:
+#   - name: FOO
+#     value: "bar"
+#
+extraEnvVars: []
+
+# -- priorityClassName : k8s scheduler priority class name for the runner
+priorityClassName: ""

@@ -1,0 +1,25 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: forgejo-runner, namespace: forgejo}
+spec:
+  interval: 10m
+  releaseName: forgejo-runner
+  targetNamespace: forgejo
+  chart:
+    spec:
+      chart: ./k8s/platform/forgejo/runner-chart
+      sourceRef: {kind: GitRepository, name: flux-system}
+  values:
+    runner:
+      config:
+        create: true
+        existingInitSecret: runner-init
+        file:
+          runner:
+            labels:
+              - ubuntu-latest:docker://catthehacker/ubuntu:act-22.04
+    dind:
+      image:
+        tag: "29.5.2-dind"
+    securityContext:
+      privileged: true

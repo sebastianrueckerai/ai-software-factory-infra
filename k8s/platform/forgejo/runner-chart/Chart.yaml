@@ -1,0 +1,8 @@
+apiVersion: v2
+name: forgejo-runner
+description: Deploy runner for an forgejo instance (default codeberg.org)
+icon: https://forgejo.org/favicon.png
+type: application
+version: "0.7.5"
+# renovate: image=code.forgejo.org/forgejo/runner
+appVersion: "12.7.3"

@@ -13,3 +13,4 @@ resources:
 - cnpg/backup.yaml
 - local-path
 - forgejo/helmrelease.yaml
+- forgejo/runner-helmrelease.yaml
