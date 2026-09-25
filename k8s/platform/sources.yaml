@@ -1,0 +1,16 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: jetstack, namespace: flux-system}
+spec: {interval: 10m, url: https://charts.jetstack.io}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata: {name: forgejo, namespace: flux-system}
+spec:
+  interval: 10m
+  url: oci://code.forgejo.org/forgejo-helm/forgejo
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    semver: ">=17.1.7 <17.2.0"
