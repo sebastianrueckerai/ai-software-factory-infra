@@ -1,0 +1,19 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata: {name: forgejo-db, namespace: platform}
+spec: {name: forgejo, owner: forgejo, cluster: {name: sf-cluster}}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata: {name: litellm-db, namespace: platform}
+spec: {name: litellm, owner: litellm, cluster: {name: sf-cluster}}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata: {name: temporal-db, namespace: platform}
+spec: {name: temporal, owner: temporal, cluster: {name: sf-cluster}}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata: {name: temporal-visibility-db, namespace: platform}
+spec: {name: temporal_visibility, owner: temporal, cluster: {name: sf-cluster}}
