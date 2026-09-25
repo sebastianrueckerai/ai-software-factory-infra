@@ -17,3 +17,4 @@ resources:
 - openbao/helmrelease.yaml
 - temporal/helmrelease.yaml
 - litellm/helmrelease.yaml
+- signoz/helmrelease.yaml
