@@ -53,6 +53,13 @@ spec:
           MINIO_BUCKET: aisoftwarefactory-forgejo
           MINIO_LOCATION: fsn1
           MINIO_BUCKET_LOOKUP: auto
+        packages:
+          STORAGE_TYPE: minio
+          MINIO_ENDPOINT: fsn1.your-objectstorage.com:443
+          MINIO_USE_SSL: true
+          MINIO_BUCKET: aisoftwarefactory-forgejo
+          MINIO_LOCATION: fsn1
+          MINIO_BUCKET_LOOKUP: auto
         actions:
           ENABLED: true
           DEFAULT_ACTIONS_URL: https://data.forgejo.org
@@ -64,5 +71,11 @@ spec:
           valueFrom:
             secretKeyRef: {name: hetzner-s3-creds, key: access-key}
         - name: FORGEJO__storage__MINIO_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef: {name: hetzner-s3-creds, key: secret-key}
+        - name: FORGEJO__packages__MINIO_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef: {name: hetzner-s3-creds, key: access-key}
+        - name: FORGEJO__packages__MINIO_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef: {name: hetzner-s3-creds, key: secret-key}
