@@ -4,8 +4,7 @@
 terraform.tfvars
 *.auto.tfvars
 crash.log
-secrets.yaml
-!k8s/platform/forgejo/runner-chart/templates/secrets.yaml
+talos/secrets.yaml
 talos/controlplane*.yaml
 talos/worker.yaml
 talos/talosconfig
