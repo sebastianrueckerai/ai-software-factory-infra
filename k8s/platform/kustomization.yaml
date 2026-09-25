@@ -14,3 +14,4 @@ resources:
 - local-path
 - forgejo/helmrelease.yaml
 - forgejo/runner-helmrelease.yaml
+- openbao/helmrelease.yaml
