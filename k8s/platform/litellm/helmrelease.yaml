@@ -42,10 +42,31 @@ spec:
           litellm_params:
             model: deepseek/deepseek-chat
             api_key: os.environ/DEEPSEEK_API_KEY
+        - model_name: coding-cheap
+          litellm_params:
+            model: deepseek/deepseek-chat
+            api_key: os.environ/DEEPSEEK_API_KEY
+        - model_name: coding-cheap
+          litellm_params:
+            model: dashscope/qwen3.8-flash
+            api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+            api_key: os.environ/ALIBABA_CLOUD_KEY
+        - model_name: coding-frontier
+          litellm_params:
+            model: zai/glm-5.3
+            api_base: https://api.z.ai/api/paas/v4
+            api_key: os.environ/Z_AI_KEY
+        - model_name: review-frontier
+          litellm_params:
+            model: zai/glm-5.3
+            api_base: https://api.z.ai/api/paas/v4
+            api_key: os.environ/Z_AI_KEY
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
     environmentSecrets:
       - litellm-deepseek
+      - litellm-qwen
+      - litellm-glm
     migrationJob:
       enabled: true
       hooks:
