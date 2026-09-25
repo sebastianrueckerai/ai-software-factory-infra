@@ -1,0 +1,59 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata: {name: litellm, namespace: flux-system}
+spec:
+  interval: 10m
+  url: oci://ghcr.io/berriai/litellm-helm
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    semver: ">=1.102.1 <1.103.0"
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: litellm, namespace: platform}
+spec:
+  interval: 10m
+  releaseName: litellm
+  targetNamespace: platform
+  chartRef:
+    kind: OCIRepository
+    name: litellm
+    namespace: flux-system
+  values:
+    replicaCount: 1
+    masterkeySecretName: litellm-master-key
+    db:
+      deployStandalone: false
+      useExisting: true
+      endpoint: sf-cluster-rw.platform.svc
+      database: litellm
+      url: postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@$(DATABASE_HOST)/$(DATABASE_NAME)
+      secret:
+        name: pg-litellm
+        usernameKey: username
+        passwordKey: password
+    proxyConfigMap:
+      create: true
+    proxy_config:
+      model_list:
+        - model_name: deepseek-chat
+          litellm_params:
+            model: deepseek/deepseek-chat
+            api_key: os.environ/DEEPSEEK_API_KEY
+      general_settings:
+        master_key: os.environ/PROXY_MASTER_KEY
+    environmentSecrets:
+      - litellm-deepseek
+    migrationJob:
+      enabled: true
+      hooks:
+        argocd:
+          enabled: false
+    service:
+      type: ClusterIP
+      port: 4000
+    resources:
+      requests: {cpu: 200m, memory: 512Mi}
+      limits: {cpu: "1", memory: 1Gi}

@@ -16,3 +16,4 @@ resources:
 - forgejo/runner-helmrelease.yaml
 - openbao/helmrelease.yaml
 - temporal/helmrelease.yaml
+- litellm/helmrelease.yaml
