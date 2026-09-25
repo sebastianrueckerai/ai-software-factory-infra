@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: forgejo-dump, namespace: forgejo}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: forgejo-dump, namespace: forgejo}
+rules:
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list]
+  - apiGroups: [""]
+    resources: [pods/exec]
+    verbs: [create, get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: forgejo-dump, namespace: forgejo}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: forgejo-dump}
+subjects: [{kind: ServiceAccount, name: forgejo-dump}]
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: forgejo-dump, namespace: forgejo}
+spec:
+  schedule: "30 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: forgejo-dump
+          restartPolicy: Never
+          initContainers:
+            - name: dump
+              image: alpine/kubectl:1.36.1
+              command: [/bin/sh, -c]
+              args:
+                - |
+                  set -e
+                  POD=$(kubectl -n forgejo get pod -l app.kubernetes.io/name=forgejo -o jsonpath='{.items[0].metadata.name}')
+                  kubectl -n forgejo exec $POD -- forgejo dump --type zip --file /tmp/forgejo-dump.zip
+                  kubectl -n forgejo cp $POD:/tmp/forgejo-dump.zip /dump/forgejo-dump.zip
+              volumeMounts: [{name: dump, mountPath: /dump}]
+          containers:
+            - name: upload
+              image: amazon/aws-cli:2.28.5
+              command: [/bin/sh, -c]
+              args:
+                - aws s3 cp /dump/forgejo-dump.zip s3://aisoftwarefactory-backups/forgejo-dumps/forgejo-$(date +%F).zip
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom: {secretKeyRef: {name: hetzner-s3-creds, key: access-key}}
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom: {secretKeyRef: {name: hetzner-s3-creds, key: secret-key}}
+                - name: AWS_ENDPOINT_URL
+                  value: https://fsn1.your-objectstorage.com
+                - name: AWS_REGION
+                  value: fsn1
+              volumeMounts: [{name: dump, mountPath: /dump}]
+          volumes: [{name: dump, emptyDir: {}}]

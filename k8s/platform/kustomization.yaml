@@ -18,3 +18,4 @@ resources:
 - temporal/helmrelease.yaml
 - litellm/helmrelease.yaml
 - signoz/helmrelease.yaml
+- cronjobs/forgejo-dump.yaml
