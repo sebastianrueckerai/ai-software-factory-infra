@@ -70,3 +70,16 @@ ingress:
 apiVersion: v1alpha1
 kind: NetworkDefaultActionConfig
 ingress: block
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false
+---
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: local-path-provisioner
+provisioning:
+  diskSelector:
+    match: disk.size > 100000000000u
+  minSize: 200GB
+  maxSize: 200GB

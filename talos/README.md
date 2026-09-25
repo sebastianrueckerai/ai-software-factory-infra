@@ -50,4 +50,10 @@ registered keeps it, so remove it by hand on live nodes:
 
     kubectl taint node sf-0 sf-2 node-role.kubernetes.io/control-plane:NoSchedule-
 
+Kube-proxy is disabled at generation time (KubeProxyConfig document) so
+Cilium runs kube-proxy-free and its Gateway API controller works. Each
+node carves a 200 GB user volume at install time (UserVolumeConfig
+document, auto-mounted at /var/mnt/local-path-provisioner); the
+local-path provisioner serves PersistentVolumeClaims from it.
+
 Run from this directory, with tofu initialised in the repo root.
