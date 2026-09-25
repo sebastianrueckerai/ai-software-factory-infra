@@ -7,6 +7,8 @@ resources:
 - gateway-api/edge.yaml
 - cert-manager/helmrelease.yaml
 - cnpg/operator.yaml
+- cnpg/plugin-barman-cloud.yaml
+- cnpg/objectstore.yaml
 - cnpg/cluster.yaml
 - cnpg/databases.yaml
 - cnpg/backup.yaml

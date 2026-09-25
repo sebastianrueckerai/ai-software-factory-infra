@@ -23,9 +23,30 @@ spec:
         enabled: true
         storageClass: local-path
         size: 20Gi
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
       zookeeper:
         enabled: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
     signoz:
       replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 200Mi
     otelCollector:
       replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+    telemetryStoreMigrator:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi

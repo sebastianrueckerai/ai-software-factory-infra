@@ -19,6 +19,10 @@ spec:
     injector:
       enabled: false
     server:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
       ha:
         enabled: true
         replicas: 1

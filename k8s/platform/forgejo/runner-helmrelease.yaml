@@ -10,6 +10,15 @@ spec:
       chart: ./k8s/platform/forgejo/runner-chart
       sourceRef: {kind: GitRepository, name: flux-system, namespace: flux-system}
   values:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    dind:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
     runner:
       config:
         create: true

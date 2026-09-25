@@ -7,3 +7,6 @@ spec:
   immediate: true
   cluster:
     name: sf-cluster
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

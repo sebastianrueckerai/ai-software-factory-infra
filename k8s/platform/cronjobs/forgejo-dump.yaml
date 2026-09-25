@@ -35,6 +35,13 @@ spec:
           initContainers:
             - name: dump
               image: alpine/kubectl:1.36.1
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}
+                seccompProfile: {type: RuntimeDefault}
               command: [/bin/sh, -c]
               args:
                 - |
@@ -47,6 +54,13 @@ spec:
           containers:
             - name: upload
               image: amazon/aws-cli:2.28.5
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}
+                seccompProfile: {type: RuntimeDefault}
               command: [/bin/sh, -c]
               args:
                 - aws s3 cp /dump/forgejo-dump.zip s3://aisoftwarefactory-backups/forgejo-dumps/forgejo-$(date +%F).zip
