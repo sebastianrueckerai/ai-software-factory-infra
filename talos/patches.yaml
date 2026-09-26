@@ -94,8 +94,6 @@ provisioning:
   minSize: 200GB
   maxSize: 200GB
 ---
-apiVersion: v1alpha1
-kind: SysctlsConfig
-sysctls:
-  - name: user.max_user_namespaces
-    value: "11255"
+machine:
+  sysctls:
+    user.max_user_namespaces: "11255"
