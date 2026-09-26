@@ -19,9 +19,9 @@ this bundle.
 - [x] Forgejo admin password
 - [x] LiteLLM master key (created in Stage 2, secret litellm-master-key
       in namespace platform)
-- [x] Forgejo SECRET_KEY — imperative secret forgejo-secret-key,
-      replicated into the forgejo namespace; re-PUT Actions secrets after
-      any key change (Task 34)
+- [x] Forgejo SECRET_KEY — imperative secret forgejo-secret-key in
+      namespace forgejo; re-PUT the Actions secrets after any key change
+      (Task 34)
 - [x] Forgejo bot account `factory-agent` (`FORGEJO_BOT_PASSWORD`): the
       factory's task-token minting identity — write collaborator on the
       code repo, password in secret forgejo-bot-creds (namespace
