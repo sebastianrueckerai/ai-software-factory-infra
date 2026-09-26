@@ -79,3 +79,6 @@ spec:
         - name: FORGEJO__packages__MINIO_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef: {name: hetzner-s3-creds, key: secret-key}
+        - name: FORGEJO__security__SECRET_KEY
+          valueFrom:
+            secretKeyRef: {name: forgejo-secret-key, key: SECRET_KEY}
