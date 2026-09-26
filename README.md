@@ -59,11 +59,16 @@ generation with a completed base backup, live archive = the next unused
 sibling). The tree already carries origin `sf-cluster-v3` and archive
 `sf-cluster-v4` for the next rebuild.
 
-1. `tofu apply`. The image selector requires the `schematic` label, so
-   only the gVisor snapshot from `talos/build-snapshot.sh` can boot.
-   Wait for the nodes, `talosctl bootstrap`, fetch the kubeconfig (strip
-   stale `sf*` entries first). [Nodes installed from the schematic image
-   register with the control-plane taint: remove it from all three.]
+1. A destroy releases the primary IPs, so first
+   `tofu apply -target=hcloud_primary_ip.node`, point the `git` DDNS
+   record at the new node-0 address (Namecheap DDNS password in the seed
+   env), and regenerate the Talos configs per `talos/README.md` with the
+   new API endpoint. Then the full `tofu apply`. The image selector
+   requires the `schematic` label, so only the gVisor snapshot from
+   `talos/build-snapshot.sh` can boot. Wait for the nodes, `talosctl
+   bootstrap`, fetch the kubeconfig (strip stale `sf*` entries first).
+   [Nodes installed from the schematic image register with the
+   control-plane taint: remove it from all three.]
 2. Cilium, imperatively (see above). The connectivity suite is optional;
    its one known failure is the node-to-node DNS check.
 3. local-path, the CNPG operator and plugin, `cluster.yaml`. The recovery
