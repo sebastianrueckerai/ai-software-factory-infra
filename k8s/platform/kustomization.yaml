@@ -20,3 +20,4 @@ resources:
 - litellm/helmrelease.yaml
 - signoz/helmrelease.yaml
 - cronjobs/forgejo-dump.yaml
+- gvisor-runtimeclass.yaml
