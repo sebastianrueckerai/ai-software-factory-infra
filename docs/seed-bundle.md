@@ -31,3 +31,7 @@ this bundle.
 - [x] Object-storage bucket aisoftwarefactory-sessions (fsn1) — session
       records; access keys in secret factory-s3-creds (namespace
       factory).
+- [x] factoryd intake token — secret factoryd-intake (key token,
+      namespace factory). Not a seed value: generate a fresh one on
+      re-seed (`openssl rand -hex 32`) before factoryd starts; callers
+      read it from the secret.
