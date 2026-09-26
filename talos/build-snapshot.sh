@@ -22,7 +22,8 @@ SRV= FW= KEY=
 teardown() {
   [ -n "$SRV" ] && hc -X DELETE "$API/servers/$SRV" >/dev/null && \
     while hc "$API/servers/$SRV" >/dev/null 2>&1; do sleep 5; done
-  [ -n "$FW" ] && hc -X DELETE "$API/firewalls/$FW" >/dev/null
+  # The firewall stays "in use" (422) for a while after its server is gone.
+  [ -n "$FW" ] && until hc -X DELETE "$API/firewalls/$FW" >/dev/null 2>&1; do sleep 5; done
   [ -n "$KEY" ] && hc -X DELETE "$API/ssh_keys/$KEY" >/dev/null
   rm -rf "$WORK"
 }
