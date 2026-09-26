@@ -27,13 +27,13 @@ spec:
         name: barman-cloud.cloudnative-pg.io
         parameters:
           barmanObjectName: sf-cluster-objectstore
-          serverName: sf-cluster-v2
+          serverName: sf-cluster-v3
   plugins:
     - name: barman-cloud.cloudnative-pg.io
       isWALArchiver: true
       parameters:
         barmanObjectName: sf-cluster-objectstore
-        serverName: sf-cluster-v3
+        serverName: sf-cluster-v4
   managed:
     roles:
       - name: forgejo
