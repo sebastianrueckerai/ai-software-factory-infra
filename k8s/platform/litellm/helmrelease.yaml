@@ -63,6 +63,9 @@ spec:
             api_key: os.environ/Z_AI_KEY
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
+      litellm_settings:
+        # factory-gateway books a stream's cost from its final usage chunk
+        include_cost_in_streaming_usage: true
     environmentSecrets:
       - litellm-deepseek
       - litellm-qwen
