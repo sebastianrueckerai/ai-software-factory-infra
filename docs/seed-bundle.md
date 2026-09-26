@@ -19,3 +19,6 @@ this bundle.
 - [x] Forgejo admin password
 - [x] LiteLLM master key (created in Stage 2, secret litellm-master-key
       in namespace platform)
+- [x] Forgejo SECRET_KEY — imperative secret forgejo-secret-key,
+      replicated into the forgejo namespace; re-PUT Actions secrets after
+      any key change (Task 34)
