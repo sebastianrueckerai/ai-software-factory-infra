@@ -59,3 +59,27 @@ at install time (UserVolumeConfig document, auto-mounted at
 PersistentVolumeClaims from it.
 
 Run from this directory, with tofu initialised in the repo root.
+
+## Node image
+
+The servers boot a Hetzner snapshot of the Talos Image Factory image for
+`schematic.yaml` (stock Talos plus the gVisor extension; schematic ID
+d9ff89777e246792e7642abd3220a616afb4e49822382e4213a2e528ab826fe5). An
+in-place `talosctl upgrade` cannot add extensions, so a new extension set
+means a new snapshot and a server re-lay. `main.tf` selects the snapshot
+by labels, including `schematic=<first 16 chars of the ID>` (Hetzner label
+values stop at 63 characters), so an older gVisor-less snapshot is never
+picked.
+
+Build it with:
+
+    set -a; source ../../ai-software-factory/.env.tools; set +a
+    HCLOUD_TOKEN=$HETZNER_KEY ./build-snapshot.sh
+
+The script downloads the image locally and verifies it with `xz -t`,
+creates a throwaway key, SSH-only firewall and cx23 server, boots a fresh
+rescue system, streams the image over ssh onto /dev/sda, powers off via
+sysrq, snapshots with the labels `os`, `version`, `arch` and `schematic`,
+and tears everything down on exit. Two rules come from failed builds:
+never download the image inside the rescue system, and never reuse a
+rescue that has already streamed an image (it wedges).

@@ -1,0 +1,8 @@
+# Image Factory schematic for the node image: stock Talos plus gVisor.
+# POST it to https://factory.talos.dev/schematics to get the schematic ID;
+# this content yields
+# d9ff89777e246792e7642abd3220a616afb4e49822382e4213a2e528ab826fe5.
+customization:
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/gvisor
