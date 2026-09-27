@@ -35,3 +35,10 @@ this bundle.
       namespace factory). Not a seed value: generate a fresh one on
       re-seed (`openssl rand -hex 32`) before factoryd starts; callers
       read it from the secret.
+- [x] Forgejo CI runner-registrar token (Task 41) — secret
+      forgejo-ci-registrar (key token, namespace factory). Not a seed
+      value: mint a fresh Forgejo access token scoped to the code repo's
+      Actions runner registration (register/list/delete runners only,
+      never repository or registry write) before factoryd starts; its
+      spawner uses this to stand up ephemeral `pr-untrusted` runner
+      pods and never mounts it into one.
