@@ -20,7 +20,10 @@ spec:
         {{- end }}
         config-hash: {{ toYaml .Values.runner.config.file | sha256sum }}
       labels:
-        {{- include "forgejo-runner.labels" . | nindent 8 }}
+        {{- /* no helm.sh/chart here: under reconcileStrategy Revision it
+        carries the Flux revision, and every infra commit would restart
+        the runner, killing its builds and wiping the dind cache */}}
+        {{- include "forgejo-runner.selectorLabels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

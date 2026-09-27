@@ -10,7 +10,9 @@ spec:
       chart: ./k8s/platform/forgejo/runner-chart
       sourceRef: {kind: GitRepository, name: flux-system, namespace: flux-system}
       # an in-repo chart: rebuild it on every commit, not only when
-      # Chart.yaml's version moves (a template change would else never ship)
+      # Chart.yaml's version moves (a template change would else never ship);
+      # the pod template carries no revision-stamped label, so a commit that
+      # changes nothing in it restarts no runner
       reconcileStrategy: Revision
   values:
     resources:
