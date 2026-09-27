@@ -64,12 +64,15 @@ spec:
           command: 
             - "sh"
             - "-c"
+            # sh as PID 1 ignores SIGTERM: trap it while waiting for dind,
+            # then exec, so the runner itself gets the pod's SIGTERM
             - |
+              trap 'exit 0' TERM INT
               while ! nc -z 127.0.0.1 2376 </dev/null; do
                 echo 'waiting for docker daemon...';
                 sleep 5;
               done
-              /bin/forgejo-runner --config /etc/runner/config.yaml daemon
+              exec /bin/forgejo-runner --config /etc/runner/config.yaml daemon
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
