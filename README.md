@@ -28,7 +28,7 @@ sync path `clusters/sf`:
 - Seeded secrets (`sf-cluster-superuser`, `app-secret`, `pg-*`,
   `cnpg-s3-creds`, `forgejo-admin-secret`, `forgejo-db-creds`,
   `hetzner-s3-creds`, `runner-init`, `litellm-master-key`,
-  `litellm-deepseek`, `litellm-qwen` (key ALIBABA_CLOUD_KEY), `litellm-glm` (keys Z_AI_KEY), `forgejo-secret-key` (namespace `forgejo`, the pinned Forgejo `SECRET_KEY`; a new key makes every stored Actions secret unreadable)) are imperative and stay out of the tree. In `factory`: `factory-db-creds` (keys `username`/`password`, the CNPG `gateway` role), a copy of `litellm-master-key` (key `masterkey`), and the `forgejo-registry` pull secret (username `sebastian`, the CI registry PAT), `factoryd-intake` (key `token`, the bearer token for factoryd's task intake; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), `factoryd-webhook` (key `secret`, task 42: the HMAC-SHA256 secret shared with Forgejo's webhook config for `POST /webhooks/forgejo`; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32` and the same value is set on the Forgejo webhook itself), and `forgejo-ci-registrar` (key `token`, task 41: a Forgejo token scoped to registering, listing and deleting the code repo's Actions runners, never repository or registry write, that factoryd's CI spawner uses to stand up the ephemeral `pr-untrusted` runner pods; no stored value, mint a fresh one on re-seed, never mount it into a runner pod itself) — pods cannot read secrets across namespaces, so the master key exists in `platform` and `factory` and rotation must replace both. `forgejo-pat` in `flux-system` (a copy of the bootstrap sync credentials) authenticates the `factory-code` GitRepository. The `gateway` role itself was created imperatively on `sf-cluster` (`CREATE ROLE gateway LOGIN PASSWORD ...`, value `SF_PG_GATEWAY_PASSWORD` in the seed env); CNPG's Database CR cannot create its owner role. The S3
+  `litellm-deepseek`, `litellm-qwen` (key ALIBABA_CLOUD_KEY), `litellm-glm` (keys Z_AI_KEY), `forgejo-secret-key` (namespace `forgejo`, the pinned Forgejo `SECRET_KEY`; a new key makes every stored Actions secret unreadable)) are imperative and stay out of the tree. In `factory`: `factory-db-creds` (keys `username`/`password`, the CNPG `gateway` role), a copy of `litellm-master-key` (key `masterkey`), and the `forgejo-registry` pull secret (username `sebastian`, the CI registry PAT), `factoryd-intake` (key `token`, the bearer token for factoryd's task intake; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), `factoryd-webhook` (key `secret`, task 42: the HMAC-SHA256 secret shared with Forgejo's webhook config for `POST /webhooks/forgejo`; value `FORGEJO_WEBHOOK_SECRET` in the seed env, because the webhook itself lives in Forgejo's database and comes back with the restore; a fresh value must be set on the webhook too), and `forgejo-ci-registrar` (key `token`, task 41: a Forgejo token scoped to registering, listing and deleting the code repo's Actions runners, never repository or registry write, that factoryd's CI spawner uses to stand up the ephemeral `pr-untrusted` runner pods; no stored value, mint a fresh one on re-seed, never mount it into a runner pod itself) — pods cannot read secrets across namespaces, so the master key exists in `platform` and `factory` and rotation must replace both. `forgejo-pat` in `flux-system` (a copy of the bootstrap sync credentials) authenticates the `factory-code` GitRepository. The `gateway` role itself was created imperatively on `sf-cluster` (`CREATE ROLE gateway LOGIN PASSWORD ...`, value `SF_PG_GATEWAY_PASSWORD` in the seed env); CNPG's Database CR cannot create its owner role. The S3
   keys exist in two namespaces — `cnpg-s3-creds` in `platform` for CNPG
   backups, `hetzner-s3-creds` in `forgejo` for the nightly dump — and
   rotation must replace both. Rotating `litellm-master-key` or
@@ -89,13 +89,25 @@ sibling). The tree already carries origin `sf-cluster-v3` and archive
    snapshot restore -force`, restart, unseal with the original key.
 8. Re-create what restores do not carry: the `factory` namespace
    secrets, `forgejo-pat` in `flux-system`, a fresh `factoryd-intake`
-   token, a fresh `factoryd-webhook` secret set identically on the
-   Forgejo webhook. Check that the `gateway` role and the
-   `factory-agent` bot exist in the recovered database, and create them
-   only if missing.
+   token, `factoryd-webhook` from `FORGEJO_WEBHOOK_SECRET`, and a freshly
+   minted `forgejo-ci-registrar` token (sebastian, `write:repository`,
+   scoped to the code repository). PUT the Actions secret
+   `REGISTRY_PASSWORD` (value `FORGEJO_CI_REGISTRY_PAT`) again if the
+   `SECRET_KEY` changed. Check what the database restore should have
+   brought back, and create it only if missing: the `gateway` role, the
+   `factory-agent` bot as a write collaborator on the code repository,
+   the code repository's webhook to factoryd (task 42, all issue and
+   pull-request events, JSON), and `main`'s branch protection (push and
+   merge whitelisted to sebastian, one approval, no file patterns).
+   factoryd itself recreates, at boot, the issue labels (`agent`,
+   `human`, `state/*`) and the bot's private fork
+   `factory-agent/ai-software-factory-code` that agent PRs come from
+   (ruling 97).
 9. Gate: every restored repository's HEAD matches the last pushed commit,
    the Stage 2 exit tests pass, CI on `main` is green, one task through
-   the authenticated intake ends `done` with its branch on Forgejo.
+   the authenticated intake ends `done` with its branch on the fork, and
+   its PR's checks run on the untrusted runner with `job-env-audit`
+   green (the job token's push refused).
 
 Budget about five hours.
 

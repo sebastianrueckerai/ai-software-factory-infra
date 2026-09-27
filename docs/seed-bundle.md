@@ -20,7 +20,8 @@ this bundle.
 - [x] LiteLLM master key (created in Stage 2, secret litellm-master-key
       in namespace platform)
 - [x] Forgejo SECRET_KEY — imperative secret forgejo-secret-key in
-      namespace forgejo; re-PUT the Actions secrets after any key change
+      namespace forgejo, value `FORGEJO_SECRET_KEY` in the seed env
+      (Ruling 85); re-PUT the Actions secrets after any key change
       (Task 34)
 - [x] Forgejo bot account `factory-agent` (`FORGEJO_BOT_PASSWORD`): the
       factory's task-token minting identity — write collaborator on the
@@ -43,7 +44,8 @@ this bundle.
       spawner uses this to stand up ephemeral `pr-untrusted` runner
       pods and never mounts it into one.
 - [x] Forgejo webhook secret (Task 42) — secret factoryd-webhook (key
-      secret, namespace factory). Not a seed value: generate a fresh one
-      on re-seed (`openssl rand -hex 32`) before factoryd starts, and set
-      the identical value on the code repo's `POST /webhooks/forgejo`
-      webhook config (HMAC-SHA256 signing secret) so deliveries verify.
+      secret, namespace factory), value `FORGEJO_WEBHOOK_SECRET` in the
+      seed env: the code repo's `POST /webhooks/forgejo` webhook lives
+      in Forgejo's database and comes back with the restore holding the
+      same value. A fresh value must also be set on that webhook
+      (HMAC-SHA256 signing secret) so deliveries verify.
