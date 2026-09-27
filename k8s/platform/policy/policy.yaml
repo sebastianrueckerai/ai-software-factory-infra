@@ -11,7 +11,7 @@ version: 1
 budget:
   task_default_eur: 2
   task_max_eur: 5
-  day_eur: 20
+  day_eur: 0.001
 
 # Capability classes a task can hold (tasks.required_capabilities; intake
 # gives agent tasks "coder"). models: the aliases the agent may call through
