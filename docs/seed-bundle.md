@@ -42,3 +42,8 @@ this bundle.
       never repository or registry write) before factoryd starts; its
       spawner uses this to stand up ephemeral `pr-untrusted` runner
       pods and never mounts it into one.
+- [x] Forgejo webhook secret (Task 42) — secret factoryd-webhook (key
+      secret, namespace factory). Not a seed value: generate a fresh one
+      on re-seed (`openssl rand -hex 32`) before factoryd starts, and set
+      the identical value on the code repo's `POST /webhooks/forgejo`
+      webhook config (HMAC-SHA256 signing secret) so deliveries verify.

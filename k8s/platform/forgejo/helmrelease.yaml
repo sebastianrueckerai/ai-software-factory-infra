@@ -63,6 +63,11 @@ spec:
         actions:
           ENABLED: true
           DEFAULT_ACTIONS_URL: https://data.forgejo.org
+        webhook:
+          # task 42: factoryd's own webhook intake is a private in-cluster
+          # host, which Forgejo's SSRF guard blocks unless allow-listed
+          # alongside the public hosts webhooks already need.
+          ALLOWED_HOST_LIST: "external,factoryd.factory.svc.cluster.local"
       additionalConfigFromEnvs:
         - name: FORGEJO__database__PASSWD
           valueFrom:
