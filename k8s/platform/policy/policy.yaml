@@ -1,0 +1,22 @@
+# Factory capability policy, schema version 1. Edit here, commit, push:
+# Flux applies the ConfigMap, factoryd records the new content as a policy
+# version within about two minutes, and the gateway enforces it within 30 s
+# more. An invalid edit is logged by factoryd and the previous version stays
+# in force. Unknown keys are rejected.
+version: 1
+
+# EUR caps. A task gets task_default_eur unless its intake asks for less or
+# more; never more than task_max_eur. day_eur caps all tasks together per
+# UTC day, over the cost ledger.
+budget:
+  task_default_eur: 2
+  task_max_eur: 5
+  day_eur: 20
+
+# Capability classes a task can hold (tasks.required_capabilities; intake
+# gives agent tasks "coder"). models: the aliases the agent may call through
+# the gateway. tools: per tool, max_requests and max_eur per task.
+classes:
+  coder:
+    models: [coding-cheap, coding-frontier]
+    tools: {}

@@ -35,6 +35,26 @@ sync path `clusters/sf`:
   `litellm-deepseek` also requires `kubectl -n platform rollout restart
   deployment/litellm`, because no reloader watches those secrets.
 
+## Policy
+
+`k8s/platform/policy/policy.yaml` is the factory's capability policy:
+per-task default and maximum budget, the per-day cap over all tasks
+(UTC day), and the capability classes (the model aliases and tools a task
+class may use). Its `configMapGenerator` makes it ConfigMap
+`factory-policy` in namespace `factory` (stable name, no hash suffix),
+which factoryd mounts read-only.
+
+To change policy: edit the file, commit, push. Flux applies the
+ConfigMap, kubelet updates the mounted file, and factoryd, which reads it
+every 30 s, records the new content as an immutable `policy_versions` row
+and makes it current (log line `policy: version N loaded`); about two
+minutes end to end. The gateway enforces the current version from
+Postgres within 30 s more and names it in every audit row. An invalid
+edit is logged (`POLICY REJECTED`) and the previous version stays in
+force; unknown keys are rejected. Reverting to earlier content makes that
+earlier version current again. `GET /policy` on factoryd shows the version
+in force.
+
 ## Cilium stays outside Flux
 
 Cilium is the substrate Flux itself runs over, and its upgrades are
