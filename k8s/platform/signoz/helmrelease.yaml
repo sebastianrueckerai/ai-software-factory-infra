@@ -15,6 +15,17 @@ spec:
       chart: signoz
       version: 0.143.0
       sourceRef: {kind: HelmRepository, name: signoz, namespace: flux-system}
+  # SigNoz creates its root user from these at boot, so self-registration is
+  # closed before the public route serves; secret signoz-root is imperative.
+  valuesFrom:
+    - kind: Secret
+      name: signoz-root
+      valuesKey: email
+      targetPath: signoz.env.signoz_user_root_email
+    - kind: Secret
+      name: signoz-root
+      valuesKey: password
+      targetPath: signoz.env.signoz_user_root_password
   values:
     global:
       storageClass: local-path
@@ -35,6 +46,9 @@ spec:
             memory: 256Mi
     signoz:
       replicaCount: 1
+      env:
+        signoz_user_root_enabled: "true"
+        signoz_user_root_org__name: aisoftwarefactory
       resources:
         requests:
           cpu: 100m
