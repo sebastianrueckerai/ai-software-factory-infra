@@ -117,17 +117,47 @@ spec:
           image: "{{ coalesce $.Values.global.image.registry .registry }}/{{ .repository }}:{{ .tag }}"
           imagePullPolicy: {{ coalesce $.Values.global.image.pullPolicy .pullPolicy }}
           {{- end }}
+          # Build cache goes by last use (builder prune's until), stopped
+          # containers by age, images only when dangling: a base image pulled
+          # today may be years old. Past maxGB of images plus build cache,
+          # every unused image and all build cache go. Backs off while dind
+          # is down; exits at once on SIGTERM.
           command:
             - "sh"
             - "-c"
             - |
-              while true; do
-                docker system prune -af --filter until={{ .keep }} || { sleep 5; continue; }
-                sleep {{ .everySeconds }}
+              trap 'exit 0' TERM INT
+              prune() {
+                docker builder prune -af --filter "until=$KEEP" >/dev/null &&
+                  docker container prune -f --filter "until=$KEEP" >/dev/null &&
+                  docker image prune -f >/dev/null || return
+                gb=$(docker system df --format '{{ "{{.Type}} {{.Size}}" }}' | awk '
+                  $1 == "Images" || $1 " " $2 == "Build Cache" {
+                    s = $NF; n = s + 0; sub(/^[0-9.]+/, "", s)
+                    total += n * (s == "kB" ? 1e3 : s == "MB" ? 1e6 : s == "GB" ? 1e9 : s == "TB" ? 1e12 : 1)
+                  }
+                  END { printf "%d", total / 1e9 }') || return
+                [ "$gb" -lt "$MAX_GB" ] || { docker image prune -af >/dev/null && docker builder prune -af >/dev/null; }
+              }
+              backoff=5
+              while :; do
+                prune & wait $!
+                if [ $? -eq 0 ]; then
+                  pause=$EVERY; backoff=5
+                else
+                  pause=$backoff; backoff=$((backoff * 2 > EVERY ? EVERY : backoff * 2))
+                fi
+                sleep "$pause" & wait $!
               done
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
           env:
+            - name: KEEP
+              value: {{ .keep | quote }}
+            - name: EVERY
+              value: {{ .everySeconds | quote }}
+            - name: MAX_GB
+              value: {{ .maxGB | quote }}
             - name: DOCKER_HOST
               value: tcp://127.0.0.1:2376
             - name: DOCKER_CERT_PATH

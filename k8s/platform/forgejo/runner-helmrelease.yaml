@@ -24,11 +24,13 @@ spec:
         requests:
           cpu: 500m
           memory: 1Gi
-      # a docker-prune sidecar keeps the image store and build cache to a
-      # day's worth: unpruned, dind filled its 40Gi volume and got evicted
+      # a docker-prune sidecar keeps the build cache to a day's use and
+      # images plus cache under maxGB: unpruned, dind filled its 40Gi
+      # volume and got evicted
       prune:
         keep: 24h
         everySeconds: 3600
+        maxGB: 25
     runner:
       config:
         create: true
