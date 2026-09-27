@@ -24,6 +24,34 @@ spec:
       allowedRoutes:
         namespaces:
           from: Same
+    - name: https-console
+      protocol: HTTPS
+      port: 443
+      hostname: console.aisoftwarefactory.world
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: console-aisoftwarefactory-world-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: {kubernetes.io/metadata.name: factory}
+    - name: https-signoz
+      protocol: HTTPS
+      port: 443
+      hostname: signoz.aisoftwarefactory.world
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: signoz-aisoftwarefactory-world-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: {kubernetes.io/metadata.name: platform}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -34,7 +62,7 @@ spec:
   parentRefs:
     - name: edge-gateway
       sectionName: http
-  hostnames: [git.aisoftwarefactory.world]
+  hostnames: [git.aisoftwarefactory.world, console.aisoftwarefactory.world, signoz.aisoftwarefactory.world]
   rules:
     - filters:
         - type: RequestRedirect
@@ -84,3 +112,45 @@ spec:
   issuerRef:
     name: letsencrypt-production
     kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: console-aisoftwarefactory-world
+  namespace: forgejo
+spec:
+  secretName: console-aisoftwarefactory-world-tls
+  dnsNames: [console.aisoftwarefactory.world]
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: signoz-aisoftwarefactory-world
+  namespace: forgejo
+spec:
+  secretName: signoz-aisoftwarefactory-world-tls
+  dnsNames: [signoz.aisoftwarefactory.world]
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+---
+# SigNoz has its own login; the admin account exists before this route does
+# (self-registration closes after the first account).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: signoz
+  namespace: platform
+spec:
+  parentRefs:
+    - name: edge-gateway
+      namespace: forgejo
+      sectionName: https-signoz
+  hostnames: [signoz.aisoftwarefactory.world]
+  rules:
+    - backendRefs:
+        - name: signoz
+          port: 8080
