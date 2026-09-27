@@ -119,7 +119,7 @@ spec:
             - "-c"
             - |
               while true; do
-                docker system prune -af --filter until={{ .keep }} || true
+                docker system prune -af --filter until={{ .keep }} || { sleep 5; continue; }
                 sleep {{ .everySeconds }}
               done
           resources:
