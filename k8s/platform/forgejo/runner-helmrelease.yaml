@@ -42,3 +42,13 @@ spec:
               - /certs/client
     securityContext:
       privileged: true
+    # dind's image store and build cache: an emptyDir the kubelet can see and
+    # bound. The image's anonymous VOLUME /var/lib/docker was invisible to
+    # eviction ranking and grew past 50 GiB on one node.
+    volumeMounts:
+      - name: docker-data
+        mountPath: /var/lib/docker
+    volumes:
+      - name: docker-data
+        emptyDir:
+          sizeLimit: 40Gi
