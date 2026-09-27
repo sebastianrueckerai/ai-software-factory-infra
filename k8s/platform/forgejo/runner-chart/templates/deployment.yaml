@@ -108,6 +108,33 @@ spec:
             {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+        {{- with .Values.dind.prune }}
+        - name: docker-prune
+          {{- with $.Values.dind.image }}
+          image: "{{ coalesce $.Values.global.image.registry .registry }}/{{ .repository }}:{{ .tag }}"
+          imagePullPolicy: {{ coalesce $.Values.global.image.pullPolicy .pullPolicy }}
+          {{- end }}
+          command:
+            - "sh"
+            - "-c"
+            - |
+              while true; do
+                docker system prune -af --filter until={{ .keep }} || true
+                sleep {{ .everySeconds }}
+              done
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          env:
+            - name: DOCKER_HOST
+              value: tcp://127.0.0.1:2376
+            - name: DOCKER_CERT_PATH
+              value: /certs/client
+            - name: DOCKER_TLS_VERIFY
+              value: "1"
+          volumeMounts:
+            - name: docker-certs
+              mountPath: /certs
+        {{- end }}
       volumes:
         - name: docker-certs
           emptyDir: {}
