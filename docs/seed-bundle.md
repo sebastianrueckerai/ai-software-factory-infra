@@ -45,7 +45,13 @@ this bundle.
       `write:repository` token scoped to the code repo only before
       factoryd starts. The spawner registers ephemeral `pr-untrusted`
       runner pods with it and never mounts it into one; the intake
-      reads collaborator permissions with it.
+      reads the code repository's collaborators and assignees with it.
+- [x] Forgejo CI org-read token (Task 47, ruling 108) — secret
+      forgejo-ci-org-read (key token, namespace factory). Not a seed
+      value: mint `factory-ci` a fresh token with the single scope
+      `read:organization` and no repository (Forgejo refuses that scope on
+      a repository-limited token) before factoryd starts. factoryd's trust
+      gate reads org `sf`'s teams, their repositories and members with it.
 - [x] Forgejo webhook secret (Task 42) — secret factoryd-webhook (key
       secret, namespace factory), value `FORGEJO_WEBHOOK_SECRET` in the
       seed env: the code repo's `POST /webhooks/forgejo` webhook lives
