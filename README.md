@@ -106,10 +106,11 @@ sibling). The tree already carries origin `sf-cluster-v3` and archive
    `factory-agent/ai-software-factory-code` that agent PRs come from
    (ruling 97).
 9. Gate: every restored repository's HEAD matches the last pushed commit,
-   the Stage 2 exit tests pass, CI on `main` is green, one task through
-   the authenticated intake ends `done` with its branch on the fork, and
-   its PR's checks run on the untrusted runner with `job-env-audit`
-   green (the job token's push refused).
+   the Stage 2 exit tests pass, CI on `main` is green, and one task
+   through the authenticated intake runs to a fork PR whose checks run
+   on the untrusted runner: the workflow completes with `job-env-audit`
+   green (the job token's push refused); merged by the human, the task
+   ends `done` and Finish deletes the fork branch.
 
 Budget about five hours.
 
