@@ -121,9 +121,8 @@ spec:
           imagePullPolicy: {{ coalesce $.Values.global.image.pullPolicy .pullPolicy }}
           {{- end }}
           # Build cache goes by last use (builder prune's until), stopped
-          # containers and unused networks by age, images only when
-          # dangling: a base image pulled today may be years old. Past
-          # maxGB of images plus build cache,
+          # containers by age, images only when dangling: a base image pulled
+          # today may be years old. Past maxGB of images plus build cache,
           # every unused image and all build cache go. Backs off while dind
           # is down; exits at once on SIGTERM.
           command:
@@ -134,7 +133,6 @@ spec:
               prune() {
                 docker builder prune -af --filter "until=$KEEP" >/dev/null &&
                   docker container prune -f --filter "until=$KEEP" >/dev/null &&
-                  docker network prune -f --filter "until=$KEEP" >/dev/null &&
                   docker image prune -f >/dev/null || return
                 gb=$(docker system df --format '{{ "{{.Type}} {{.Size}}" }}' | awk '
                   $1 == "Images" || $1 " " $2 == "Build Cache" {
