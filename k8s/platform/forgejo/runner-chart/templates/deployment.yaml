@@ -157,7 +157,7 @@ spec:
             - name: EVERY
               value: {{ .everySeconds | quote }}
             - name: MAX_GB
-              value: {{ .maxGB | quote }}
+              value: {{ required "dind.prune.maxGB: without it the size check would fail open" .maxGB | quote }}
             - name: DOCKER_HOST
               value: tcp://127.0.0.1:2376
             - name: DOCKER_CERT_PATH
