@@ -1,0 +1,9 @@
+# Facts about this cluster's substrate that factory workloads need. Written
+# from `tofu output node_public_ips` at every rebuild (ruling 112).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-facts
+  namespace: factory
+data:
+  node_public_ips: "138.199.227.128,138.199.224.193,138.199.231.242"

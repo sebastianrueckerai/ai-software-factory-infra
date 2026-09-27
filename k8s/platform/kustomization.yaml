@@ -21,3 +21,4 @@ resources:
 - signoz/helmrelease.yaml
 - cronjobs/forgejo-dump.yaml
 - gvisor-runtimeclass.yaml
+- cluster-facts/configmap.yaml
