@@ -51,7 +51,10 @@ and makes it current (log line `policy: version N loaded`); about two
 minutes end to end. The gateway enforces the current version from
 Postgres within 30 s more and names it in every audit row. An invalid
 edit is logged (`POLICY REJECTED`) and the previous version stays in
-force; unknown keys are rejected. Reverting to earlier content makes that
+force; unknown keys are rejected, and so is a `coder` class that leaves
+out a model of factoryd's ladder (`MODEL`, `STRONGER_MODEL`). `day_eur: 0`
+stops all spend. Every activation is an append-only `policy_activations`
+row, so the history of what was in force when stays in Postgres. Reverting to earlier content makes that
 earlier version current again. `GET /policy` on factoryd shows the version
 in force.
 

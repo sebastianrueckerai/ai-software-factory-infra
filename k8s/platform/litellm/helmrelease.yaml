@@ -74,6 +74,10 @@ spec:
             drop_params: true
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
+        # backstop behind factory-gateway's holds: refuse a call whose
+        # worst case does not fit the key's max_budget instead of shrinking
+        # the reservation and admitting it
+        fail_closed_budget_enforcement: true
       litellm_settings:
         # factory-gateway books a stream's cost from its final usage chunk
         include_cost_in_streaming_usage: true

@@ -7,7 +7,8 @@ version: 1
 
 # EUR caps. A task gets task_default_eur unless its intake asks for less or
 # more; never more than task_max_eur. day_eur caps all tasks together per
-# UTC day, over the cost ledger.
+# UTC day, over the cost ledger; 0 stops all spend. The coder class must
+# allow factoryd's model ladder, or factoryd rejects the version.
 budget:
   task_default_eur: 2
   task_max_eur: 5
