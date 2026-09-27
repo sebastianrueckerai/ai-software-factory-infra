@@ -36,12 +36,13 @@ this bundle.
       namespace factory). Not a seed value: generate a fresh one on
       re-seed (`openssl rand -hex 32`) before factoryd starts; callers
       read it from the secret.
-- [x] Forgejo CI registrar token (Tasks 41, 46; ruling 101) — secret
-      forgejo-ci-registrar (key token, namespace factory). Not a seed
-      value: the dedicated user `factory-ci` (admin collaborator on the
-      code repo only, not in `main`'s push/merge whitelist, which
-      applies to admins) comes back with the database restore; mint it
-      a fresh `write:repository` token scoped to the code repo before
+- [x] Forgejo CI registrar token (Tasks 41, 46; rulings 101, 101a) —
+      secret forgejo-ci-registrar (key token, namespace factory). Not a
+      seed value: the dedicated user `factory-ci` (member of org `sf`'s
+      Owners team, because Forgejo's repository runner API demands the
+      owner; not in `main`'s push/merge whitelist, which applies to
+      admins) comes back with the database restore; mint it a fresh
+      `write:repository` token scoped to the code repo only before
       factoryd starts. The spawner registers ephemeral `pr-untrusted`
       runner pods with it and never mounts it into one; the intake
       reads collaborator permissions with it.
