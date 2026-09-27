@@ -65,6 +65,13 @@ spec:
             api_key: os.environ/Z_AI_KEY
             # opencode sends reasoning_effort, which zai rejects with a 400
             drop_params: true
+        # factoryd's supervisor (architecture 6.6): the strongest configured model
+        - model_name: supervisor
+          litellm_params:
+            model: zai/glm-5.3
+            api_base: https://api.z.ai/api/paas/v4
+            api_key: os.environ/Z_AI_KEY
+            drop_params: true
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
       litellm_settings:
