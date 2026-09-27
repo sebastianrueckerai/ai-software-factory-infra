@@ -56,8 +56,8 @@ Before a destroy that must keep Postgres state: a completed CNPG
 a Forgejo dump, `flux suspend kustomization --all`, and the two-line edit
 in `k8s/platform/cnpg/cluster.yaml` (recovery origin = the newest
 generation with a completed base backup, live archive = the next unused
-sibling). The tree already carries origin `sf-cluster-v3` and archive
-`sf-cluster-v4` for the next rebuild.
+sibling). The tree already carries origin `sf-cluster-v4` and archive
+`sf-cluster-v5` for the next rebuild.
 
 1. A destroy releases the primary IPs, so first
    `tofu apply -target=hcloud_primary_ip.node`, point the `git` DDNS
