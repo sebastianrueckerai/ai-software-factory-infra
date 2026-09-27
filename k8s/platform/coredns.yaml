@@ -19,6 +19,12 @@ data:
         rewrite stop {
             name exact git.aisoftwarefactory.world cilium-gateway-edge-gateway.forgejo.svc.cluster.local
         }
+        rewrite stop {
+            name exact console.aisoftwarefactory.world cilium-gateway-edge-gateway.forgejo.svc.cluster.local
+        }
+        rewrite stop {
+            name exact signoz.aisoftwarefactory.world cilium-gateway-edge-gateway.forgejo.svc.cluster.local
+        }
 
         kubernetes cluster.local in-addr.arpa ip6.arpa {
             pods insecure
