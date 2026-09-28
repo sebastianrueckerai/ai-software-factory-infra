@@ -16,8 +16,46 @@ budget:
 
 # Capability classes a task can hold (tasks.required_capabilities; intake
 # gives agent tasks "coder"). models: the aliases the agent may call through
-# the gateway. tools: per tool, max_requests and max_eur per task.
+# the gateway. tools: the gateway's paid MCP tools, per tool max_requests
+# and max_eur per task (every admitted call counts; a call is held at its
+# worst case below until its real cost is booked). escalate_to_human is
+# free and always allowed for coder, so it is not listed.
 classes:
   coder:
     models: [coding-cheap, coding-frontier]
-    tools: {}
+    tools:
+      web_scrape: {max_requests: 30, max_eur: 0.20}
+      web_search: {max_requests: 30, max_eur: 0.20}
+      replicate_predict: {max_requests: 5, max_eur: 0.50}
+      fal_run: {max_requests: 5, max_eur: 0.50}
+
+# Tool prices no provider API reports (USD prices booked 1:1 as EUR, as
+# LiteLLM's are). fal's prices come from its pricing API per endpoint.
+prices:
+  firecrawl:
+    # extra credits on the Hobby plan: 1,000 per 5 USD
+    # https://www.firecrawl.dev/pricing (fetched 2026-09-28)
+    eur_per_credit: 0.005
+    # the worst case a call is held at: a scrape is 1 credit per page (basic
+    # proxy, no PDF parser), a search 2 credits per 10 results (at most 10)
+    scrape_credits: 1
+    search_credits: 2
+  replicate:
+    # per second of predict_time, by hardware SKU
+    # https://replicate.com/pricing (fetched 2026-09-28)
+    eur_per_second:
+      cpu: 0.0001
+      gpu-t4: 0.000225
+      gpu-l40s: 0.000975
+      gpu-a100-large: 0.0014
+      gpu-h100: 0.001525
+    # Replicate's API names no model's hardware: a model is usable once it is
+    # listed here with the SKU its model page names
+    models:
+      replicate/hello-world: cpu
+    # a prediction is held at this many seconds of its hardware: the
+    # gateway's 60 s wait, then a cancel
+    max_seconds: 90
+  fal:
+    # an endpoint priced per megapixel is held at this many
+    max_megapixels: 4
