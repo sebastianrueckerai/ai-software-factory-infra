@@ -106,6 +106,30 @@ token can merge only what sebastian already approved.
 On a rebuild the user, its collaboration and the protection come back
 with Forgejo's database; the token is minted fresh.
 
+## Build cache
+
+`k8s/platform/build-cache/` is the pull-request image builds' layer cache
+(ruling 111): a `registry:3` Deployment and Service `build-cache:5000` in
+namespace `forgejo`, plain HTTP, on a 20Gi `local-path` volume. Main CI
+(the trusted dind runner) exports each image's BuildKit cache to
+`cache/<image>:main` (`factory-gateway`, `opencode-worker`, `ci-runner`);
+an untrusted PR runner pod copies it into a local OCI layout and streams
+it to its build VM, which never reaches the cache itself. No credential
+exists: the CiliumNetworkPolicy `build-cache-ingress` lets the
+`forgejo-runner` pods use any method and pods in namespaces labelled
+`factory.ai/ci=true` (factoryd's CI namespaces) only GET and HEAD, so a
+write from a PR job answers 403; nothing else connects. The API's DELETE
+is off.
+
+Each main run moves the tags and orphans the old cache's blobs. The
+CronJob `build-cache-gc` restarts the registry every Sunday 03:30 UTC;
+its initContainer runs `registry garbage-collect --delete-untagged` on the
+idle volume (strategy Recreate) and deletes them.
+
+The cache is disposable and nothing restores it: after a rebuild it is
+empty, PR builds log "no cache" and build cold until the next main CI
+run fills it. To empty it by hand, delete the PVC and the pod.
+
 ## Cilium stays outside Flux
 
 Cilium is the substrate Flux itself runs over, and its upgrades are

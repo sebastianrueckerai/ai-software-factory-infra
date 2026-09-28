@@ -1,0 +1,26 @@
+# Who may use the cache, enforced by Cilium's L7 proxy: the trusted main
+# runner (namespace forgejo) reads and writes; the untrusted PR runner pods
+# (factoryd's CI namespaces, label factory.ai/ci=true) only GET and HEAD, so
+# a PUT, PATCH, POST or DELETE from them answers 403. Nothing else connects.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata: {name: build-cache-ingress, namespace: forgejo}
+spec:
+  endpointSelector:
+    matchLabels: {app.kubernetes.io/name: build-cache}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: forgejo
+            k8s:app.kubernetes.io/name: forgejo-runner
+      toPorts:
+        - ports: [{port: "5000", protocol: TCP}]
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.cilium.k8s.namespace.labels.factory.ai/ci: "true"
+      toPorts:
+        - ports: [{port: "5000", protocol: TCP}]
+          rules:
+            http:
+              - method: GET
+              - method: HEAD

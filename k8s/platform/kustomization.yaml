@@ -15,6 +15,7 @@ resources:
 - local-path
 - forgejo/helmrelease.yaml
 - forgejo/runner-helmrelease.yaml
+- build-cache
 - openbao/helmrelease.yaml
 - temporal/helmrelease.yaml
 - litellm/helmrelease.yaml

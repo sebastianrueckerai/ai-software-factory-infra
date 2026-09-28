@@ -1,0 +1,49 @@
+# The bound on the cache: each main CI run moves tag `main` per image and
+# leaves the old cache's blobs untagged. A weekly restart runs the
+# registry's garbage-collect initContainer on the idle volume (Recreate:
+# the old pod is gone first), which deletes them.
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: build-cache-gc, namespace: forgejo}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: build-cache-gc, namespace: forgejo}
+rules:
+  - apiGroups: [apps]
+    resources: [deployments]
+    resourceNames: [build-cache]
+    verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: build-cache-gc, namespace: forgejo}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: build-cache-gc}
+subjects: [{kind: ServiceAccount, name: build-cache-gc}]
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: build-cache-gc, namespace: forgejo}
+spec:
+  # Sunday 03:30 UTC, after the 02:30 forgejo dump
+  schedule: "30 3 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          serviceAccountName: build-cache-gc
+          restartPolicy: Never
+          containers:
+            - name: restart
+              image: alpine/kubectl:1.36.1
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}
+                seccompProfile: {type: RuntimeDefault}
+              command: [kubectl, -n, forgejo, rollout, restart, deployment/build-cache]

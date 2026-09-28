@@ -1,0 +1,69 @@
+# The PR image builds' read-only layer cache (ruling 111): main CI exports
+# each image's BuildKit cache here, the untrusted PR runner pods read it.
+# No credential anywhere; policy.yaml is the access control. Plain HTTP,
+# in-cluster only. Disposable: after a rebuild it starts empty and the next
+# main CI run refills it.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: build-cache, namespace: forgejo}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 20Gi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: build-cache, namespace: forgejo}
+spec:
+  replicas: 1
+  # the garbage collector must not run while a registry serves the volume
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: build-cache}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: build-cache}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        # every start sweeps the blobs no tag reaches any more; gc.yaml
+        # restarts the pod weekly
+        - name: garbage-collect
+          image: registry:3@sha256:852b3e4d378c426dda6b318fe9d9bfe8e92a0eccb9926671ec3d3ea17a196696
+          args: [garbage-collect, --delete-untagged, /etc/distribution/config.yml]
+          env:
+            - {name: REGISTRY_LOG_LEVEL, value: warn}
+          securityContext: &restricted
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts: [{name: data, mountPath: /var/lib/registry}]
+      containers:
+        - name: registry
+          image: registry:3@sha256:852b3e4d378c426dda6b318fe9d9bfe8e92a0eccb9926671ec3d3ea17a196696
+          env:
+            - {name: REGISTRY_LOG_LEVEL, value: info}
+            - {name: REGISTRY_STORAGE_DELETE_ENABLED, value: "false"}
+          ports: [{name: http, containerPort: 5000}]
+          readinessProbe:
+            httpGet: {path: /v2/, port: http}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 512Mi}
+          securityContext: *restricted
+          volumeMounts: [{name: data, mountPath: /var/lib/registry}]
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: build-cache}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: build-cache, namespace: forgejo}
+spec:
+  selector: {app.kubernetes.io/name: build-cache}
+  ports: [{name: http, port: 5000, targetPort: http}]
