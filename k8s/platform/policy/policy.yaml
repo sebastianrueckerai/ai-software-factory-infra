@@ -24,7 +24,7 @@ classes:
   coder:
     models: [coding-cheap, coding-frontier]
     tools:
-      web_scrape: {max_requests: 30, max_eur: 0.20}
+      web_scrape: {max_requests: 1, max_eur: 0.20}
       web_search: {max_requests: 30, max_eur: 0.20}
       replicate_predict: {max_requests: 5, max_eur: 0.50}
       fal_run: {max_requests: 5, max_eur: 0.50}
