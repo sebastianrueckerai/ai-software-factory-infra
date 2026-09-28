@@ -1,0 +1,70 @@
+# Node and pod telemetry into SigNoz: the otel-agent DaemonSet (host
+# metrics, kubelet stats, container logs) and the otel-deployment (cluster
+# metrics and Kubernetes events). Its own namespace because the agent needs
+# hostPath mounts, which the cluster's baseline Pod Security forbids in
+# platform. No log line from an agent sandbox namespace (factory-agents-*)
+# is read: an agent's transcript must not land in SigNoz.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: k8s-infra, namespace: platform}
+spec:
+  interval: 10m
+  releaseName: k8s-infra
+  targetNamespace: k8s-infra
+  chart:
+    spec:
+      chart: k8s-infra
+      version: 0.17.1
+      sourceRef: {kind: HelmRepository, name: signoz, namespace: flux-system}
+  values:
+    global:
+      clusterName: sf
+    otelCollectorEndpoint: http://signoz-otel-collector.platform.svc.cluster.local:4318
+    presets:
+      logsCollection:
+        blacklist:
+          signozLogs: false
+          namespaces: [factory-agents-*]
+          pods: []
+    otelAgent:
+      # Container log files are root-owned 0640; reading them needs uid 0,
+      # no capability.
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities: {drop: [ALL]}
+        seccompProfile: {type: RuntimeDefault}
+      # The agent receives nothing: no OTLP receiver, no host port.
+      ports:
+        otlp: {enabled: false, hostPort: null}
+        otlp-http: {enabled: false, hostPort: null}
+        metrics: {enabled: false, hostPort: null}
+        health-check: {hostPort: null}
+      config:
+        receivers: {otlp: null}
+        service:
+          pipelines:
+            traces: {receivers: []}
+            metrics: {receivers: []}
+            logs: {receivers: []}
+      additionalEnvs:
+        GOMEMLIMIT: 320MiB
+      resources:
+        requests: {cpu: 50m, memory: 128Mi}
+        limits: {cpu: 500m, memory: 384Mi}
+    otelDeployment:
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities: {drop: [ALL]}
+        seccompProfile: {type: RuntimeDefault}
+      podSecurityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      additionalEnvs:
+        GOMEMLIMIT: 200MiB
+      resources:
+        requests: {cpu: 25m, memory: 96Mi}
+        limits: {cpu: 250m, memory: 256Mi}

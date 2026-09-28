@@ -14,3 +14,10 @@ metadata:
   name: forgejo
   labels:
     pod-security.kubernetes.io/enforce: privileged
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: k8s-infra
+  labels:
+    pod-security.kubernetes.io/enforce: privileged

@@ -19,6 +19,7 @@ resources:
 - temporal/helmrelease.yaml
 - litellm/helmrelease.yaml
 - signoz
+- k8s-infra
 - cronjobs/forgejo-dump.yaml
 - gvisor-runtimeclass.yaml
 - cluster-facts/configmap.yaml

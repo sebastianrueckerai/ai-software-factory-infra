@@ -1,9 +1,11 @@
-# Writes dashboard "factory pipeline" (dashboards/factory-pipeline.json)
-# into SigNoz, which loses its dashboards with its volume on a rebuild.
-# Edits made in the UI are overwritten on the next run: change the file.
+# Writes the dashboards (dashboards/*.json), the alert rules
+# (alerts/*.json) and the retention (HOT_DAYS on the local volume, then S3,
+# deleted after RETENTION_DAYS) into SigNoz, which loses all three with its
+# volumes on a rebuild. Edits made in the UI are overwritten on the next
+# run: change the files or the values here.
 apiVersion: batch/v1
 kind: CronJob
-metadata: {name: signoz-dashboard, namespace: platform}
+metadata: {name: signoz-objects, namespace: platform}
 spec:
   schedule: "*/10 * * * *"
   concurrencyPolicy: Forbid
@@ -18,14 +20,16 @@ spec:
           automountServiceAccountToken: false
           restartPolicy: Never
           containers:
-            - name: dashboard
+            - name: objects
               image: alpine/k8s:1.36.1@sha256:692239d739589247c4a791205ed9619c28ae85a21286e19a6211c04a62c56668
-              command: [sh, /scripts/dashboard.sh]
+              command: [sh, /scripts/objects.sh]
               env:
                 - name: SIGNOZ_EMAIL
                   valueFrom: {secretKeyRef: {name: signoz-root, key: email}}
                 - name: SIGNOZ_PASSWORD
                   valueFrom: {secretKeyRef: {name: signoz-root, key: password}}
+                - {name: HOT_DAYS, value: "7"}
+                - {name: RETENTION_DAYS, value: "30"}
               securityContext:
                 runAsNonRoot: true
                 runAsUser: 1000
@@ -40,11 +44,14 @@ spec:
               volumeMounts:
                 - {name: script, mountPath: /scripts, readOnly: true}
                 - {name: dashboards, mountPath: /dashboards, readOnly: true}
+                - {name: alerts, mountPath: /alerts, readOnly: true}
                 - {name: tmp, mountPath: /tmp}
           volumes:
             - name: script
-              configMap: {name: signoz-dashboard-script}
+              configMap: {name: signoz-objects-script}
             - name: dashboards
               configMap: {name: signoz-dashboards}
+            - name: alerts
+              configMap: {name: signoz-alerts}
             - name: tmp
               emptyDir: {}

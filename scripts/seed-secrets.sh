@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1090
 # Creates every imperative secret of the rebuild recipe from .env.tools/.env.seed. Prints no values.
 set -euo pipefail
 set -a; source ~/repos/ai-software-factory/.env.tools; source ~/repos/ai-software-factory/.env.seed; set +a
@@ -39,6 +40,8 @@ kubectl -n $A get secret gateway-factoryd >/dev/null 2>&1 || k -n $A create secr
 k -n $A create secret generic gateway-tool-keys --from-literal=FIRECRAWL_KEY="$FIRECRAWL_KEY" --from-literal=REPLICATE_KEY="$REPLICATE_KEY" --from-literal=FAL_AI_KEY="$FAL_AI_KEY"
 k -n $A create secret generic hetzner-ci --from-literal=token="$HETZNER_CI_KEY"
 k -n $A create secret generic hetzner-agent --from-literal=token="$HETZNER_AGENT_KEY"
+# ClickHouse reads the cold-storage key pair as XML through include_from (config.d/storage.xml in the SigNoz HelmRelease).
+k -n $P create secret generic signoz-s3 --from-literal=s3.xml="<clickhouse><signoz_s3_access_key_id>$HETZNER_S3_ACCESS_KEY_ID</signoz_s3_access_key_id><signoz_s3_secret_access_key>$HETZNER_S3_SECRET_ACCESS_KEY</signoz_s3_secret_access_key></clickhouse>"
 k -n $P create secret generic signoz-root --from-literal=email=mail@sebastianruecker.com --from-literal=password="$SIGNOZ_ADMIN_PASSWORD"
 # forgejo-pat (flux-system) is the Flux bootstrap PAT from ~/.git-credentials; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
 for n in $P $F $A; do echo "$n: $(kubectl -n "$n" get secret -o name | wc -l) secrets"; done

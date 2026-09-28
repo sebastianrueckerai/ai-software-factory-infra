@@ -37,6 +37,11 @@ this bundle.
 - [x] Object-storage bucket aisoftwarefactory-sessions (fsn1) — session
       records; access keys in secret factory-s3-creds (namespace
       factory).
+- [ ] Object-storage bucket signoz-cold (fsn1) — SigNoz's cold tier
+      (ClickHouse disk `s3`, prefix `data/`), lifecycle rule: expire
+      objects after 31 days; access keys in secret signoz-s3 (key s3.xml,
+      namespace platform), made by `scripts/seed-secrets.sh` from the
+      same S3 key pair.
 - [x] factoryd intake token — secret factoryd-intake (key token,
       namespace factory). Not a seed value: generate a fresh one on
       re-seed (`openssl rand -hex 32`) before factoryd starts; callers

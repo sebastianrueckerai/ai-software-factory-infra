@@ -28,10 +28,13 @@ sync path `clusters/sf`:
 - Seeded secrets (`sf-cluster-superuser`, `app-secret`, `pg-*`,
   `cnpg-s3-creds`, `forgejo-admin-secret`, `forgejo-db-creds`,
   `hetzner-s3-creds`, `runner-init`, `litellm-master-key`,
-  `litellm-deepseek`, `litellm-qwen` (key ALIBABA_CLOUD_KEY), `litellm-glm` (keys Z_AI_KEY), `signoz-root` (namespace `platform`, keys `email`, `password`: SigNoz's root login, value `SIGNOZ_ADMIN_PASSWORD` in the seed env, created by `scripts/seed-secrets.sh`; the SigNoz HelmRelease fails until it exists), `forgejo-secret-key` (namespace `forgejo`, the pinned Forgejo `SECRET_KEY`; a new key makes every stored Actions secret unreadable), `github-mirror` (namespace `forgejo`, key `token`: the fine-grained GitHub token of the push mirrors, the two repositories only, contents read and write, ruling 144; value `GITHUB_MIRROR_PAT` in `.env.tools`)) are imperative and stay out of the tree. In `factory`: `factory-db-creds` (keys `username`/`password`, the CNPG `gateway` role), a copy of `litellm-master-key` (key `masterkey`), and the `forgejo-registry` pull secret (username `sebastian`, the CI registry PAT), `factoryd-intake` (key `token`, the bearer token for factoryd's task intake; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), `factoryd-webhook` (key `secret`, task 42: the HMAC-SHA256 secret shared with Forgejo's webhook config for `POST /webhooks/forgejo`; value `FORGEJO_WEBHOOK_SECRET` in the seed env, because the webhook itself lives in Forgejo's database and comes back with the restore; a fresh value must be set on the webhook too), and `forgejo-ci-registrar` (key `token`, tasks 41 and 46, rulings 101 and 101a: a `write:repository` token of the dedicated Forgejo user `factory-ci` scoped to the code repository; Forgejo's repository runner API demands the repository owner, so `factory-ci` is a member of org `sf`'s Owners team, and `main`'s push and merge whitelist, which applies to admins, excludes it, so the token can neither push nor merge `main`; factoryd's CI spawner uses it to stand up the ephemeral `pr-untrusted` runner pods and its intake uses it to read the code repository's collaborators and assignee list; no stored value: the user comes back with the database restore, mint a fresh token on re-seed, never mount it into a runner pod itself), `forgejo-ci-org-read` (key `token`, ruling 108: a second `factory-ci` token with the single scope `read:organization` and no repository, because Forgejo refuses that scope on a repository-limited token; factoryd's trust gate reads org `sf`'s teams, their repositories and their members with it; no stored value: mint a fresh token on re-seed), `gateway-tool-keys` (task 52: keys `FIRECRAWL_KEY`, `REPLICATE_KEY`, `FAL_AI_KEY`, the MCP tools' provider keys, mounted by the gateway only; created from `.env.tools` without printing it: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic gateway-tool-keys --from-literal=FIRECRAWL_KEY="$FIRECRAWL_KEY" --from-literal=REPLICATE_KEY="$REPLICATE_KEY" --from-literal=FAL_AI_KEY="$FAL_AI_KEY"`), `gateway-factoryd` (task 52: key `token`, the bearer the gateway presents on factoryd's `POST /internal/escalations`; both deployments mount it; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), and `hetzner-agent` (task 53: key `token`, the API token of the Hetzner project `agent` that holds only agent-commissioned servers, firewalls and volumes; mounted by the gateway only, never by factoryd; value `HETZNER_AGENT_KEY` in `.env.tools`: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic hetzner-agent --from-literal=token="$HETZNER_AGENT_KEY"`), and `hetzner-ci` (task 49, ruling 110: key `token`, the API token of the Hetzner project `ci` that holds only the throwaway PR build VMs and their firewalls; mounted by factoryd only, whose collector deletes anything in that project it does not know; value `HETZNER_CI_KEY` in `.env.tools`: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic hetzner-ci --from-literal=token="$HETZNER_CI_KEY"`), and `console-oauth` (keys `client_id`, `client_secret`, `session_key`, the console's Forgejo OAuth2 app `factory-console`; not seeded: CronJob `console-oauth` in `forgejo` makes it, see Rebuild step 8) — pods cannot read secrets across namespaces, so the master key exists in `platform` and `factory` and rotation must replace both. `forgejo-pat` in `flux-system` (a copy of the bootstrap sync credentials) authenticates the `factory-code` GitRepository. The `gateway` role itself was created imperatively on `sf-cluster` (`CREATE ROLE gateway LOGIN PASSWORD ...`, value `SF_PG_GATEWAY_PASSWORD` in the seed env); CNPG's Database CR cannot create its owner role. The S3
-  keys exist in two namespaces — `cnpg-s3-creds` in `platform` for CNPG
-  backups, `hetzner-s3-creds` in `forgejo` for the nightly dump — and
-  rotation must replace both. Rotating `litellm-master-key` or
+  `litellm-deepseek`, `litellm-qwen` (key ALIBABA_CLOUD_KEY), `litellm-glm` (keys Z_AI_KEY), `signoz-root` (namespace `platform`, keys `email`, `password`: SigNoz's root login, value `SIGNOZ_ADMIN_PASSWORD` in the seed env, created by `scripts/seed-secrets.sh`; the SigNoz HelmRelease fails until it exists), `signoz-s3` (namespace `platform`, key `s3.xml`: the S3 key pair `HETZNER_S3_ACCESS_KEY_ID`/`HETZNER_S3_SECRET_ACCESS_KEY` from `.env.tools` wrapped in the XML ClickHouse reads through `include_from`, created by `scripts/seed-secrets.sh`; the ClickHouse pod does not start until it exists, see Telemetry), `forgejo-secret-key` (namespace `forgejo`, the pinned Forgejo `SECRET_KEY`; a new key makes every stored Actions secret unreadable), `github-mirror` (namespace `forgejo`, key `token`: the fine-grained GitHub token of the push mirrors, the two repositories only, contents read and write, ruling 144; value `GITHUB_MIRROR_PAT` in `.env.tools`)) are imperative and stay out of the tree. In `factory`: `factory-db-creds` (keys `username`/`password`, the CNPG `gateway` role), a copy of `litellm-master-key` (key `masterkey`), and the `forgejo-registry` pull secret (username `sebastian`, the CI registry PAT), `factoryd-intake` (key `token`, the bearer token for factoryd's task intake; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), `factoryd-webhook` (key `secret`, task 42: the HMAC-SHA256 secret shared with Forgejo's webhook config for `POST /webhooks/forgejo`; value `FORGEJO_WEBHOOK_SECRET` in the seed env, because the webhook itself lives in Forgejo's database and comes back with the restore; a fresh value must be set on the webhook too), and `forgejo-ci-registrar` (key `token`, tasks 41 and 46, rulings 101 and 101a: a `write:repository` token of the dedicated Forgejo user `factory-ci` scoped to the code repository; Forgejo's repository runner API demands the repository owner, so `factory-ci` is a member of org `sf`'s Owners team, and `main`'s push and merge whitelist, which applies to admins, excludes it, so the token can neither push nor merge `main`; factoryd's CI spawner uses it to stand up the ephemeral `pr-untrusted` runner pods and its intake uses it to read the code repository's collaborators and assignee list; no stored value: the user comes back with the database restore, mint a fresh token on re-seed, never mount it into a runner pod itself), `forgejo-ci-org-read` (key `token`, ruling 108: a second `factory-ci` token with the single scope `read:organization` and no repository, because Forgejo refuses that scope on a repository-limited token; factoryd's trust gate reads org `sf`'s teams, their repositories and their members with it; no stored value: mint a fresh token on re-seed), `gateway-tool-keys` (task 52: keys `FIRECRAWL_KEY`, `REPLICATE_KEY`, `FAL_AI_KEY`, the MCP tools' provider keys, mounted by the gateway only; created from `.env.tools` without printing it: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic gateway-tool-keys --from-literal=FIRECRAWL_KEY="$FIRECRAWL_KEY" --from-literal=REPLICATE_KEY="$REPLICATE_KEY" --from-literal=FAL_AI_KEY="$FAL_AI_KEY"`), `gateway-factoryd` (task 52: key `token`, the bearer the gateway presents on factoryd's `POST /internal/escalations`; both deployments mount it; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), and `hetzner-agent` (task 53: key `token`, the API token of the Hetzner project `agent` that holds only agent-commissioned servers, firewalls and volumes; mounted by the gateway only, never by factoryd; value `HETZNER_AGENT_KEY` in `.env.tools`: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic hetzner-agent --from-literal=token="$HETZNER_AGENT_KEY"`), and `hetzner-ci` (task 49, ruling 110: key `token`, the API token of the Hetzner project `ci` that holds only the throwaway PR build VMs and their firewalls; mounted by factoryd only, whose collector deletes anything in that project it does not know; value `HETZNER_CI_KEY` in `.env.tools`: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic hetzner-ci --from-literal=token="$HETZNER_CI_KEY"`), and `console-oauth` (keys `client_id`, `client_secret`, `session_key`, the console's Forgejo OAuth2 app `factory-console`; not seeded: CronJob `console-oauth` in `forgejo` makes it, see Rebuild step 8) — pods cannot read secrets across namespaces, so the master key exists in `platform` and `factory` and rotation must replace both. `forgejo-pat` in `flux-system` (a copy of the bootstrap sync credentials) authenticates the `factory-code` GitRepository. The `gateway` role itself was created imperatively on `sf-cluster` (`CREATE ROLE gateway LOGIN PASSWORD ...`, value `SF_PG_GATEWAY_PASSWORD` in the seed env); CNPG's Database CR cannot create its owner role. The S3
+  keys exist in four secrets — `cnpg-s3-creds` in `platform` for CNPG
+  backups, `signoz-s3` in `platform` for SigNoz's cold storage,
+  `hetzner-s3-creds` in `forgejo` for the nightly dump, `factory-s3-creds`
+  in `factory` for the artifact store — and rotation must replace all
+  four; ClickHouse reads `signoz-s3` at start, so delete pod
+  `chi-signoz-clickhouse-cluster-0-0-0` after rotating it. Rotating `litellm-master-key` or
   `litellm-deepseek` also requires `kubectl -n platform rollout restart
   deployment/litellm`, because no reloader watches those secrets.
 
@@ -220,6 +223,61 @@ is reached over plain HTTP inside the cluster: Cilium's WireGuard
 encrypts pod traffic between nodes.
 All of it lives in the raft storage, so the snapshot carries it.
 
+## Telemetry
+
+SigNoz (`k8s/platform/signoz/`, chart 0.143.0) is the one telemetry
+store. Two collectors of the `k8s-infra` chart (0.17.1, HelmRelease in
+`k8s/platform/k8s-infra/`) feed its collector
+`signoz-otel-collector.platform` on OTLP HTTP (4318), from namespace
+`k8s-infra` (Pod Security `privileged`: the agent mounts host paths,
+which the cluster's baseline profile forbids elsewhere):
+
+- `otel-agent`, a DaemonSet: host metrics (CPU, memory, disk,
+  filesystem, network per node), kubelet stats (node, pod, container,
+  volume) and every container's log lines, read from
+  `/var/log/pods` as uid 0 without capabilities. Log files of the agent
+  sandbox namespaces `factory-agents-*` are never opened: an agent's
+  transcript must not land in SigNoz. It receives nothing (no OTLP
+  receiver, no host port).
+- `otel-deployment`, one replica: cluster metrics from the Kubernetes API
+  (`k8s.job.failed_pods`, pod phases, node conditions, ...) and the
+  Kubernetes events as logs.
+
+CiliumNetworkPolicies `otel-agent` and `otel-deployment` admit their
+egress only to DNS, the API server, SigNoz's collector and, for the
+agent, its own node's kubelet (10250); neither admits ingress.
+
+CronJob `signoz-objects` in `platform` (every 10 minutes, one log line
+per object, `no change` once converged) writes into SigNoz what it keeps
+on its volumes: the dashboards in `signoz/dashboards/*.json` (by title),
+the alert rules in `signoz/alerts/*.json` (by name; a file holds the rule
+as SigNoz returns it, so an untouched rule compares equal) and the
+retention of traces, metrics and logs through SigNoz's TTL settings API.
+Edits made in the UI are overwritten on the next run. A retention set
+that SigNoz records as failed is set again and fails the run.
+
+- Alert rule `Job has a failed pod`: `k8s.job.failed_pods` above 0 at
+  least once in 15 minutes, per namespace and Job name, severity
+  `warning`; it fires while a failed Job exists (a CronJob keeps its
+  last three failed runs) and clears 15 minutes after the Job is gone.
+  No notification channel yet: the rule's state in SigNoz is the signal.
+- Retention: 7 days hot on ClickHouse's local-path volume, then moved to
+  volume `s3` (disk `s3`, bucket `signoz-cold` on
+  `fsn1.your-objectstorage.com`, prefix `data/`), deleted after 30 days
+  (`HOT_DAYS`, `RETENTION_DAYS` in `signoz/objects.yaml`). ClickHouse's
+  `config.d/storage.xml` in the SigNoz HelmRelease defines the disk and
+  the storage policy `tiered`; the key pair comes from secret `signoz-s3`
+  through `include_from`, so it lands in no ConfigMap and no custom
+  resource. The disk skips its access check, so ClickHouse starts even
+  when the bucket is unreachable; parts then stay local until it is back.
+  ClickHouse keeps the S3 disk's metadata on the local volume, so after a
+  rebuild the bucket's objects belong to nobody: the bucket's lifecycle
+  rule (expire after 31 days) removes them.
+
+The rebuild needs: bucket `signoz-cold` with that lifecycle rule, and
+secret `signoz-s3` seeded (step 4) before the SigNoz HelmRelease rolls
+ClickHouse. Everything else converges by itself.
+
 ## Cilium stays outside Flux
 
 Cilium is the substrate Flux itself runs over, and its upgrades are
@@ -313,10 +371,9 @@ sibling). The tree already carries origin `sf-cluster-v4` and archive
    only once its sync fails, so after a token change revoke the old token
    or delete both mirrors once (Settings -> Mirror Settings); the next run
    posts them with the new token, and the Forgejo dump after that point
-   carries it; `signoz-dashboard` in `platform` writes
-   dashboard `factory pipeline` from
-   `k8s/platform/signoz/dashboards/factory-pipeline.json`, which SigNoz
-   loses with its volume. `signoz-root` came with step 4's seed (`scripts/seed-secrets.sh`
+   carries it; `signoz-objects` in `platform` writes SigNoz's
+   dashboards, alert rules and retention (see Telemetry), which SigNoz
+   loses with its volumes. `signoz-root` came with step 4's seed (`scripts/seed-secrets.sh`
    from `SIGNOZ_ADMIN_PASSWORD`); create it now if SigNoz's HelmRelease
    reports it missing. Check that ConfigMap `cluster-facts`
    (namespace `factory`, key `node_public_ips`) carries the new node

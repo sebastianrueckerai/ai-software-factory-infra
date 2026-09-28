@@ -1,0 +1,53 @@
+# Egress of the two collectors, nothing else: DNS, the API server (pod and
+# node metadata, the cluster receiver, events), SigNoz's collector on OTLP
+# HTTP, and for the agent its own node's kubelet. Neither takes ingress.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata: {name: otel-agent, namespace: k8s-infra}
+spec:
+  endpointSelector:
+    matchLabels: {app.kubernetes.io/component: otel-agent}
+  ingress:
+    - {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports: [{port: "53", protocol: ANY}]
+    - toEntities: [kube-apiserver]
+    - toEntities: [host]
+      toPorts:
+        - ports: [{port: "10250", protocol: TCP}]
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: platform
+            app.kubernetes.io/instance: signoz
+            app.kubernetes.io/component: otel-collector
+      toPorts:
+        - ports: [{port: "4318", protocol: TCP}]
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata: {name: otel-deployment, namespace: k8s-infra}
+spec:
+  endpointSelector:
+    matchLabels: {app.kubernetes.io/component: otel-deployment}
+  ingress:
+    - {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports: [{port: "53", protocol: ANY}]
+    - toEntities: [kube-apiserver]
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: platform
+            app.kubernetes.io/instance: signoz
+            app.kubernetes.io/component: otel-collector
+      toPorts:
+        - ports: [{port: "4318", protocol: TCP}]

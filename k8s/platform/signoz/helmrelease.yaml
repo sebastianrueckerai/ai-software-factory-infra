@@ -26,6 +26,8 @@ spec:
       name: signoz-root
       valuesKey: password
       targetPath: signoz.env.signoz_user_root_password
+  # Requests from the usage measured on 2026-09-28 (Task 69 report) with
+  # headroom for the k8s-infra ingest; limits so a runaway cannot take a node.
   values:
     global:
       storageClass: local-path
@@ -35,32 +37,78 @@ spec:
         storageClass: local-path
         size: 20Gi
       resources:
-        requests:
-          cpu: 500m
-          memory: 2Gi
+        requests: {cpu: 250m, memory: 1Gi}
+        limits: {cpu: "2", memory: 3Gi}
+      # Hot data on the local-path volume, cold on bucket signoz-cold: the
+      # signoz-objects CronJob sets the TTLs that move parts to volume s3.
+      # The key pair comes from secret signoz-s3 through include_from, so it
+      # is in no ConfigMap and no custom resource.
+      files:
+        config.d/storage.xml: |
+          <clickhouse>
+            <include_from>/etc/clickhouse-server/secrets/s3.xml</include_from>
+            <storage_configuration>
+              <disks>
+                <s3>
+                  <type>s3</type>
+                  <endpoint>https://fsn1.your-objectstorage.com/signoz-cold/data/</endpoint>
+                  <access_key_id incl="signoz_s3_access_key_id"/>
+                  <secret_access_key incl="signoz_s3_secret_access_key"/>
+                  <skip_access_check>true</skip_access_check>
+                </s3>
+              </disks>
+              <policies>
+                <tiered>
+                  <volumes>
+                    <default>
+                      <disk>default</disk>
+                    </default>
+                    <s3>
+                      <disk>s3</disk>
+                      <perform_ttl_move_on_insert>0</perform_ttl_move_on_insert>
+                      <prefer_not_to_merge>1</prefer_not_to_merge>
+                    </s3>
+                  </volumes>
+                  <move_factor>0</move_factor>
+                </tiered>
+              </policies>
+            </storage_configuration>
+          </clickhouse>
+      additionalVolumes:
+        - name: signoz-s3
+          secret: {secretName: signoz-s3}
+      additionalVolumeMounts:
+        - {name: signoz-s3, mountPath: /etc/clickhouse-server/secrets, readOnly: true}
+      clickhouseOperator:
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 200m, memory: 128Mi}
+        metricsExporter:
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
       zookeeper:
         enabled: true
+        # One ClickHouse replica keeps a few MB in ZooKeeper; the chart's
+        # 1024 MB heap only reserved memory.
+        heapSize: 256
         resources:
-          requests:
-            cpu: 100m
-            memory: 256Mi
+          requests: {cpu: 50m, memory: 384Mi}
+          limits: {cpu: 500m, memory: 640Mi}
     signoz:
       replicaCount: 1
       env:
         signoz_user_root_enabled: "true"
         signoz_user_root_org__name: aisoftwarefactory
       resources:
-        requests:
-          cpu: 100m
-          memory: 200Mi
+        requests: {cpu: 50m, memory: 128Mi}
+        limits: {cpu: "1", memory: 768Mi}
     otelCollector:
       replicaCount: 1
       resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
+        requests: {cpu: 100m, memory: 256Mi}
+        limits: {cpu: "1", memory: 1Gi}
     telemetryStoreMigrator:
       resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
+        requests: {cpu: 100m, memory: 128Mi}
+        limits: {cpu: 500m, memory: 512Mi}

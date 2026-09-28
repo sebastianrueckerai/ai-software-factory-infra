@@ -2,11 +2,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - helmrelease.yaml
-- dashboard.yaml
+- objects.yaml
 configMapGenerator:
-- name: signoz-dashboard-script
+- name: signoz-objects-script
   namespace: platform
-  files: [dashboard.sh]
+  files: [objects.sh]
 - name: signoz-dashboards
   namespace: platform
   files: [dashboards/factory-pipeline.json]
+- name: signoz-alerts
+  namespace: platform
+  files: [alerts/job-failed-pod.json]
