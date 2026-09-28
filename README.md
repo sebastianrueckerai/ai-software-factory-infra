@@ -51,7 +51,10 @@ fails the task, `requires_approval` waits for a human before
 human's review), and
 `envelope_default`, the standard resource envelope a project's first
 commissioning request copies (monthly EUR cap, server types, count,
-longest lease, largest volume). A
+longest lease, largest volume), and
+`approvers` (ruling 128), the Forgejo users who may authorize spend in the
+console (approve a resource request or a merge, edit an envelope, promote);
+a merge approver must also be on main's approvals whitelist. A
 Replicate model runs only once it is listed under
 `prices.replicate.models`. Its `configMapGenerator` makes it ConfigMap
 `factory-policy` in namespace `factory` (stable name, no hash suffix),
