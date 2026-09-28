@@ -6,4 +6,4 @@ metadata:
   name: cluster-facts
   namespace: factory
 data:
-  node_public_ips: "138.199.227.128,138.199.224.193,138.199.231.242"
+  node_public_ips: "138.199.231.242,138.199.224.193,138.199.227.128"
