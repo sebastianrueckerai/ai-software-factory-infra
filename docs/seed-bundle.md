@@ -74,7 +74,7 @@ this bundle.
       (HMAC-SHA256 signing secret) so deliveries verify.
 - [x] SigNoz root login — secret signoz-root (keys email, password,
       namespace platform), value `SIGNOZ_ADMIN_PASSWORD` in the seed env;
-      `seed-secrets.sh` creates it. The SigNoz HelmRelease fails until it
+      `scripts/seed-secrets.sh` creates it. The SigNoz HelmRelease fails until it
       exists.
 - [x] Console OAuth2 client — secret console-oauth (keys client_id,
       client_secret, session_key, namespace factory). Not a seed value:
@@ -83,5 +83,5 @@ this bundle.
       regenerate it with `PATCH /api/v1/user/applications/oauth2/{id}`
       (as sebastian) and take client_id and client_secret from the
       answer; mint a fresh session_key with `openssl rand -hex 32`
-      (`seed-secrets.sh` fills in only a missing session_key). factoryd
+      (`scripts/seed-secrets.sh` fills in only a missing session_key). factoryd
       refuses to boot without all three keys.
