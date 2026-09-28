@@ -121,6 +121,6 @@ approvers: [sebastian]
 
 # Temporary for the Task 67 live proofs (controller, reverted afterwards).
 bounds:
-  WaitChecks: 300
+  WaitChecks: 180
 supervisor:
   no_write: 60
