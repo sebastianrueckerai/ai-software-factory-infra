@@ -88,7 +88,10 @@ risk:
 # accrued cost together; servers (with their primary IPv4) of these types,
 # at most max_count at once, leases up to max_lease_hours, one volume per
 # server up to volume_max_gb (0 = none, else at least 10). Beyond it, a
-# request becomes a human approval card.
+# request becomes a human approval card. No buckets (ruling 121): Hetzner's
+# Cloud API has no Object Storage endpoint and its S3 keys reach every
+# bucket of a project. A server's firewall admits SSH only from the cluster
+# nodes and lets it out only on 53, 80 and 443, as build VMs (ruling 122).
 envelope_default:
   monthly_eur: 10
   server_types: [cx23, cx33]
