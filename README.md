@@ -350,8 +350,12 @@ sibling). The tree already carries origin `sf-cluster-v4` and archive
    control-plane taint: remove it from all three.]
 2. Cilium, imperatively (see above). The connectivity suite is optional;
    its one known failure is the node-to-node DNS check.
-3. local-path, cert-manager, then the CNPG operator and plugin,
-   `cluster.yaml`. [cert-manager's CRDs must exist before the plugin
+3. local-path, cert-manager, then, before any Certificate can be issued,
+   restore the edge TLS secrets from the newest `tls/edge-tls-*.yaml` in the
+   backups bucket into `forgejo` (`kubectl apply`): Let's Encrypt allows five
+   certificates per exact name set in seven days, and the rebuilds of one week
+   hit that limit once (2026-09-28, an interim certificate under another name
+   set bridged it). Then the CNPG operator and plugin, `cluster.yaml`. [cert-manager's CRDs must exist before the plugin
    manifest applies: it carries a Certificate and an Issuer for its own
    webhook, and applying the plugin first drops them silently, leaves
    the plugin pod ContainerCreating and the Cluster reporting an unknown
