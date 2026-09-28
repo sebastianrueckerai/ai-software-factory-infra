@@ -280,6 +280,9 @@ then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
   Job name, severity `warning`. It clears by itself 15 minutes after the
   failure; a failed Job the CronJob keeps does not hold it. No
   notification channel yet: the rule's state in SigNoz is the signal.
+  The rule routes by notification policy (`usePolicy`), because SigNoz
+  refuses a rule that routes to its thresholds' channels when they list
+  none.
 - Retention: 7 days hot on ClickHouse's local-path volume, then moved to
   volume `s3` (disk `s3`, bucket `signoz-cold` on
   `fsn1.your-objectstorage.com`, prefix `data/`), deleted after 30 days

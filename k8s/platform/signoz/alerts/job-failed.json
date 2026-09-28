@@ -70,7 +70,7 @@
     "severity": "warning"
   },
   "notificationSettings": {
-    "usePolicy": false
+    "usePolicy": true
   },
   "ruleType": "threshold_rule",
   "schemaVersion": "v2alpha1",
