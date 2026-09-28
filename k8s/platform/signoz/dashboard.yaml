@@ -1,0 +1,50 @@
+# Writes dashboard "factory pipeline" (dashboards/factory-pipeline.json)
+# into SigNoz, which loses its dashboards with its volume on a rebuild.
+# Edits made in the UI are overwritten on the next run: change the file.
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: signoz-dashboard, namespace: platform}
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          containers:
+            - name: dashboard
+              image: alpine/k8s:1.36.1@sha256:692239d739589247c4a791205ed9619c28ae85a21286e19a6211c04a62c56668
+              command: [sh, /scripts/dashboard.sh]
+              env:
+                - name: SIGNOZ_EMAIL
+                  valueFrom: {secretKeyRef: {name: signoz-root, key: email}}
+                - name: SIGNOZ_PASSWORD
+                  valueFrom: {secretKeyRef: {name: signoz-root, key: password}}
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+                seccompProfile: {type: RuntimeDefault}
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {memory: 128Mi}
+              volumeMounts:
+                - {name: script, mountPath: /scripts, readOnly: true}
+                - {name: dashboards, mountPath: /dashboards, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: script
+              configMap: {name: signoz-dashboard-script}
+            - name: dashboards
+              configMap: {name: signoz-dashboards}
+            - name: tmp
+              emptyDir: {}

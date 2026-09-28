@@ -1,0 +1,60 @@
+# Converges OpenBao to config.sh every 10 minutes: at a rebuild once the
+# restore is unsealed, after a roll that changes the gateway's token, and on
+# drift. It logs in as Kubernetes auth role openbao-config, whose policy
+# reaches only the paths config.sh writes; scripts/openbao-config-bootstrap.sh
+# writes that role once with the root token, which never enters the cluster.
+# While OpenBao is sealed a run fails and the next one retries.
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: openbao-config, namespace: platform}
+automountServiceAccountToken: false
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: openbao-config, namespace: platform}
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          serviceAccountName: openbao-config
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          containers:
+            - name: config
+              image: quay.io/openbao/openbao:2.6.3@sha256:a60afafda36337abe833c4a63894bf1095098f29abea4091e7e555a33dd52889
+              command: [sh, /scripts/config.sh]
+              env:
+                - {name: BAO_ADDR, value: http://openbao.platform.svc.cluster.local:8200}
+                - {name: HOME, value: /tmp}
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+                seccompProfile: {type: RuntimeDefault}
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {memory: 128Mi}
+              volumeMounts:
+                - {name: script, mountPath: /scripts, readOnly: true}
+                - {name: token, mountPath: /var/run/secrets/openbao, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: script
+              configMap: {name: openbao-config-script}
+            # role openbao-config demands audience openbao, like the gateway's
+            - name: token
+              projected:
+                sources:
+                  - serviceAccountToken: {path: token, audience: openbao, expirationSeconds: 600}
+            - name: tmp
+              emptyDir: {}

@@ -1,0 +1,1012 @@
+{
+  "schemaVersion": "v6",
+  "image": "",
+  "name": "factory-pipeline",
+  "tags": [],
+  "spec": {
+    "display": {
+      "name": "factory pipeline",
+      "description": "CI, build VMs, rolls and task gates from factoryd's OTel metrics. Applied by the signoz-dashboard CronJob from the infra repository; edits in the UI are overwritten."
+    },
+    "variables": [],
+    "panels": {
+      "buildvm-cost": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Build VM cost per day (EUR)",
+            "description": ""
+          },
+          "plugin": {
+            "kind": "signoz/BarChartPanel",
+            "spec": {
+              "visualization": {
+                "timePreference": "global_time",
+                "fillSpans": false,
+                "stackedBarChart": true
+              },
+              "formatting": {
+                "unit": "EUR",
+                "decimalPrecision": "2"
+              },
+              "axes": {
+                "softMin": null,
+                "softMax": null,
+                "isLogScale": false
+              },
+              "legend": {
+                "position": "bottom",
+                "mode": "list",
+                "customColors": null
+              },
+              "thresholds": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "A",
+                          "stepInterval": 86400,
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.buildvm.cost",
+                              "temporality": "",
+                              "timeAggregation": "increase",
+                              "spaceAggregation": "sum"
+                            }
+                          ],
+                          "disabled": false,
+                          "groupBy": [
+                            {
+                              "name": "deleted_by",
+                              "signal": "",
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string"
+                            }
+                          ],
+                          "legend": "{{deleted_by}}"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "links": []
+        }
+      },
+      "buildvm-time": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Build VM lifetime and ready time",
+            "description": ""
+          },
+          "plugin": {
+            "kind": "signoz/TimeSeriesPanel",
+            "spec": {
+              "visualization": {
+                "timePreference": "global_time",
+                "fillSpans": false
+              },
+              "formatting": {
+                "unit": "s",
+                "decimalPrecision": "2"
+              },
+              "chartAppearance": {
+                "lineInterpolation": "spline",
+                "showPoints": false,
+                "lineStyle": "solid",
+                "fillMode": "none",
+                "spanGaps": {
+                  "fillOnlyBelow": false,
+                  "fillLessThan": ""
+                }
+              },
+              "axes": {
+                "softMin": null,
+                "softMax": null,
+                "isLogScale": false
+              },
+              "legend": {
+                "position": "bottom",
+                "mode": "list",
+                "customColors": null
+              },
+              "thresholds": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "A",
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.buildvm.lifetime",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p50"
+                            }
+                          ],
+                          "disabled": false,
+                          "legend": "lifetime p50"
+                        }
+                      },
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "B",
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.buildvm.lifetime",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p95"
+                            }
+                          ],
+                          "disabled": false,
+                          "legend": "lifetime p95"
+                        }
+                      },
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "C",
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.buildvm.ready",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p50"
+                            }
+                          ],
+                          "disabled": false,
+                          "legend": "ready p50"
+                        }
+                      },
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "D",
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.buildvm.ready",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p95"
+                            }
+                          ],
+                          "disabled": false,
+                          "legend": "ready p95"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "links": []
+        }
+      },
+      "ci-job": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CI job duration by job (p95)",
+            "description": ""
+          },
+          "plugin": {
+            "kind": "signoz/TablePanel",
+            "spec": {
+              "visualization": {
+                "timePreference": "global_time"
+              },
+              "formatting": {
+                "columnUnits": {
+                  "A": "s"
+                },
+                "decimalPrecision": "2"
+              },
+              "thresholds": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "scalar",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "A",
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.job.duration",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p95",
+                              "reduceTo": "avg"
+                            }
+                          ],
+                          "disabled": false,
+                          "groupBy": [
+                            {
+                              "name": "job",
+                              "signal": "",
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string"
+                            }
+                          ],
+                          "legend": "{{job}}"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "links": []
+        }
+      },
+      "ci-queue": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CI queue time by runner label (p95)",
+            "description": ""
+          },
+          "plugin": {
+            "kind": "signoz/TimeSeriesPanel",
+            "spec": {
+              "visualization": {
+                "timePreference": "global_time",
+                "fillSpans": false
+              },
+              "formatting": {
+                "unit": "s",
+                "decimalPrecision": "2"
+              },
+              "chartAppearance": {
+                "lineInterpolation": "spline",
+                "showPoints": false,
+                "lineStyle": "solid",
+                "fillMode": "none",
+                "spanGaps": {
+                  "fillOnlyBelow": false,
+                  "fillLessThan": ""
+                }
+              },
+              "axes": {
+                "softMin": null,
+                "softMax": null,
+                "isLogScale": false
+              },
+              "legend": {
+                "position": "bottom",
+                "mode": "list",
+                "customColors": null
+              },
+              "thresholds": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "A",
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.job.queue",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p95"
+                            }
+                          ],
+                          "disabled": false,
+                          "groupBy": [
+                            {
+                              "name": "label",
+                              "signal": "",
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string"
+                            }
+                          ],
+                          "legend": "{{label}}"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "links": []
+        }
+      },
+      "ci-run-main": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Main CI run duration per day",
+            "description": ""
+          },
+          "plugin": {
+            "kind": "signoz/TimeSeriesPanel",
+            "spec": {
+              "visualization": {
+                "timePreference": "global_time",
+                "fillSpans": false
+              },
+              "formatting": {
+                "unit": "s",
+                "decimalPrecision": "2"
+              },
+              "chartAppearance": {
+                "lineInterpolation": "spline",
+                "showPoints": false,
+                "lineStyle": "solid",
+                "fillMode": "none",
+                "spanGaps": {
+                  "fillOnlyBelow": false,
+                  "fillLessThan": ""
+                }
+              },
+              "axes": {
+                "softMin": null,
+                "softMax": null,
+                "isLogScale": false
+              },
+              "legend": {
+                "position": "bottom",
+                "mode": "list",
+                "customColors": null
+              },
+              "thresholds": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "A",
+                          "stepInterval": 86400,
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.run.duration",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p50"
+                            }
+                          ],
+                          "disabled": false,
+                          "filter": {
+                            "expression": "event = 'push'"
+                          },
+                          "legend": "p50 main"
+                        }
+                      },
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "B",
+                          "stepInterval": 86400,
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.run.duration",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p95"
+                            }
+                          ],
+                          "disabled": false,
+                          "filter": {
+                            "expression": "event = 'push'"
+                          },
+                          "legend": "p95 main"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "links": []
+        }
+      },
+      "ci-run-pr": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "PR checks duration per day",
+            "description": ""
+          },
+          "plugin": {
+            "kind": "signoz/TimeSeriesPanel",
+            "spec": {
+              "visualization": {
+                "timePreference": "global_time",
+                "fillSpans": false
+              },
+              "formatting": {
+                "unit": "s",
+                "decimalPrecision": "2"
+              },
+              "chartAppearance": {
+                "lineInterpolation": "spline",
+                "showPoints": false,
+                "lineStyle": "solid",
+                "fillMode": "none",
+                "spanGaps": {
+                  "fillOnlyBelow": false,
+                  "fillLessThan": ""
+                }
+              },
+              "axes": {
+                "softMin": null,
+                "softMax": null,
+                "isLogScale": false
+              },
+              "legend": {
+                "position": "bottom",
+                "mode": "list",
+                "customColors": null
+              },
+              "thresholds": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "A",
+                          "stepInterval": 86400,
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.run.duration",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p50"
+                            }
+                          ],
+                          "disabled": false,
+                          "filter": {
+                            "expression": "event = 'pull_request'"
+                          },
+                          "legend": "p50 PR"
+                        }
+                      },
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "B",
+                          "stepInterval": 86400,
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.run.duration",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p95"
+                            }
+                          ],
+                          "disabled": false,
+                          "filter": {
+                            "expression": "event = 'pull_request'"
+                          },
+                          "legend": "p95 PR"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "links": []
+        }
+      },
+      "gate-day": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Gate duration per day",
+            "description": ""
+          },
+          "plugin": {
+            "kind": "signoz/TimeSeriesPanel",
+            "spec": {
+              "visualization": {
+                "timePreference": "global_time",
+                "fillSpans": false
+              },
+              "formatting": {
+                "unit": "s",
+                "decimalPrecision": "2"
+              },
+              "chartAppearance": {
+                "lineInterpolation": "spline",
+                "showPoints": false,
+                "lineStyle": "solid",
+                "fillMode": "none",
+                "spanGaps": {
+                  "fillOnlyBelow": false,
+                  "fillLessThan": ""
+                }
+              },
+              "axes": {
+                "softMin": null,
+                "softMax": null,
+                "isLogScale": false
+              },
+              "legend": {
+                "position": "bottom",
+                "mode": "list",
+                "customColors": null
+              },
+              "thresholds": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "A",
+                          "stepInterval": 86400,
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.task.gate.duration",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p50"
+                            }
+                          ],
+                          "disabled": false,
+                          "groupBy": [
+                            {
+                              "name": "gate",
+                              "signal": "",
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string"
+                            }
+                          ],
+                          "legend": "p50 {{gate}}"
+                        }
+                      },
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "B",
+                          "stepInterval": 86400,
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.task.gate.duration",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p95"
+                            }
+                          ],
+                          "disabled": false,
+                          "groupBy": [
+                            {
+                              "name": "gate",
+                              "signal": "",
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string"
+                            }
+                          ],
+                          "legend": "p95 {{gate}}"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "links": []
+        }
+      },
+      "open-gates": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Open gates now (oldest running activity)",
+            "description": ""
+          },
+          "plugin": {
+            "kind": "signoz/TimeSeriesPanel",
+            "spec": {
+              "visualization": {
+                "timePreference": "global_time",
+                "fillSpans": false
+              },
+              "formatting": {
+                "unit": "s",
+                "decimalPrecision": "2"
+              },
+              "chartAppearance": {
+                "lineInterpolation": "spline",
+                "showPoints": false,
+                "lineStyle": "solid",
+                "fillMode": "none",
+                "spanGaps": {
+                  "fillOnlyBelow": false,
+                  "fillLessThan": ""
+                }
+              },
+              "axes": {
+                "softMin": null,
+                "softMax": null,
+                "isLogScale": false
+              },
+              "legend": {
+                "position": "bottom",
+                "mode": "list",
+                "customColors": null
+              },
+              "thresholds": [
+                {
+                  "value": 1200,
+                  "unit": "s",
+                  "color": "Red",
+                  "label": "RunSession 20 min"
+                },
+                {
+                  "value": 900,
+                  "unit": "s",
+                  "color": "Orange",
+                  "label": "GateReproduction 15 min"
+                },
+                {
+                  "value": 600,
+                  "unit": "s",
+                  "color": "Yellow",
+                  "label": "WaitChecks 10 min"
+                },
+                {
+                  "value": 300,
+                  "unit": "s",
+                  "color": "Blue",
+                  "label": "Merge 5 min"
+                },
+                {
+                  "value": 180,
+                  "unit": "s",
+                  "color": "Purple",
+                  "label": "ModelReview 3 min"
+                },
+                {
+                  "value": 120,
+                  "unit": "s",
+                  "color": "Green",
+                  "label": "every other activity 2 min"
+                }
+              ]
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "A",
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.activity.open_age",
+                              "temporality": "",
+                              "timeAggregation": "max",
+                              "spaceAggregation": "max"
+                            }
+                          ],
+                          "disabled": false,
+                          "groupBy": [
+                            {
+                              "name": "activity",
+                              "signal": "",
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string"
+                            }
+                          ],
+                          "legend": "{{activity}}"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "links": []
+        }
+      },
+      "roll": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Roll-to-live: push to apply to ready",
+            "description": ""
+          },
+          "plugin": {
+            "kind": "signoz/TimeSeriesPanel",
+            "spec": {
+              "visualization": {
+                "timePreference": "global_time",
+                "fillSpans": false
+              },
+              "formatting": {
+                "unit": "s",
+                "decimalPrecision": "2"
+              },
+              "chartAppearance": {
+                "lineInterpolation": "spline",
+                "showPoints": false,
+                "lineStyle": "solid",
+                "fillMode": "none",
+                "spanGaps": {
+                  "fillOnlyBelow": false,
+                  "fillLessThan": ""
+                }
+              },
+              "axes": {
+                "softMin": null,
+                "softMax": null,
+                "isLogScale": false
+              },
+              "legend": {
+                "position": "bottom",
+                "mode": "list",
+                "customColors": null
+              },
+              "thresholds": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "A",
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.roll.duration",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p50"
+                            }
+                          ],
+                          "disabled": false,
+                          "legend": "push to live"
+                        }
+                      },
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "B",
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.roll.apply",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p50"
+                            }
+                          ],
+                          "disabled": false,
+                          "legend": "push to apply"
+                        }
+                      },
+                      {
+                        "type": "builder_query",
+                        "spec": {
+                          "name": "C",
+                          "signal": "metrics",
+                          "source": "",
+                          "aggregations": [
+                            {
+                              "metricName": "factory.roll.ready",
+                              "temporality": "",
+                              "timeAggregation": "",
+                              "spaceAggregation": "p50"
+                            }
+                          ],
+                          "disabled": false,
+                          "legend": "apply to ready"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "links": []
+        }
+      }
+    },
+    "layouts": [
+      {
+        "kind": "Grid",
+        "spec": {
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/ci-run-main"
+              }
+            },
+            {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/ci-run-pr"
+              }
+            },
+            {
+              "x": 0,
+              "y": 6,
+              "width": 6,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/ci-job"
+              }
+            },
+            {
+              "x": 6,
+              "y": 6,
+              "width": 6,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/ci-queue"
+              }
+            },
+            {
+              "x": 0,
+              "y": 12,
+              "width": 6,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/buildvm-time"
+              }
+            },
+            {
+              "x": 6,
+              "y": 12,
+              "width": 6,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/buildvm-cost"
+              }
+            },
+            {
+              "x": 0,
+              "y": 18,
+              "width": 6,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/roll"
+              }
+            },
+            {
+              "x": 6,
+              "y": 18,
+              "width": 6,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/gate-day"
+              }
+            },
+            {
+              "x": 0,
+              "y": 24,
+              "width": 6,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/open-gates"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "duration": "7d",
+    "refreshInterval": "0s"
+  }
+}

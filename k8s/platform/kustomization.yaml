@@ -13,13 +13,12 @@ resources:
 - cnpg/databases.yaml
 - cnpg/backup.yaml
 - local-path
-- forgejo/helmrelease.yaml
-- forgejo/runner-helmrelease.yaml
+- forgejo
 - build-cache
-- openbao/helmrelease.yaml
+- openbao
 - temporal/helmrelease.yaml
 - litellm/helmrelease.yaml
-- signoz/helmrelease.yaml
+- signoz
 - cronjobs/forgejo-dump.yaml
 - gvisor-runtimeclass.yaml
 - cluster-facts/configmap.yaml

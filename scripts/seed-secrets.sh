@@ -21,6 +21,7 @@ F=forgejo
 k -n $F create secret generic forgejo-secret-key --from-literal=SECRET_KEY="$FORGEJO_SECRET_KEY"
 k -n $F create secret generic forgejo-admin-secret --from-literal=username=sebastian --from-literal=password="$FORGEJO_ADMIN_PASSWORD"
 k -n $F create secret generic forgejo-db-creds --from-literal=password="$SF_PG_FORGEJO_PASSWORD"
+k -n $F create secret generic github-mirror --from-literal=token="$GITHUB_MIRROR_PAT"
 k -n $F create secret generic hetzner-s3-creds --from-literal=access-key="$HETZNER_S3_ACCESS_KEY_ID" --from-literal=secret-key="$HETZNER_S3_SECRET_ACCESS_KEY"
 A=factory
 k -n $A create secret generic factory-db-creds --from-literal=username=gateway --from-literal=password="$SF_PG_GATEWAY_PASSWORD"
@@ -35,7 +36,5 @@ k -n $A create secret generic gateway-tool-keys --from-literal=FIRECRAWL_KEY="$F
 k -n $A create secret generic hetzner-ci --from-literal=token="$HETZNER_CI_KEY"
 k -n $A create secret generic hetzner-agent --from-literal=token="$HETZNER_AGENT_KEY"
 k -n $P create secret generic signoz-root --from-literal=email=mail@sebastianruecker.com --from-literal=password="$SIGNOZ_ADMIN_PASSWORD"
-# console-oauth: client_id/client_secret come from the Forgejo OAuth app (PATCH regenerates the secret); session_key is fresh.
-kubectl -n $A get secret console-oauth >/dev/null 2>&1 && ! kubectl -n $A get secret console-oauth -o template='{{range $k,$_ := .data}}{{$k}} {{end}}' | grep -q session_key && kubectl -n $A patch secret console-oauth --type merge -p "{\"stringData\":{\"session_key\":\"$(openssl rand -hex 32)\"}}" >/dev/null
-# forgejo-pat (flux-system) is the Flux bootstrap PAT from ~/.git-credentials; runner-init, forgejo-ci-*, console-oauth are minted after Forgejo is up (see the infra README).
-for n in $P $F $A; do echo "$n: $(kubectl -n $n get secret -o name | wc -l) secrets"; done
+# forgejo-pat (flux-system) is the Flux bootstrap PAT from ~/.git-credentials; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
+for n in $P $F $A; do echo "$n: $(kubectl -n "$n" get secret -o name | wc -l) secrets"; done

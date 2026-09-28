@@ -1,0 +1,76 @@
+# Keeps the console's Forgejo OAuth app and secret factory/console-oauth in
+# step (console-oauth.sh). It runs where sebastian's credentials are and
+# writes into factory through the Role below: create on secrets (a create
+# cannot be bound to a name), get and update on console-oauth, and the
+# restart of factoryd, which reads the keys only at boot.
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: console-oauth, namespace: forgejo}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: console-oauth, namespace: factory}
+rules:
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [create]
+  - apiGroups: [""]
+    resources: [secrets]
+    resourceNames: [console-oauth]
+    verbs: [get, update]
+  - apiGroups: [apps]
+    resources: [deployments]
+    resourceNames: [factoryd]
+    verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: console-oauth, namespace: factory}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: console-oauth}
+subjects: [{kind: ServiceAccount, name: console-oauth, namespace: forgejo}]
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: console-oauth, namespace: forgejo}
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          serviceAccountName: console-oauth
+          restartPolicy: Never
+          containers:
+            - name: oauth
+              image: alpine/k8s:1.36.1@sha256:692239d739589247c4a791205ed9619c28ae85a21286e19a6211c04a62c56668
+              command: [sh, /scripts/console-oauth.sh]
+              env:
+                - name: FORGEJO_USER
+                  valueFrom: {secretKeyRef: {name: forgejo-admin-secret, key: username}}
+                - name: FORGEJO_PASSWORD
+                  valueFrom: {secretKeyRef: {name: forgejo-admin-secret, key: password}}
+                - {name: HOME, value: /tmp}
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+                seccompProfile: {type: RuntimeDefault}
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {memory: 128Mi}
+              volumeMounts:
+                - {name: script, mountPath: /scripts, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: script
+              configMap: {name: console-oauth-script}
+            - name: tmp
+              emptyDir: {}
