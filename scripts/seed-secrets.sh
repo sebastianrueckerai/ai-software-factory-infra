@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
-# Creates every imperative secret of the rebuild recipe from .env.tools/.env.seed. Prints no values.
+# Creates every missing imperative secret of the rebuild recipe from .env.tools/.env.seed and leaves
+# an existing one as it is (to replace one, delete it first). Prints names, no values.
 set -euo pipefail
 set -a; source ~/repos/ai-software-factory/.env.tools; source ~/repos/ai-software-factory/.env.seed; set +a
 kubectl apply -f ~/repos/ai-software-factory-infra/k8s/platform/namespaces.yaml >/dev/null
-k() { kubectl "$@" --dry-run=client -o yaml | kubectl apply -f - >/dev/null; }
+k() { # -n <namespace> create secret <type> <name> ...
+  if kubectl -n "$2" get secret "$6" >/dev/null 2>&1; then
+    echo "$2/$6: exists"
+  else
+    kubectl "$@" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+    echo "$2/$6: created"
+  fi
+}
 P=platform
 k -n $P create secret generic sf-cluster-superuser --type=kubernetes.io/basic-auth --from-literal=username=postgres --from-literal=password="$SF_PG_SUPERUSER_PASSWORD"
 k -n $P create secret generic app-secret --type=kubernetes.io/basic-auth --from-literal=username=app --from-literal=password="$SF_PG_APP_PASSWORD"
@@ -35,8 +43,8 @@ k -n $A create secret docker-registry forgejo-registry --docker-server=git.aisof
 k -n $A create secret generic forgejo-bot-creds --from-literal=password="$FORGEJO_BOT_PASSWORD"
 k -n $A create secret generic factory-s3-creds --from-literal=access-key-id="$HETZNER_S3_ACCESS_KEY_ID" --from-literal=secret-access-key="$HETZNER_S3_SECRET_ACCESS_KEY"
 k -n $A create secret generic factoryd-webhook --from-literal=secret="$FORGEJO_WEBHOOK_SECRET"
-kubectl -n $A get secret factoryd-intake >/dev/null 2>&1 || k -n $A create secret generic factoryd-intake --from-literal=token="$(openssl rand -hex 32)"
-kubectl -n $A get secret gateway-factoryd >/dev/null 2>&1 || k -n $A create secret generic gateway-factoryd --from-literal=token="$(openssl rand -hex 32)"
+k -n $A create secret generic factoryd-intake --from-literal=token="$(openssl rand -hex 32)"
+k -n $A create secret generic gateway-factoryd --from-literal=token="$(openssl rand -hex 32)"
 k -n $A create secret generic gateway-tool-keys --from-literal=FIRECRAWL_KEY="$FIRECRAWL_KEY" --from-literal=REPLICATE_KEY="$REPLICATE_KEY" --from-literal=FAL_AI_KEY="$FAL_AI_KEY"
 k -n $A create secret generic hetzner-ci --from-literal=token="$HETZNER_CI_KEY"
 k -n $A create secret generic hetzner-agent --from-literal=token="$HETZNER_AGENT_KEY"

@@ -358,8 +358,10 @@ sibling). The tree already carries origin `sf-cluster-v4` and archive
    with an empty-archive error.] Apply the four Database CRs.
 4. The bootstrap slice by hand: namespaces, every seeded secret from the
    list above (`forgejo-secret-key` first; `scripts/seed-secrets.sh`
-   creates them from `.env.tools` and `.env.seed` without printing a
-   value), Forgejo. Restore the
+   creates the missing ones from `.env.tools` and `.env.seed` without
+   printing a value and leaves existing ones alone, so it also adds a
+   new secret to a running cluster; to replace a secret, delete it and
+   run it again), Forgejo. Restore the
    repositories from the dump's `repos/` into `gitea-repositories`.
 5. Fast-forward push every repository from the local clones to `origin`
    NOW, before Flux's first sync. [Pushes made while Forgejo was down
