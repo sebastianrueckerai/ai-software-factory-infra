@@ -148,25 +148,35 @@ root token from the seed env, never printed:
     bao secrets list -format=json | grep -q '"ssh-client-signer/"' || bao secrets enable -path=ssh-client-signer ssh
     bao read ssh-client-signer/config/ca >/dev/null 2>&1 || bao write -field=public_key ssh-client-signer/config/ca generate_signing_key=true key_type=ssh-ed25519
     bao write ssh-client-signer/roles/factory-agent - <<'JSON'
-    {"key_type": "ca", "allow_user_certificates": true, "allowed_users": "root", "default_user": "root",
+    {"key_type": "ca", "allow_user_certificates": true, "allowed_users": "*", "default_user": "unassigned",
      "ttl": "30m", "max_ttl": "30m", "allowed_extensions": "permit-pty", "default_extensions": {"permit-pty": ""}, "allow_user_key_ids": true}
     JSON
     printf 'path "ssh-client-signer/sign/factory-agent" {\n  capabilities = ["update"]\n}\n' | bao policy write factory-gateway-ssh -
     bao auth list -format=json | grep -q '"kubernetes/"' || bao auth enable kubernetes
     bao write auth/kubernetes/config kubernetes_host="https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT"
     bao write auth/kubernetes/role/factory-gateway bound_service_account_names=factory-gateway \
-      bound_service_account_namespaces=factory token_policies=factory-gateway-ssh token_ttl=1h token_max_ttl=1h
+      bound_service_account_namespaces=factory audience=openbao token_policies=factory-gateway-ssh token_ttl=1h token_max_ttl=1h
     SH
 
 The engine at `ssh-client-signer` holds an ed25519 CA; its public key is
 served unauthenticated at `/v1/ssh-client-signer/public_key`. Role
-`factory-agent` signs user certificates for principal `root` only, at
-most 30 minutes, extension `permit-pty` only. Kubernetes auth role
-`factory-gateway` admits the `factory-gateway` ServiceAccount in
-`factory` only (OpenBao reviews the token with its own ServiceAccount,
-bound to `system:auth-delegator` by the chart), and its policy
-`factory-gateway-ssh` may only sign with `factory-agent`: reading the
-role, other principals, longer TTLs and CA changes answer 400 or 403.
+`factory-agent` signs user certificates, at most 30 minutes, extension
+`permit-pty` only. A certificate opens one server (ruling 125): the
+gateway signs for principal `resource-<row id>` of the task's own server,
+and that server's cloud-init lists exactly that principal in
+`AuthorizedPrincipalsFile` for root. OpenBao 2.6.3's `allowed_users`
+takes no glob (`resource-*` refuses `resource-5`, with or without
+`allowed_users_template`, verified 2026-09-28), so the role allows any
+principal (`*`) and the servers' principals file is the binding; a
+request without principals gets `unassigned`, which no server lists.
+Kubernetes auth role `factory-gateway` admits the `factory-gateway`
+ServiceAccount in `factory` only, with audience `openbao` (the gateway
+mounts a projected token with that audience; OpenBao reviews it with its
+own ServiceAccount, bound to `system:auth-delegator` by the chart), and
+its policy `factory-gateway-ssh` may only sign with `factory-agent`:
+reading the role, longer TTLs and CA changes answer 400 or 403. OpenBao
+is reached over plain HTTP inside the cluster: Cilium's WireGuard
+encrypts pod traffic between nodes.
 All of it lives in the raft storage, so the snapshot carries it.
 
 ## Cilium stays outside Flux
