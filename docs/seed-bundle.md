@@ -72,3 +72,16 @@ this bundle.
       in Forgejo's database and comes back with the restore holding the
       same value. A fresh value must also be set on that webhook
       (HMAC-SHA256 signing secret) so deliveries verify.
+- [x] SigNoz root login — secret signoz-root (keys email, password,
+      namespace platform), value `SIGNOZ_ADMIN_PASSWORD` in the seed env;
+      `seed-secrets.sh` creates it. The SigNoz HelmRelease fails until it
+      exists.
+- [x] Console OAuth2 client — secret console-oauth (keys client_id,
+      client_secret, session_key, namespace factory). Not a seed value:
+      the Forgejo OAuth2 app `factory-console` comes back with the
+      database restore, but its client secret cannot be read back;
+      regenerate it with `PATCH /api/v1/user/applications/oauth2/{id}`
+      (as sebastian) and take client_id and client_secret from the
+      answer; mint a fresh session_key with `openssl rand -hex 32`
+      (`seed-secrets.sh` fills in only a missing session_key). factoryd
+      refuses to boot without all three keys.

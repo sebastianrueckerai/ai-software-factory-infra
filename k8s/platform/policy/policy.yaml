@@ -16,10 +16,12 @@ budget:
 
 # Capability classes a task can hold (tasks.required_capabilities; intake
 # gives agent tasks "coder"). models: the aliases the agent may call through
-# the gateway. tools: the gateway's paid MCP tools, per tool max_requests
-# and max_eur per task (every admitted call counts; a call is held at its
-# worst case below until its real cost is booked). escalate_to_human is
-# free and always allowed for coder, so it is not listed.
+# the gateway. tools: the gateway's MCP tools the class may call, nothing
+# else (ruling 132). A paid tool carries max_requests and max_eur per task
+# (every admitted call counts; a call is held at its worst case below until
+# its real cost is booked); a free tool is listed as {}: escalate_to_human
+# and the commissioning tools, which spend through their reservation and
+# the project envelope instead.
 classes:
   coder:
     models: [coding-cheap, coding-frontier]
@@ -28,6 +30,13 @@ classes:
       web_search: {max_requests: 30, max_eur: 0.20}
       replicate_predict: {max_requests: 5, max_eur: 0.50}
       fal_run: {max_requests: 5, max_eur: 0.50}
+      escalate_to_human: {}
+      cloud_prices: {}
+      commission_server: {}
+      list_resources: {}
+      release_resource: {}
+      ssh_certificate: {}
+      resource_request_status: {}
 
 # Tool prices no provider API reports (USD prices booked 1:1 as EUR, as
 # LiteLLM's are). fal's prices come from its pricing API per endpoint.
