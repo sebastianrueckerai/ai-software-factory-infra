@@ -51,5 +51,21 @@ k -n $A create secret generic hetzner-agent --from-literal=token="$HETZNER_AGENT
 # ClickHouse reads the cold-storage key pair as XML through include_from (config.d/storage.xml in the SigNoz HelmRelease).
 k -n $P create secret generic signoz-s3 --from-literal=s3.xml="<clickhouse><signoz_s3_access_key_id>$HETZNER_S3_ACCESS_KEY_ID</signoz_s3_access_key_id><signoz_s3_secret_access_key>$HETZNER_S3_SECRET_ACCESS_KEY</signoz_s3_secret_access_key></clickhouse>"
 k -n $P create secret generic signoz-root --from-literal=email=mail@sebastianruecker.com --from-literal=password="$SIGNOZ_ADMIN_PASSWORD"
+# Secrets two namespaces read with one value: the value comes from the copy
+# that exists, else it is minted, and the missing copy is created.
+shared() { # <name> <key> <namespace>...: prints the value
+  local name=$1 key=$2 n v=""; shift 2
+  for n in "$@"; do
+    v=$(kubectl -n "$n" get secret "$name" -o "jsonpath={.data.$key}" 2>/dev/null | base64 -d) && [ -n "$v" ] && break
+  done
+  printf '%s' "${v:-$(openssl rand -hex 32)}"
+}
+# SigNoz's webhook channel factoryd authenticates to factoryd with it; the signoz-objects job writes the channel.
+pw=$(shared signoz-webhook password $A $P)
+for n in $A $P; do k -n "$n" create secret generic signoz-webhook --from-literal=password="$pw"; done
+# factoryd's SigNoz viewer; the signoz-objects job creates the account from the platform copy.
+pw=$(shared signoz-factoryd password $A $P)
+for n in $A $P; do k -n "$n" create secret generic signoz-factoryd --from-literal=email=factoryd@aisoftwarefactory.world --from-literal=password="$pw"; done
+unset pw
 # forgejo-pat (flux-system) is the Flux bootstrap PAT from ~/.git-credentials; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
 for n in $P $F $A; do echo "$n: $(kubectl -n "$n" get secret -o name | wc -l) secrets"; done

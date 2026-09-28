@@ -100,6 +100,9 @@ spec:
       env:
         signoz_user_root_enabled: "true"
         signoz_user_root_org__name: aisoftwarefactory
+        # the alert rules' links (ruleSource, the webhook's generatorURL)
+        # name this base; the chart's default is http://localhost:8080
+        signoz_alertmanager_signoz_external__url: https://signoz.aisoftwarefactory.world
       resources:
         requests: {cpu: 50m, memory: 128Mi}
         limits: {cpu: "1", memory: 768Mi}

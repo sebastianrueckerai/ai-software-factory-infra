@@ -1,8 +1,31 @@
-# Writes the dashboards (dashboards/*.json), the alert rules
-# (alerts/*.json) and the retention (HOT_DAYS on the local volume, then S3,
-# deleted after RETENTION_DAYS) into SigNoz, which loses all three with its
-# volumes on a rebuild. Edits made in the UI are overwritten on the next
-# run: change the files or the values here.
+# Writes factoryd's viewer account, the webhook channel factoryd, the
+# dashboards (dashboards/*.json), the alert rules (alerts/*.json and every
+# project's ConfigMaps labelled factory/signoz-rules=true) and the retention
+# (HOT_DAYS on the local volume, then S3, deleted after RETENTION_DAYS) into
+# SigNoz, which loses all of it with its volumes on a rebuild. Edits made in
+# the UI to the platform's objects are overwritten on the next run: change
+# the files or the values here.
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: signoz-objects, namespace: platform}
+---
+# the project namespaces and their rule ConfigMaps; RBAC cannot select by
+# label, so list reaches every ConfigMap
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata: {name: signoz-objects}
+rules:
+- apiGroups: [""]
+  resources: [namespaces, configmaps]
+  verbs: [list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata: {name: signoz-objects}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: signoz-objects}
+subjects:
+- {kind: ServiceAccount, name: signoz-objects, namespace: platform}
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata: {name: signoz-objects, namespace: platform}
@@ -17,7 +40,7 @@ spec:
       activeDeadlineSeconds: 300
       template:
         spec:
-          automountServiceAccountToken: false
+          serviceAccountName: signoz-objects
           restartPolicy: Never
           containers:
             - name: objects
@@ -28,6 +51,12 @@ spec:
                   valueFrom: {secretKeyRef: {name: signoz-root, key: email}}
                 - name: SIGNOZ_PASSWORD
                   valueFrom: {secretKeyRef: {name: signoz-root, key: password}}
+                - name: VIEWER_EMAIL
+                  valueFrom: {secretKeyRef: {name: signoz-factoryd, key: email}}
+                - name: VIEWER_PASSWORD
+                  valueFrom: {secretKeyRef: {name: signoz-factoryd, key: password}}
+                - name: SIGNOZ_WEBHOOK_PASSWORD
+                  valueFrom: {secretKeyRef: {name: signoz-webhook, key: password}}
                 - {name: HOT_DAYS, value: "7"}
                 - {name: RETENTION_DAYS, value: "30"}
               securityContext:
