@@ -179,14 +179,23 @@ takes no glob (`resource-*` refuses `resource-5`, with or without
 `allowed_users_template`, verified 2026-09-28), so the role allows any
 principal (`*`). Ruling 125 as amended: the binding is the server's
 `AuthorizedPrincipalsFile` plus the gateway signing only for the task's
-own server. A request without principals gets `unassigned`, which no
-server lists.
+own server. Checked live on 2.6.3 (2026-09-28) with the gateway's login:
+a request that omits `valid_principals` is signed for `unassigned`
+(`default_user`), and one that sends `valid_principals=""` is signed with
+no principals ("Principals: (none)"; `allow_empty_principals` false does
+not stop it). sshd refuses both: neither matches the server's principals
+file. The gateway always sends the server's principal.
 Kubernetes auth role `factory-gateway` admits the `factory-gateway`
 ServiceAccount in `factory` only, with audience `openbao` (the gateway
 mounts a projected token with that audience; OpenBao reviews it with its
 own ServiceAccount, bound to `system:auth-delegator` by the chart), and
 its policy `factory-gateway-ssh` may only sign with `factory-agent`:
-reading the role, longer TTLs and CA changes answer 400 or 403. OpenBao
+reading the role, longer TTLs and CA changes answer 400 or 403. The
+role must carry `audience=openbao` whenever a gateway with that token
+runs: OpenBao refuses its login otherwise, and commissioning and signing
+fail. On a rebuild the script above runs before the gateway's first
+commission; a change of the audience is written right after the roll that
+changes the token and checked with one signing. OpenBao
 is reached over plain HTTP inside the cluster: Cilium's WireGuard
 encrypts pod traffic between nodes.
 All of it lives in the raft storage, so the snapshot carries it.
