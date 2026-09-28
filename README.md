@@ -147,6 +147,8 @@ root token from the seed env, never printed:
     set -e
     bao secrets list -format=json | grep -q '"ssh-client-signer/"' || bao secrets enable -path=ssh-client-signer ssh
     bao read ssh-client-signer/config/ca >/dev/null 2>&1 || bao write -field=public_key ssh-client-signer/config/ca generate_signing_key=true key_type=ssh-ed25519
+    # any principal: 2.6.3 has no glob; ruling 125 as amended binds a certificate by the
+    # server's AuthorizedPrincipalsFile plus the gateway signing only for the task's own server
     bao write ssh-client-signer/roles/factory-agent - <<'JSON'
     {"key_type": "ca", "allow_user_certificates": true, "allowed_users": "*", "default_user": "unassigned",
      "ttl": "30m", "max_ttl": "30m", "allowed_extensions": "permit-pty", "default_extensions": {"permit-pty": ""}, "allow_user_key_ids": true}
@@ -167,8 +169,10 @@ and that server's cloud-init lists exactly that principal in
 `AuthorizedPrincipalsFile` for root. OpenBao 2.6.3's `allowed_users`
 takes no glob (`resource-*` refuses `resource-5`, with or without
 `allowed_users_template`, verified 2026-09-28), so the role allows any
-principal (`*`) and the servers' principals file is the binding; a
-request without principals gets `unassigned`, which no server lists.
+principal (`*`). Ruling 125 as amended: the binding is the server's
+`AuthorizedPrincipalsFile` plus the gateway signing only for the task's
+own server. A request without principals gets `unassigned`, which no
+server lists.
 Kubernetes auth role `factory-gateway` admits the `factory-gateway`
 ServiceAccount in `factory` only, with audience `openbao` (the gateway
 mounts a projected token with that audience; OpenBao reviews it with its
