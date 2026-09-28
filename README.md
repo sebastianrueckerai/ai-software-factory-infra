@@ -106,8 +106,11 @@ to `main` is refused (git: "Not allowed to push to protected branch main";
 contents API: 403). It cannot read the infra repository (404). A leaked
 token can merge only what sebastian already approved.
 
-On a rebuild the user, its collaboration and the protection come back
-with Forgejo's database; the token is minted fresh.
+`scripts/setup-factory-merge.sh` does all of this idempotently (user,
+collaboration, a fresh token into the secret, the protection) and prints
+the protection it left. On a rebuild the user, its collaboration and the
+protection come back with Forgejo's database; run the script anyway for
+the fresh token.
 
 ## Build cache
 
@@ -250,7 +253,7 @@ sibling). The tree already carries origin `sf-cluster-v4` and archive
    as a write collaborator on the code repository, and `main`'s branch
    protection exactly as in "The merge bot" below. Mint `factory-merge` a
    fresh token into `forgejo-merge` either way (the old one is not in any
-   restore).
+   restore): `scripts/setup-factory-merge.sh`.
    factoryd itself recreates, at boot, the issue labels (`agent`,
    `human`, `state/*`) and the bot's private fork
    `factory-agent/ai-software-factory-code` that agent PRs come from
