@@ -12,4 +12,4 @@ configMapGenerator:
   files: [dashboards/factory-pipeline.json]
 - name: signoz-alerts
   namespace: platform
-  files: [alerts/job-failed-pod.json]
+  files: [alerts/job-failed.json]

@@ -26,8 +26,6 @@ spec:
       name: signoz-root
       valuesKey: password
       targetPath: signoz.env.signoz_user_root_password
-  # Requests from the usage measured on 2026-09-28 (Task 69 report) with
-  # headroom for the k8s-infra ingest; limits so a runaway cannot take a node.
   values:
     global:
       storageClass: local-path
@@ -42,7 +40,9 @@ spec:
       # Hot data on the local-path volume, cold on bucket signoz-cold: the
       # signoz-objects CronJob sets the TTLs that move parts to volume s3.
       # The key pair comes from secret signoz-s3 through include_from, so it
-      # is in no ConfigMap and no custom resource.
+      # is in no ConfigMap and no custom resource, and hide_in_preprocessed
+      # keeps it out of preprocessed_configs on the data volume. move_factor
+      # moves the oldest parts to S3 once the local volume is 90 % full.
       files:
         config.d/storage.xml: |
           <clickhouse>
@@ -52,8 +52,8 @@ spec:
                 <s3>
                   <type>s3</type>
                   <endpoint>https://fsn1.your-objectstorage.com/signoz-cold/data/</endpoint>
-                  <access_key_id incl="signoz_s3_access_key_id"/>
-                  <secret_access_key incl="signoz_s3_secret_access_key"/>
+                  <access_key_id incl="signoz_s3_access_key_id" hide_in_preprocessed="true"/>
+                  <secret_access_key incl="signoz_s3_secret_access_key" hide_in_preprocessed="true"/>
                   <skip_access_check>true</skip_access_check>
                 </s3>
               </disks>
@@ -69,7 +69,7 @@ spec:
                       <prefer_not_to_merge>1</prefer_not_to_merge>
                     </s3>
                   </volumes>
-                  <move_factor>0</move_factor>
+                  <move_factor>0.1</move_factor>
                 </tiered>
               </policies>
             </storage_configuration>

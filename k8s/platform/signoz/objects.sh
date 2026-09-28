@@ -51,14 +51,18 @@ for file in /alerts/*.json; do
   fi
 done
 
-# SigNoz applies a TTL in the background and records its status: a pending
-# one is left to finish, a failed one is applied again and fails this run.
+# SigNoz records a TTL's status. A set lasts seconds, so a pending one ten
+# minutes later is stuck: SigNoz refuses every set until its row is gone
+# (README, Telemetry). A failed one is applied again. Both fail this run.
 rc=0
 retention() { # signal, [delete, move] as SigNoz reports it, as wanted, status, the call that sets it
   sig=$1 have=$2 want=$3 status=$4
   shift 4
-  if [ "$status" = pending ]; then
-    say "retention $sig pending"
+  if [ "$status" = pending ] && [ "$have" = "$want" ]; then
+    say "retention $sig no change"
+  elif [ "$status" = pending ]; then
+    say "retention $sig pending: SigNoz holds a stuck TTL row"
+    rc=1
   elif [ "$status" != failed ] && [ "$have" = "$want" ]; then
     say "retention $sig no change"
   else

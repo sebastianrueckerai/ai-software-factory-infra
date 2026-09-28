@@ -1,6 +1,6 @@
 {
-  "alert": "Job has a failed pod",
-  "alertType": "METRIC_BASED_ALERT",
+  "alert": "Job failed",
+  "alertType": "LOGS_BASED_ALERT",
   "condition": {
     "compositeQuery": {
       "panelType": "graph",
@@ -9,30 +9,30 @@
           "spec": {
             "aggregations": [
               {
-                "metricName": "k8s.job.failed_pods",
-                "spaceAggregation": "max",
-                "temporality": "",
-                "timeAggregation": "max"
+                "expression": "count()"
               }
             ],
             "disabled": false,
+            "filter": {
+              "expression": "attribute.k8s.event.reason IN ('BackoffLimitExceeded', 'DeadlineExceeded') AND resource.k8s.object.kind = 'Job'"
+            },
             "groupBy": [
               {
-                "fieldContext": "",
-                "fieldDataType": "",
+                "fieldContext": "attribute",
+                "fieldDataType": "string",
                 "name": "k8s.namespace.name",
                 "signal": ""
               },
               {
-                "fieldContext": "",
-                "fieldDataType": "",
-                "name": "k8s.job.name",
+                "fieldContext": "resource",
+                "fieldDataType": "string",
+                "name": "k8s.object.name",
                 "signal": ""
               }
             ],
             "legend": "",
             "name": "A",
-            "signal": "metrics",
+            "signal": "logs",
             "source": "",
             "stepInterval": 60
           },
@@ -57,7 +57,7 @@
       ]
     }
   },
-  "description": "A Kubernetes Job, a CronJob run included, has had a failed pod within the last 15 minutes. It clears 15 minutes after the failed Job is deleted.",
+  "description": "A Kubernetes Job, a CronJob run included, failed within the last 15 minutes: the Job controller's Warning event BackoffLimitExceeded or DeadlineExceeded. It clears by itself 15 minutes after the failure, whether or not the failed Job is deleted.",
   "disabled": false,
   "evaluation": {
     "kind": "rolling",

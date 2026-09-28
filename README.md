@@ -232,16 +232,27 @@ store. Two collectors of the `k8s-infra` chart (0.17.1, HelmRelease in
 `k8s-infra` (Pod Security `privileged`: the agent mounts host paths,
 which the cluster's baseline profile forbids elsewhere):
 
-- `otel-agent`, a DaemonSet: host metrics (CPU, memory, disk,
-  filesystem, network per node), kubelet stats (node, pod, container,
-  volume) and every container's log lines, read from
-  `/var/log/pods` as uid 0 without capabilities. Log files of the agent
-  sandbox namespaces `factory-agents-*` are never opened: an agent's
-  transcript must not land in SigNoz. It receives nothing (no OTLP
-  receiver, no host port).
+- `otel-agent`, a DaemonSet: host metrics (CPU, memory, load, disk I/O,
+  read from `/proc`; the host's root filesystem is not mounted), kubelet
+  stats (node, pod, container and volume, node network and filesystem
+  included) and container log lines, read from `/var/log/pods` as uid 0
+  without capabilities. It receives nothing (no OTLP receiver, no host
+  port). Its ClusterRole reads pods, namespaces, nodes, volumes,
+  ReplicaSets and Jobs, and the kubelet's `nodes/stats` and `nodes/pods`;
+  no `nodes/proxy`, which would allow exec into any pod on the node.
+  Log files it never opens:
+  - the agent sandboxes `factory-agents-*` (CI included): an agent's
+    transcript must not land in SigNoz;
+  - the trusted runner `forgejo-runner` in `forgejo`: it echoes every
+    job step's output, and a value a step prints without a mask would
+    get a second copy here; Forgejo's Actions log keeps it;
+  - SigNoz's own pods and `k8s-infra` itself: every insert would log
+    lines that are inserted next.
 - `otel-deployment`, one replica: cluster metrics from the Kubernetes API
-  (`k8s.job.failed_pods`, pod phases, node conditions, ...) and the
-  Kubernetes events as logs.
+  (pod phases, node conditions, Job counts, ...) and the Kubernetes
+  events as logs (reason in attribute `k8s.event.reason`, namespace in
+  `k8s.namespace.name`, the object in resource attributes
+  `k8s.object.kind` and `k8s.object.name`, the message as body).
 
 CiliumNetworkPolicies `otel-agent` and `otel-deployment` admit their
 egress only to DNS, the API server, SigNoz's collector and, for the
@@ -253,26 +264,44 @@ on its volumes: the dashboards in `signoz/dashboards/*.json` (by title),
 the alert rules in `signoz/alerts/*.json` (by name; a file holds the rule
 as SigNoz returns it, so an untouched rule compares equal) and the
 retention of traces, metrics and logs through SigNoz's TTL settings API.
-Edits made in the UI are overwritten on the next run. A retention set
-that SigNoz records as failed is set again and fails the run.
+Edits made in the UI are overwritten on the next run. The run fails, and
+so fires the alert below, when SigNoz records a retention set as failed
+(it is set again) or still pending ten minutes on: a SigNoz restart in
+the middle of a set leaves a row that SigNoz never ages out, and it
+refuses every later set. Recovery: delete that row, then the next run
+sets the TTL:
+`kubectl -n platform debug -it signoz-0 --image=alpine --target=signoz`,
+then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
+"DELETE FROM ttl_setting WHERE status = 'pending'"`.
 
-- Alert rule `Job has a failed pod`: `k8s.job.failed_pods` above 0 at
-  least once in 15 minutes, per namespace and Job name, severity
-  `warning`; it fires while a failed Job exists (a CronJob keeps its
-  last three failed runs) and clears 15 minutes after the Job is gone.
-  No notification channel yet: the rule's state in SigNoz is the signal.
+- Alert rule `Job failed` (ruling 160): the Job controller's Warning
+  event `BackoffLimitExceeded` or `DeadlineExceeded` on a Job, a CronJob
+  run included, at least once in the last 15 minutes, per namespace and
+  Job name, severity `warning`. It clears by itself 15 minutes after the
+  failure; a failed Job the CronJob keeps does not hold it. No
+  notification channel yet: the rule's state in SigNoz is the signal.
 - Retention: 7 days hot on ClickHouse's local-path volume, then moved to
   volume `s3` (disk `s3`, bucket `signoz-cold` on
   `fsn1.your-objectstorage.com`, prefix `data/`), deleted after 30 days
-  (`HOT_DAYS`, `RETENTION_DAYS` in `signoz/objects.yaml`). ClickHouse's
+  (`HOT_DAYS`, `RETENTION_DAYS` in `signoz/objects.yaml`). A TTL change
+  applies to parts written after it, so the first objects reach the
+  bucket 7 days after a rebuild or a change. ClickHouse's
   `config.d/storage.xml` in the SigNoz HelmRelease defines the disk and
   the storage policy `tiered`; the key pair comes from secret `signoz-s3`
   through `include_from`, so it lands in no ConfigMap and no custom
-  resource. The disk skips its access check, so ClickHouse starts even
-  when the bucket is unreachable; parts then stay local until it is back.
-  ClickHouse keeps the S3 disk's metadata on the local volume, so after a
-  rebuild the bucket's objects belong to nobody: the bucket's lifecycle
-  rule (expire after 31 days) removes them.
+  resource, and `hide_in_preprocessed` keeps it out of the preprocessed
+  config on the data volume. Once the local volume is 90 % full, the
+  oldest parts move to S3 early. The disk skips its access check, so
+  ClickHouse starts even when the bucket is unreachable or the key wrong;
+  parts then stay local, and a full 20 Gi volume stops every insert
+  (ClickHouse's log names the failed moves). ClickHouse keeps the S3
+  disk's metadata on the local volume, so after a rebuild the bucket's
+  objects belong to nobody: the bucket's lifecycle rule (expire after 31
+  days) removes them. For logs, SigNoz reports the retention from its own
+  database, not from ClickHouse: if ClickHouse's volume alone is lost,
+  the job says `no change` while ClickHouse runs its defaults. Then run
+  the recovery above with `DELETE FROM ttl_setting`: the next run sets
+  all three again.
 
 The rebuild needs: bucket `signoz-cold` with that lifecycle rule, and
 secret `signoz-s3` seeded (step 4) before the SigNoz HelmRelease rolls

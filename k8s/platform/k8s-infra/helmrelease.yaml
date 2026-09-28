@@ -2,8 +2,10 @@
 # metrics, kubelet stats, container logs) and the otel-deployment (cluster
 # metrics and Kubernetes events). Its own namespace because the agent needs
 # hostPath mounts, which the cluster's baseline Pod Security forbids in
-# platform. No log line from an agent sandbox namespace (factory-agents-*)
-# is read: an agent's transcript must not land in SigNoz.
+# platform. Log files never read: the agent sandboxes (factory-agents-*,
+# an agent's transcript), the trusted runner (it echoes every job step's
+# output, already kept in Forgejo), SigNoz and these collectors themselves
+# (every insert would log lines that are inserted next).
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata: {name: k8s-infra, namespace: platform}
@@ -24,9 +26,36 @@ spec:
       logsCollection:
         blacklist:
           signozLogs: false
-          namespaces: [factory-agents-*]
-          pods: []
+          namespaces: [factory-agents-*, k8s-infra]
+          pods: [forgejo-runner]
+          additionalExclude:
+            - /var/log/pods/platform_signoz-0_*/*/*.log
+            - /var/log/pods/platform_signoz-otel-collector-*/*/*.log
+            - /var/log/pods/platform_signoz-zookeeper-*/*/*.log
+            - /var/log/pods/platform_signoz-clickhouse-operator-*/*/*.log
+            - /var/log/pods/platform_signoz-telemetrystore-migrator-*/*/*.log
+            - /var/log/pods/platform_chi-signoz-clickhouse-*/*/*.log
+      # Host CPU, memory, load and disk I/O come from /proc, which reports
+      # the host's values without the host's root filesystem mounted;
+      # kubeletstats covers node network and filesystem.
+      hostMetrics:
+        rootPath: ""
+        scrapers: {network: null, filesystem: null}
     otelAgent:
+      clusterRole:
+        rules:
+          - apiGroups: [""]
+            resources: [pods, namespaces, nodes, persistentvolumes, persistentvolumeclaims]
+            verbs: [get, list, watch]
+          - apiGroups: [apps]
+            resources: [replicasets]
+            verbs: [get, list, watch]
+          - apiGroups: [batch]
+            resources: [jobs]
+            verbs: [list, watch]
+          - apiGroups: [""]
+            resources: [nodes/stats, nodes/pods]
+            verbs: [get]
       # Container log files are root-owned 0640; reading them needs uid 0,
       # no capability.
       securityContext:
