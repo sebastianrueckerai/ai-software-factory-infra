@@ -29,7 +29,7 @@ spec:
                 - name: FORGEJO_PASSWORD
                   valueFrom: {secretKeyRef: {name: forgejo-admin-secret, key: password}}
                 - name: GITHUB_TOKEN
-                  valueFrom: {secretKeyRef: {name: github-mirror, key: token}}
+                  valueFrom: {secretKeyRef: {name: github-mirror, key: token, optional: true}}
               securityContext:
                 runAsNonRoot: true
                 runAsUser: 1000

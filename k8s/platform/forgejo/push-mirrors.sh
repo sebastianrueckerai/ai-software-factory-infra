@@ -6,6 +6,10 @@
 # again with the token from secret github-mirror.
 set -euo pipefail
 trap '[ $? = 0 ] || echo "push-mirrors: failed"' EXIT
+if [ -z "${GITHUB_TOKEN:-}" ]; then
+  echo "push-mirrors: secret github-mirror missing, nothing to do"
+  exit 0
+fi
 api=http://forgejo-http.forgejo.svc.cluster.local:3000/api/v1
 owner=sebastianrueckerai
 umask 077

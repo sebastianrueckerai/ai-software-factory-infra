@@ -400,7 +400,9 @@ sibling). The tree already carries origin `sf-cluster-v4` and archive
    `session_key`, writes the secret and restarts factoryd, which cannot
    start without it; `push-mirrors` in `forgejo` keeps one healthy
    push mirror to GitHub on both repositories (ruling 126, sync_on_commit,
-   8 h interval) with the token from `github-mirror` (step 4's seed), and
+   8 h interval) with the token from `github-mirror` (step 4's seed; until
+   that secret exists the job idles and logs `push-mirrors: secret
+   github-mirror missing, nothing to do`), and
    recreates a mirror whose `last_error` is set. A mirror is recreated
    only once its sync fails, so after a token change revoke the old token
    or delete both mirrors once (Settings -> Mirror Settings); the next run
