@@ -1124,7 +1124,7 @@
         "kind": "Panel",
         "spec": {
           "display": {
-            "description": "factory.alert.count sampled at the end of each week: every alerts row ever, by kind (gate_bound, supervisor_trip, escalation, info_request, alert) and verdict (real, noise, open until one is set)",
+            "description": "factory.alert.count sampled at the end of each week: every alerts row ever, by kind (gate_bound, supervisor_trip, escalation, info_request, alert) and verdict (real, noise, open until one is set); the largest of the factoryd pods' reports, since each reports the whole table",
             "name": "Alerts per kind and verdict (total at each week's end)"
           },
           "links": [],
@@ -1167,7 +1167,7 @@
                             {
                               "metricName": "factory.alert.count",
                               "reduceTo": "",
-                              "spaceAggregation": "sum",
+                              "spaceAggregation": "max",
                               "temporality": "",
                               "timeAggregation": "latest"
                             }
