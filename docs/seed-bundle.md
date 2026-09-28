@@ -11,6 +11,11 @@ this bundle.
       aisoftwarefactory.world
 - [ ] Model provider keys: DeepSeek, Alibaba, z.ai, Groq
 - [ ] Tool provider keys: Replicate, Firecrawl, fal.ai
+- [x] Hetzner agent project token (`HETZNER_AGENT_KEY` in `.env.tools`,
+      task 53): secret hetzner-agent (key token, namespace factory),
+      mounted by the gateway only; the project holds nothing but
+      agent-commissioned resources, and the gateway's collector deletes
+      anything there its registry does not know.
 - [x] OpenBao unseal keys (created in Stage 2, one key per OpenBao's
       threshold-1 init; values in the Stage 2 task reports, task 17)
 - [x] Talos secrets bundle (created in Stage 1, secrets.yaml)

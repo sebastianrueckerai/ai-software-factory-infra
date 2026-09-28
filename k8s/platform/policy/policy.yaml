@@ -81,3 +81,17 @@ risk:
     - {class: migration, paths: ["internal/*/migrations/**", "internal/policy/schema.sql"]}
     - {class: high, paths: ["k8s/**", "Dockerfile*", "go.mod", "go.sum"]}
   default: normal
+
+# The standard resource envelope (architecture 5.5): a project's first
+# commissioning request copies it into the project's envelopes row, which
+# the console edits. Per calendar month (UTC) in net EUR, reservations and
+# accrued cost together; servers (with their primary IPv4) of these types,
+# at most max_count at once, leases up to max_lease_hours, one volume per
+# server up to volume_max_gb (0 = none, else at least 10). Beyond it, a
+# request becomes a human approval card.
+envelope_default:
+  monthly_eur: 10
+  server_types: [cx23, cx33]
+  max_count: 2
+  max_lease_hours: 4
+  volume_max_gb: 20

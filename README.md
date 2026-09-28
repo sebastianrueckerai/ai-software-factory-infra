@@ -28,7 +28,7 @@ sync path `clusters/sf`:
 - Seeded secrets (`sf-cluster-superuser`, `app-secret`, `pg-*`,
   `cnpg-s3-creds`, `forgejo-admin-secret`, `forgejo-db-creds`,
   `hetzner-s3-creds`, `runner-init`, `litellm-master-key`,
-  `litellm-deepseek`, `litellm-qwen` (key ALIBABA_CLOUD_KEY), `litellm-glm` (keys Z_AI_KEY), `forgejo-secret-key` (namespace `forgejo`, the pinned Forgejo `SECRET_KEY`; a new key makes every stored Actions secret unreadable)) are imperative and stay out of the tree. In `factory`: `factory-db-creds` (keys `username`/`password`, the CNPG `gateway` role), a copy of `litellm-master-key` (key `masterkey`), and the `forgejo-registry` pull secret (username `sebastian`, the CI registry PAT), `factoryd-intake` (key `token`, the bearer token for factoryd's task intake; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), `factoryd-webhook` (key `secret`, task 42: the HMAC-SHA256 secret shared with Forgejo's webhook config for `POST /webhooks/forgejo`; value `FORGEJO_WEBHOOK_SECRET` in the seed env, because the webhook itself lives in Forgejo's database and comes back with the restore; a fresh value must be set on the webhook too), and `forgejo-ci-registrar` (key `token`, tasks 41 and 46, rulings 101 and 101a: a `write:repository` token of the dedicated Forgejo user `factory-ci` scoped to the code repository; Forgejo's repository runner API demands the repository owner, so `factory-ci` is a member of org `sf`'s Owners team, and `main`'s push and merge whitelist, which applies to admins, excludes it, so the token can neither push nor merge `main`; factoryd's CI spawner uses it to stand up the ephemeral `pr-untrusted` runner pods and its intake uses it to read the code repository's collaborators and assignee list; no stored value: the user comes back with the database restore, mint a fresh token on re-seed, never mount it into a runner pod itself), `forgejo-ci-org-read` (key `token`, ruling 108: a second `factory-ci` token with the single scope `read:organization` and no repository, because Forgejo refuses that scope on a repository-limited token; factoryd's trust gate reads org `sf`'s teams, their repositories and their members with it; no stored value: mint a fresh token on re-seed), `gateway-tool-keys` (task 52: keys `FIRECRAWL_KEY`, `REPLICATE_KEY`, `FAL_AI_KEY`, the MCP tools' provider keys, mounted by the gateway only; created from `.env.tools` without printing it: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic gateway-tool-keys --from-literal=FIRECRAWL_KEY="$FIRECRAWL_KEY" --from-literal=REPLICATE_KEY="$REPLICATE_KEY" --from-literal=FAL_AI_KEY="$FAL_AI_KEY"`), and `gateway-factoryd` (task 52: key `token`, the bearer the gateway presents on factoryd's `POST /internal/escalations`; both deployments mount it; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`) — pods cannot read secrets across namespaces, so the master key exists in `platform` and `factory` and rotation must replace both. `forgejo-pat` in `flux-system` (a copy of the bootstrap sync credentials) authenticates the `factory-code` GitRepository. The `gateway` role itself was created imperatively on `sf-cluster` (`CREATE ROLE gateway LOGIN PASSWORD ...`, value `SF_PG_GATEWAY_PASSWORD` in the seed env); CNPG's Database CR cannot create its owner role. The S3
+  `litellm-deepseek`, `litellm-qwen` (key ALIBABA_CLOUD_KEY), `litellm-glm` (keys Z_AI_KEY), `forgejo-secret-key` (namespace `forgejo`, the pinned Forgejo `SECRET_KEY`; a new key makes every stored Actions secret unreadable)) are imperative and stay out of the tree. In `factory`: `factory-db-creds` (keys `username`/`password`, the CNPG `gateway` role), a copy of `litellm-master-key` (key `masterkey`), and the `forgejo-registry` pull secret (username `sebastian`, the CI registry PAT), `factoryd-intake` (key `token`, the bearer token for factoryd's task intake; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), `factoryd-webhook` (key `secret`, task 42: the HMAC-SHA256 secret shared with Forgejo's webhook config for `POST /webhooks/forgejo`; value `FORGEJO_WEBHOOK_SECRET` in the seed env, because the webhook itself lives in Forgejo's database and comes back with the restore; a fresh value must be set on the webhook too), and `forgejo-ci-registrar` (key `token`, tasks 41 and 46, rulings 101 and 101a: a `write:repository` token of the dedicated Forgejo user `factory-ci` scoped to the code repository; Forgejo's repository runner API demands the repository owner, so `factory-ci` is a member of org `sf`'s Owners team, and `main`'s push and merge whitelist, which applies to admins, excludes it, so the token can neither push nor merge `main`; factoryd's CI spawner uses it to stand up the ephemeral `pr-untrusted` runner pods and its intake uses it to read the code repository's collaborators and assignee list; no stored value: the user comes back with the database restore, mint a fresh token on re-seed, never mount it into a runner pod itself), `forgejo-ci-org-read` (key `token`, ruling 108: a second `factory-ci` token with the single scope `read:organization` and no repository, because Forgejo refuses that scope on a repository-limited token; factoryd's trust gate reads org `sf`'s teams, their repositories and their members with it; no stored value: mint a fresh token on re-seed), `gateway-tool-keys` (task 52: keys `FIRECRAWL_KEY`, `REPLICATE_KEY`, `FAL_AI_KEY`, the MCP tools' provider keys, mounted by the gateway only; created from `.env.tools` without printing it: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic gateway-tool-keys --from-literal=FIRECRAWL_KEY="$FIRECRAWL_KEY" --from-literal=REPLICATE_KEY="$REPLICATE_KEY" --from-literal=FAL_AI_KEY="$FAL_AI_KEY"`), `gateway-factoryd` (task 52: key `token`, the bearer the gateway presents on factoryd's `POST /internal/escalations`; both deployments mount it; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), and `hetzner-agent` (task 53: key `token`, the API token of the Hetzner project `agent` that holds only agent-commissioned servers, firewalls and volumes; mounted by the gateway only, never by factoryd; value `HETZNER_AGENT_KEY` in `.env.tools`: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic hetzner-agent --from-literal=token="$HETZNER_AGENT_KEY"`) — pods cannot read secrets across namespaces, so the master key exists in `platform` and `factory` and rotation must replace both. `forgejo-pat` in `flux-system` (a copy of the bootstrap sync credentials) authenticates the `factory-code` GitRepository. The `gateway` role itself was created imperatively on `sf-cluster` (`CREATE ROLE gateway LOGIN PASSWORD ...`, value `SF_PG_GATEWAY_PASSWORD` in the seed env); CNPG's Database CR cannot create its owner role. The S3
   keys exist in two namespaces — `cnpg-s3-creds` in `platform` for CNPG
   backups, `hetzner-s3-creds` in `forgejo` for the nightly dump — and
   rotation must replace both. Rotating `litellm-master-key` or
@@ -43,12 +43,15 @@ per-task default and maximum budget, the per-day cap over all tasks
 class may use, each tool with per-task `max_requests` and `max_eur`), and
 `prices`, the tool prices no provider API reports (Firecrawl's EUR per
 credit, Replicate's EUR per second by hardware SKU and the SKU of each
-usable model, fal's megapixel bound), each with its source URL, and
+usable model, fal's megapixel bound), each with its source URL;
 `risk`, the rules that classify an agent pull request by its changed
 paths (ordered globs to a class, most severe class wins; `forbidden`
 fails the task, `requires_approval` waits for a human before
 `factory-merge` merges; `migration: true` flags schema migrations for the
-human's review). A
+human's review), and
+`envelope_default`, the standard resource envelope a project's first
+commissioning request copies (monthly EUR cap, server types, count,
+longest lease, largest volume). A
 Replicate model runs only once it is listed under
 `prices.replicate.models`. Its `configMapGenerator` makes it ConfigMap
 `factory-policy` in namespace `factory` (stable name, no hash suffix),
@@ -130,6 +133,39 @@ The cache is disposable and nothing restores it: after a rebuild it is
 empty, PR builds log "no cache" and build cold until the next main CI
 run fills it. To empty it by hand, delete the PVC and the pod.
 
+## OpenBao SSH CA
+
+Commissioned servers (task 53) trust one SSH CA in OpenBao, and the
+factory gateway signs sandbox keys with it. Idempotent; run with the
+root token from the seed env, never printed:
+
+    set -a; . .env.seed; set +a
+    kubectl -n platform exec -i openbao-0 -- env BAO_TOKEN="$OPENBAO_ROOT_TOKEN" sh <<'SH'
+    set -e
+    bao secrets list -format=json | grep -q '"ssh-client-signer/"' || bao secrets enable -path=ssh-client-signer ssh
+    bao read ssh-client-signer/config/ca >/dev/null 2>&1 || bao write -field=public_key ssh-client-signer/config/ca generate_signing_key=true key_type=ssh-ed25519
+    bao write ssh-client-signer/roles/factory-agent - <<'JSON'
+    {"key_type": "ca", "allow_user_certificates": true, "allowed_users": "root", "default_user": "root",
+     "ttl": "30m", "max_ttl": "30m", "allowed_extensions": "permit-pty", "default_extensions": {"permit-pty": ""}, "allow_user_key_ids": true}
+    JSON
+    printf 'path "ssh-client-signer/sign/factory-agent" {\n  capabilities = ["update"]\n}\n' | bao policy write factory-gateway-ssh -
+    bao auth list -format=json | grep -q '"kubernetes/"' || bao auth enable kubernetes
+    bao write auth/kubernetes/config kubernetes_host="https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT"
+    bao write auth/kubernetes/role/factory-gateway bound_service_account_names=factory-gateway \
+      bound_service_account_namespaces=factory token_policies=factory-gateway-ssh token_ttl=1h token_max_ttl=1h
+    SH
+
+The engine at `ssh-client-signer` holds an ed25519 CA; its public key is
+served unauthenticated at `/v1/ssh-client-signer/public_key`. Role
+`factory-agent` signs user certificates for principal `root` only, at
+most 30 minutes, extension `permit-pty` only. Kubernetes auth role
+`factory-gateway` admits the `factory-gateway` ServiceAccount in
+`factory` only (OpenBao reviews the token with its own ServiceAccount,
+bound to `system:auth-delegator` by the chart), and its policy
+`factory-gateway-ssh` may only sign with `factory-agent`: reading the
+role, other principals, longer TTLs and CA changes answer 400 or 403.
+All of it lives in the raft storage, so the snapshot carries it.
+
 ## Cilium stays outside Flux
 
 Cilium is the substrate Flux itself runs over, and its upgrades are
@@ -182,14 +218,20 @@ sibling). The tree already carries origin `sf-cluster-v4` and archive
    pinned; after any key change, PUT them again.
 7. OpenBao: throwaway init, ship the snapshot, `bao operator raft
    snapshot restore -force`, restart, unseal with the original key.
+   The snapshot carries the SSH CA (its signing key too) and the
+   gateway's Kubernetes auth; check with `bao read
+   ssh-client-signer/config/ca` and run "OpenBao SSH CA" below only if
+   it is missing (a new CA key needs nothing else: servers read it at
+   creation).
 8. Re-create what restores do not carry: the `factory` namespace
    secrets, `forgejo-pat` in `flux-system`, a fresh `factoryd-intake`
    token, `factoryd-webhook` from `FORGEJO_WEBHOOK_SECRET`, and a freshly
    minted `forgejo-ci-registrar` token (user `factory-ci`,
    `write:repository`, scoped to the code repository only) and a freshly
    minted `forgejo-ci-org-read` token (user `factory-ci`, scope
-   `read:organization` only, no repository), `gateway-tool-keys` from
-   `.env.tools` and a fresh `gateway-factoryd` token. PUT the Actions secret
+   `read:organization` only, no repository), `gateway-tool-keys` and
+   `hetzner-agent` from `.env.tools` and a fresh `gateway-factoryd`
+   token. PUT the Actions secret
    `REGISTRY_PASSWORD` (value `FORGEJO_CI_REGISTRY_PAT`) again if the
    `SECRET_KEY` changed. Check what the database restore should have
    brought back, and create it only if missing: the `gateway` role, the
