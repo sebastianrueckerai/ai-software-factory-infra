@@ -53,6 +53,11 @@ spec:
             api_key: os.environ/ALIBABA_CLOUD_KEY
             # opencode sends reasoning_effort, which dashscope rejects with a 400
             drop_params: true
+            # Qwen thinks by default and its thinking is not bounded by
+            # max_tokens (verified: max_tokens 60 gave 240 completion
+            # tokens), so factory-gateway's output clamp would not hold
+            extra_body:
+              enable_thinking: false
         - model_name: coding-frontier
           litellm_params:
             model: zai/glm-5.3
