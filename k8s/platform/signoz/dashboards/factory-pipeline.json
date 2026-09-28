@@ -94,6 +94,15 @@
               "width": 6,
               "x": 0,
               "y": 24
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/alerts"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 6,
+              "y": 24
             }
           ]
         }
@@ -1100,6 +1109,93 @@
                           "signal": "metrics",
                           "source": "",
                           "stepInterval": 0
+                        },
+                        "type": "builder_query"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "alerts": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "description": "factory.alert.count at the end of each week: every alerts row by kind (gate_bound, supervisor_trip, escalation, info_request, alert) and verdict (real, noise, open until one is set)",
+            "name": "Alerts per kind and verdict per week"
+          },
+          "links": [],
+          "plugin": {
+            "kind": "signoz/BarChartPanel",
+            "spec": {
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
+              },
+              "formatting": {
+                "decimalPrecision": "0",
+                "unit": "none"
+              },
+              "legend": {
+                "customColors": null,
+                "mode": "list",
+                "position": "bottom"
+              },
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "stackedBarChart": true,
+                "timePreference": "global_time"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "spec": {
+                          "aggregations": [
+                            {
+                              "metricName": "factory.alert.count",
+                              "reduceTo": "",
+                              "spaceAggregation": "sum",
+                              "temporality": "",
+                              "timeAggregation": "latest"
+                            }
+                          ],
+                          "disabled": false,
+                          "functions": null,
+                          "groupBy": [
+                            {
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string",
+                              "name": "kind",
+                              "signal": ""
+                            },
+                            {
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string",
+                              "name": "verdict",
+                              "signal": ""
+                            }
+                          ],
+                          "legend": "{{kind}} {{verdict}}",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 604800
                         },
                         "type": "builder_query"
                       }
