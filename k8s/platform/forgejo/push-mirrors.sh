@@ -38,4 +38,5 @@ for repo in ai-software-factory-code ai-software-factory-infra; do
   [ -z "$did" ] || log="$log $repo:$did;"
 done
 echo "push-mirrors:${log:- no change}"
+trap - EXIT
 exit "$failed"
