@@ -1,5 +1,5 @@
 # The bound on the cache: each main CI run moves tag `main` per image and
-# leaves the old cache's blobs untagged. A weekly restart runs the
+# leaves the old cache's blobs untagged. A daily restart runs the
 # registry's garbage-collect initContainer on the idle volume (Recreate:
 # the old pod is gone first), which deletes them.
 apiVersion: v1
@@ -25,8 +25,8 @@ apiVersion: batch/v1
 kind: CronJob
 metadata: {name: build-cache-gc, namespace: forgejo}
 spec:
-  # Sunday 03:30 UTC, after the 02:30 forgejo dump
-  schedule: "30 3 * * 0"
+  # 03:30 UTC, after the 02:30 forgejo dump
+  schedule: "30 3 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   jobTemplate:
@@ -38,7 +38,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: restart
-              image: alpine/kubectl:1.36.1
+              image: alpine/kubectl:1.36.1@sha256:c5b35e51aadf9eacc43cd301f519ae862a7f480a5b46d1b36b423d93c3b20abe
               securityContext:
                 runAsNonRoot: true
                 runAsUser: 1000
@@ -47,3 +47,6 @@ spec:
                 capabilities: {drop: [ALL]}
                 seccompProfile: {type: RuntimeDefault}
               command: [kubectl, -n, forgejo, rollout, restart, deployment/build-cache]
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {memory: 128Mi}

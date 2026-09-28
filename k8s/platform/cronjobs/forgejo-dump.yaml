@@ -34,7 +34,7 @@ spec:
           restartPolicy: Never
           initContainers:
             - name: dump
-              image: alpine/kubectl:1.36.1
+              image: alpine/kubectl:1.36.1@sha256:c5b35e51aadf9eacc43cd301f519ae862a7f480a5b46d1b36b423d93c3b20abe
               securityContext:
                 runAsNonRoot: true
                 runAsUser: 1000

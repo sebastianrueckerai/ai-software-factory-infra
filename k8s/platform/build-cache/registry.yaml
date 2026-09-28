@@ -32,7 +32,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       initContainers:
         # every start sweeps the blobs no tag reaches any more; gc.yaml
-        # restarts the pod weekly. An empty store has nothing to mark and
+        # restarts the pod daily. An empty store has nothing to mark and
         # would fail the collector.
         - name: garbage-collect
           image: registry:3@sha256:852b3e4d378c426dda6b318fe9d9bfe8e92a0eccb9926671ec3d3ea17a196696
@@ -41,6 +41,9 @@ spec:
             - >-
               [ ! -d /var/lib/registry/docker/registry/v2/repositories ] ||
               exec registry garbage-collect --delete-untagged /etc/distribution/config.yml
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 512Mi}
           env:
             - {name: REGISTRY_LOG_LEVEL, value: warn}
           securityContext: &restricted

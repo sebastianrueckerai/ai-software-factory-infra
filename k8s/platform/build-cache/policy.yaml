@@ -1,7 +1,8 @@
 # Who may use the cache, enforced by Cilium's L7 proxy: the trusted main
 # runner (namespace forgejo) reads and writes; the untrusted PR runner pods
 # (factoryd's CI namespaces, label factory.ai/ci=true) only GET and HEAD, so
-# a PUT, PATCH, POST or DELETE from them answers 403. Nothing else connects.
+# a PUT, PATCH, POST or DELETE from them answers 403. Nothing else connects,
+# and the registry itself connects nowhere.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata: {name: build-cache-ingress, namespace: forgejo}
@@ -24,3 +25,5 @@ spec:
             http:
               - method: GET
               - method: HEAD
+  egress:
+    - {}

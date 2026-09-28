@@ -124,13 +124,18 @@ it to its build VM, which never reaches the cache itself. No credential
 exists: the CiliumNetworkPolicy `build-cache-ingress` lets the
 `forgejo-runner` pods use any method and pods in namespaces labelled
 `factory.ai/ci=true` (factoryd's CI namespaces) only GET and HEAD, so a
-write from a PR job answers 403; nothing else connects. The API's DELETE
-is off.
+write from a PR job answers 403; nothing else connects, and the registry
+itself has no egress. The API's DELETE is off.
 
-Each main run moves the tags and orphans the old cache's blobs. The
-CronJob `build-cache-gc` restarts the registry every Sunday 03:30 UTC;
-its initContainer runs `registry garbage-collect --delete-untagged` on the
-idle volume (strategy Recreate) and deletes them.
+Each main run moves the tags and orphans the old cache's blobs: measured
+at about 100 to 200 MB per main run that changes code (2026-09-28: 1.94 ->
+2.15 GB over two runs, then 2.35 GB after a third; about 1.5 GB is the
+three live caches). The CronJob `build-cache-gc` restarts the registry
+daily at 03:30 UTC; its initContainer runs `registry garbage-collect
+--delete-untagged` on the idle volume (strategy Recreate) and deletes
+them, so the store holds the live caches plus one day's churn (a few GB
+on a busy day). local-path does not enforce the 20Gi; the node's disk is
+the hard limit.
 
 The cache is disposable and nothing restores it: after a rebuild it is
 empty, PR builds log "no cache" and build cold until the next main CI
