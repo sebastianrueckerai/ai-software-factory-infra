@@ -128,3 +128,7 @@ approvers: [sebastian]
 # command twice since ruling 167, so its bound is doubled.
 bounds:
   GateReproduction: 1800
+  # Temporary for the Task 67 final proof run (controller, reverted afterwards).
+  WaitChecks: 180
+supervisor:
+  no_write: 60
