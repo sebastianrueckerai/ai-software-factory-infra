@@ -5,41 +5,133 @@
   "tags": [],
   "spec": {
     "display": {
-      "name": "factory pipeline",
-      "description": "CI, build VMs, rolls and task gates from factoryd's OTel metrics. Applied by the signoz-dashboard CronJob from the infra repository; edits in the UI are overwritten."
+      "description": "CI, build VMs, rolls and task gates from factoryd's OTel metrics. Applied by the signoz-dashboard CronJob from the infra repository; edits in the UI are overwritten.",
+      "name": "factory pipeline"
     },
-    "variables": [],
+    "duration": "7d",
+    "layouts": [
+      {
+        "kind": "Grid",
+        "spec": {
+          "items": [
+            {
+              "content": {
+                "$ref": "#/spec/panels/ci-run-main"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/ci-run-pr"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 6,
+              "y": 0
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/ci-job"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 0,
+              "y": 6
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/ci-queue"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 6,
+              "y": 6
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/buildvm-time"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 0,
+              "y": 12
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/buildvm-cost"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 6,
+              "y": 12
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/roll"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 0,
+              "y": 18
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/gate-day"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 6,
+              "y": 18
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/open-gates"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 0,
+              "y": 24
+            }
+          ]
+        }
+      }
+    ],
+    "links": null,
     "panels": {
       "buildvm-cost": {
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "Build VM cost per day (EUR)",
-            "description": ""
+            "description": "",
+            "name": "Build VM cost per day (EUR)"
           },
+          "links": [],
           "plugin": {
             "kind": "signoz/BarChartPanel",
             "spec": {
-              "visualization": {
-                "timePreference": "global_time",
-                "fillSpans": false,
-                "stackedBarChart": true
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
               },
               "formatting": {
-                "unit": "EUR",
-                "decimalPrecision": "2"
-              },
-              "axes": {
-                "softMin": null,
-                "softMax": null,
-                "isLogScale": false
+                "decimalPrecision": "2",
+                "unit": "EUR"
               },
               "legend": {
-                "position": "bottom",
+                "customColors": null,
                 "mode": "list",
-                "customColors": null
+                "position": "bottom"
               },
-              "thresholds": []
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "stackedBarChart": true,
+                "timePreference": "global_time"
+              }
             }
           },
           "queries": [
@@ -51,80 +143,85 @@
                   "spec": {
                     "queries": [
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "A",
-                          "stepInterval": 86400,
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.ci.buildvm.cost",
+                              "reduceTo": "",
+                              "spaceAggregation": "sum",
                               "temporality": "",
-                              "timeAggregation": "increase",
-                              "spaceAggregation": "sum"
+                              "timeAggregation": "increase"
                             }
                           ],
                           "disabled": false,
+                          "functions": null,
                           "groupBy": [
                             {
-                              "name": "deleted_by",
-                              "signal": "",
                               "fieldContext": "attribute",
-                              "fieldDataType": "string"
+                              "fieldDataType": "string",
+                              "name": "deleted_by",
+                              "signal": ""
                             }
                           ],
-                          "legend": "{{deleted_by}}"
-                        }
+                          "legend": "{{deleted_by}}",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
                       }
                     ]
                   }
                 }
               }
             }
-          ],
-          "links": []
+          ]
         }
       },
       "buildvm-time": {
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "Build VM lifetime and ready time",
-            "description": ""
+            "description": "",
+            "name": "Build VM lifetime and ready time"
           },
+          "links": [],
           "plugin": {
             "kind": "signoz/TimeSeriesPanel",
             "spec": {
-              "visualization": {
-                "timePreference": "global_time",
-                "fillSpans": false
-              },
-              "formatting": {
-                "unit": "s",
-                "decimalPrecision": "2"
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
               },
               "chartAppearance": {
-                "lineInterpolation": "spline",
-                "showPoints": false,
-                "lineStyle": "solid",
                 "fillMode": "none",
+                "lineInterpolation": "spline",
+                "lineStyle": "solid",
+                "showPoints": false,
                 "spanGaps": {
-                  "fillOnlyBelow": false,
-                  "fillLessThan": ""
+                  "fillLessThan": "",
+                  "fillOnlyBelow": false
                 }
               },
-              "axes": {
-                "softMin": null,
-                "softMax": null,
-                "isLogScale": false
+              "formatting": {
+                "decimalPrecision": "2",
+                "unit": "s"
               },
               "legend": {
-                "position": "bottom",
+                "customColors": null,
                 "mode": "list",
-                "customColors": null
+                "position": "bottom"
               },
-              "thresholds": []
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "timePreference": "global_time"
+              }
             }
           },
           "queries": [
@@ -136,106 +233,134 @@
                   "spec": {
                     "queries": [
                       {
-                        "type": "builder_query",
                         "spec": {
+                          "aggregations": [
+                            {
+                              "metricName": "factory.ci.buildvm.lifetime",
+                              "reduceTo": "",
+                              "spaceAggregation": "p50",
+                              "temporality": "",
+                              "timeAggregation": ""
+                            }
+                          ],
+                          "disabled": false,
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "lifetime p50",
                           "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
                           "signal": "metrics",
                           "source": "",
+                          "stepInterval": 0
+                        },
+                        "type": "builder_query"
+                      },
+                      {
+                        "spec": {
                           "aggregations": [
                             {
                               "metricName": "factory.ci.buildvm.lifetime",
+                              "reduceTo": "",
+                              "spaceAggregation": "p95",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p50"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
-                          "legend": "lifetime p50"
-                        }
-                      },
-                      {
-                        "type": "builder_query",
-                        "spec": {
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "lifetime p95",
                           "name": "B",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
                           "signal": "metrics",
                           "source": "",
+                          "stepInterval": 0
+                        },
+                        "type": "builder_query"
+                      },
+                      {
+                        "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.ci.buildvm.lifetime",
+                              "metricName": "factory.ci.buildvm.ready",
+                              "reduceTo": "",
+                              "spaceAggregation": "p50",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p95"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
-                          "legend": "lifetime p95"
-                        }
-                      },
-                      {
-                        "type": "builder_query",
-                        "spec": {
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "ready p50",
                           "name": "C",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
                           "signal": "metrics",
                           "source": "",
-                          "aggregations": [
-                            {
-                              "metricName": "factory.ci.buildvm.ready",
-                              "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p50"
-                            }
-                          ],
-                          "disabled": false,
-                          "legend": "ready p50"
-                        }
+                          "stepInterval": 0
+                        },
+                        "type": "builder_query"
                       },
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "D",
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.ci.buildvm.ready",
+                              "reduceTo": "",
+                              "spaceAggregation": "p95",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p95"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
-                          "legend": "ready p95"
-                        }
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "ready p95",
+                          "name": "D",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 0
+                        },
+                        "type": "builder_query"
                       }
                     ]
                   }
                 }
               }
             }
-          ],
-          "links": []
+          ]
         }
       },
       "ci-job": {
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "CI job duration by job (p95)",
-            "description": ""
+            "description": "",
+            "name": "CI job duration by job (p95)"
           },
+          "links": [],
           "plugin": {
             "kind": "signoz/TablePanel",
             "spec": {
-              "visualization": {
-                "timePreference": "global_time"
-              },
               "formatting": {
                 "columnUnits": {
                   "A": "s"
                 },
                 "decimalPrecision": "2"
               },
-              "thresholds": []
+              "thresholds": [],
+              "visualization": {
+                "timePreference": "global_time"
+              }
             }
           },
           "queries": [
@@ -247,80 +372,85 @@
                   "spec": {
                     "queries": [
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "A",
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.ci.job.duration",
-                              "temporality": "",
-                              "timeAggregation": "",
+                              "reduceTo": "avg",
                               "spaceAggregation": "p95",
-                              "reduceTo": "avg"
+                              "temporality": "",
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
+                          "functions": null,
                           "groupBy": [
                             {
-                              "name": "job",
-                              "signal": "",
                               "fieldContext": "attribute",
-                              "fieldDataType": "string"
+                              "fieldDataType": "string",
+                              "name": "job",
+                              "signal": ""
                             }
                           ],
-                          "legend": "{{job}}"
-                        }
+                          "legend": "{{job}}",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 0
+                        },
+                        "type": "builder_query"
                       }
                     ]
                   }
                 }
               }
             }
-          ],
-          "links": []
+          ]
         }
       },
       "ci-queue": {
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "CI queue time by runner label (p95)",
-            "description": ""
+            "description": "",
+            "name": "CI queue time by runner label (p95)"
           },
+          "links": [],
           "plugin": {
             "kind": "signoz/TimeSeriesPanel",
             "spec": {
-              "visualization": {
-                "timePreference": "global_time",
-                "fillSpans": false
-              },
-              "formatting": {
-                "unit": "s",
-                "decimalPrecision": "2"
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
               },
               "chartAppearance": {
-                "lineInterpolation": "spline",
-                "showPoints": false,
-                "lineStyle": "solid",
                 "fillMode": "none",
+                "lineInterpolation": "spline",
+                "lineStyle": "solid",
+                "showPoints": false,
                 "spanGaps": {
-                  "fillOnlyBelow": false,
-                  "fillLessThan": ""
+                  "fillLessThan": "",
+                  "fillOnlyBelow": false
                 }
               },
-              "axes": {
-                "softMin": null,
-                "softMax": null,
-                "isLogScale": false
+              "formatting": {
+                "decimalPrecision": "2",
+                "unit": "s"
               },
               "legend": {
-                "position": "bottom",
+                "customColors": null,
                 "mode": "list",
-                "customColors": null
+                "position": "bottom"
               },
-              "thresholds": []
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "timePreference": "global_time"
+              }
             }
           },
           "queries": [
@@ -332,79 +462,85 @@
                   "spec": {
                     "queries": [
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "A",
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.ci.job.queue",
+                              "reduceTo": "",
+                              "spaceAggregation": "p95",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p95"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
+                          "functions": null,
                           "groupBy": [
                             {
-                              "name": "label",
-                              "signal": "",
                               "fieldContext": "attribute",
-                              "fieldDataType": "string"
+                              "fieldDataType": "string",
+                              "name": "label",
+                              "signal": ""
                             }
                           ],
-                          "legend": "{{label}}"
-                        }
+                          "legend": "{{label}}",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 0
+                        },
+                        "type": "builder_query"
                       }
                     ]
                   }
                 }
               }
             }
-          ],
-          "links": []
+          ]
         }
       },
       "ci-run-main": {
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "Main CI run duration per day",
-            "description": ""
+            "description": "",
+            "name": "Main CI run duration per day"
           },
+          "links": [],
           "plugin": {
             "kind": "signoz/TimeSeriesPanel",
             "spec": {
-              "visualization": {
-                "timePreference": "global_time",
-                "fillSpans": false
-              },
-              "formatting": {
-                "unit": "s",
-                "decimalPrecision": "2"
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
               },
               "chartAppearance": {
-                "lineInterpolation": "spline",
-                "showPoints": false,
-                "lineStyle": "solid",
                 "fillMode": "none",
+                "lineInterpolation": "spline",
+                "lineStyle": "solid",
+                "showPoints": false,
                 "spanGaps": {
-                  "fillOnlyBelow": false,
-                  "fillLessThan": ""
+                  "fillLessThan": "",
+                  "fillOnlyBelow": false
                 }
               },
-              "axes": {
-                "softMin": null,
-                "softMax": null,
-                "isLogScale": false
+              "formatting": {
+                "decimalPrecision": "2",
+                "unit": "s"
               },
               "legend": {
-                "position": "bottom",
+                "customColors": null,
                 "mode": "list",
-                "customColors": null
+                "position": "bottom"
               },
-              "thresholds": []
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "timePreference": "global_time"
+              }
             }
           },
           "queries": [
@@ -416,97 +552,109 @@
                   "spec": {
                     "queries": [
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "A",
-                          "stepInterval": 86400,
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.ci.run.duration",
+                              "reduceTo": "",
+                              "spaceAggregation": "p50",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p50"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
                           "filter": {
                             "expression": "event = 'push'"
                           },
-                          "legend": "p50 main"
-                        }
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "p50 main",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
                       },
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "B",
-                          "stepInterval": 86400,
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.ci.run.duration",
+                              "reduceTo": "",
+                              "spaceAggregation": "p95",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p95"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
                           "filter": {
                             "expression": "event = 'push'"
                           },
-                          "legend": "p95 main"
-                        }
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "p95 main",
+                          "name": "B",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
                       }
                     ]
                   }
                 }
               }
             }
-          ],
-          "links": []
+          ]
         }
       },
       "ci-run-pr": {
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "PR checks duration per day",
-            "description": ""
+            "description": "",
+            "name": "PR checks duration per day"
           },
+          "links": [],
           "plugin": {
             "kind": "signoz/TimeSeriesPanel",
             "spec": {
-              "visualization": {
-                "timePreference": "global_time",
-                "fillSpans": false
-              },
-              "formatting": {
-                "unit": "s",
-                "decimalPrecision": "2"
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
               },
               "chartAppearance": {
-                "lineInterpolation": "spline",
-                "showPoints": false,
-                "lineStyle": "solid",
                 "fillMode": "none",
+                "lineInterpolation": "spline",
+                "lineStyle": "solid",
+                "showPoints": false,
                 "spanGaps": {
-                  "fillOnlyBelow": false,
-                  "fillLessThan": ""
+                  "fillLessThan": "",
+                  "fillOnlyBelow": false
                 }
               },
-              "axes": {
-                "softMin": null,
-                "softMax": null,
-                "isLogScale": false
+              "formatting": {
+                "decimalPrecision": "2",
+                "unit": "s"
               },
               "legend": {
-                "position": "bottom",
+                "customColors": null,
                 "mode": "list",
-                "customColors": null
+                "position": "bottom"
               },
-              "thresholds": []
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "timePreference": "global_time"
+              }
             }
           },
           "queries": [
@@ -518,97 +666,109 @@
                   "spec": {
                     "queries": [
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "A",
-                          "stepInterval": 86400,
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.ci.run.duration",
+                              "reduceTo": "",
+                              "spaceAggregation": "p50",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p50"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
                           "filter": {
                             "expression": "event = 'pull_request'"
                           },
-                          "legend": "p50 PR"
-                        }
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "p50 PR",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
                       },
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "B",
-                          "stepInterval": 86400,
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.ci.run.duration",
+                              "reduceTo": "",
+                              "spaceAggregation": "p95",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p95"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
                           "filter": {
                             "expression": "event = 'pull_request'"
                           },
-                          "legend": "p95 PR"
-                        }
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "p95 PR",
+                          "name": "B",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
                       }
                     ]
                   }
                 }
               }
             }
-          ],
-          "links": []
+          ]
         }
       },
       "gate-day": {
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "Gate duration per day",
-            "description": ""
+            "description": "",
+            "name": "Gate duration per day"
           },
+          "links": [],
           "plugin": {
             "kind": "signoz/TimeSeriesPanel",
             "spec": {
-              "visualization": {
-                "timePreference": "global_time",
-                "fillSpans": false
-              },
-              "formatting": {
-                "unit": "s",
-                "decimalPrecision": "2"
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
               },
               "chartAppearance": {
-                "lineInterpolation": "spline",
-                "showPoints": false,
-                "lineStyle": "solid",
                 "fillMode": "none",
+                "lineInterpolation": "spline",
+                "lineStyle": "solid",
+                "showPoints": false,
                 "spanGaps": {
-                  "fillOnlyBelow": false,
-                  "fillLessThan": ""
+                  "fillLessThan": "",
+                  "fillOnlyBelow": false
                 }
               },
-              "axes": {
-                "softMin": null,
-                "softMax": null,
-                "isLogScale": false
+              "formatting": {
+                "decimalPrecision": "2",
+                "unit": "s"
               },
               "legend": {
-                "position": "bottom",
+                "customColors": null,
                 "mode": "list",
-                "customColors": null
+                "position": "bottom"
               },
-              "thresholds": []
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "timePreference": "global_time"
+              }
             }
           },
           "queries": [
@@ -620,144 +780,154 @@
                   "spec": {
                     "queries": [
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "A",
-                          "stepInterval": 86400,
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.task.gate.duration",
+                              "reduceTo": "",
+                              "spaceAggregation": "p50",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p50"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
+                          "functions": null,
                           "groupBy": [
                             {
-                              "name": "gate",
-                              "signal": "",
                               "fieldContext": "attribute",
-                              "fieldDataType": "string"
+                              "fieldDataType": "string",
+                              "name": "gate",
+                              "signal": ""
                             }
                           ],
-                          "legend": "p50 {{gate}}"
-                        }
+                          "legend": "p50 {{gate}}",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
                       },
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "B",
-                          "stepInterval": 86400,
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.task.gate.duration",
+                              "reduceTo": "",
+                              "spaceAggregation": "p95",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p95"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
+                          "functions": null,
                           "groupBy": [
                             {
-                              "name": "gate",
-                              "signal": "",
                               "fieldContext": "attribute",
-                              "fieldDataType": "string"
+                              "fieldDataType": "string",
+                              "name": "gate",
+                              "signal": ""
                             }
                           ],
-                          "legend": "p95 {{gate}}"
-                        }
+                          "legend": "p95 {{gate}}",
+                          "name": "B",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
                       }
                     ]
                   }
                 }
               }
             }
-          ],
-          "links": []
+          ]
         }
       },
       "open-gates": {
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "Open gates now (oldest running activity)",
-            "description": ""
+            "description": "",
+            "name": "Open gates now (oldest running activity)"
           },
+          "links": [],
           "plugin": {
             "kind": "signoz/TimeSeriesPanel",
             "spec": {
-              "visualization": {
-                "timePreference": "global_time",
-                "fillSpans": false
-              },
-              "formatting": {
-                "unit": "s",
-                "decimalPrecision": "2"
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
               },
               "chartAppearance": {
-                "lineInterpolation": "spline",
-                "showPoints": false,
-                "lineStyle": "solid",
                 "fillMode": "none",
+                "lineInterpolation": "spline",
+                "lineStyle": "solid",
+                "showPoints": false,
                 "spanGaps": {
-                  "fillOnlyBelow": false,
-                  "fillLessThan": ""
+                  "fillLessThan": "",
+                  "fillOnlyBelow": false
                 }
               },
-              "axes": {
-                "softMin": null,
-                "softMax": null,
-                "isLogScale": false
+              "formatting": {
+                "decimalPrecision": "2",
+                "unit": "s"
               },
               "legend": {
-                "position": "bottom",
+                "customColors": null,
                 "mode": "list",
-                "customColors": null
+                "position": "bottom"
               },
               "thresholds": [
                 {
-                  "value": 1200,
-                  "unit": "s",
                   "color": "Red",
-                  "label": "RunSession 20 min"
+                  "label": "RunSession 20 min",
+                  "unit": "s",
+                  "value": 1200
                 },
                 {
-                  "value": 900,
-                  "unit": "s",
                   "color": "Orange",
-                  "label": "GateReproduction 15 min"
+                  "label": "GateReproduction 15 min",
+                  "unit": "s",
+                  "value": 900
                 },
                 {
-                  "value": 600,
-                  "unit": "s",
                   "color": "Yellow",
-                  "label": "WaitChecks 10 min"
+                  "label": "WaitChecks 10 min",
+                  "unit": "s",
+                  "value": 600
                 },
                 {
-                  "value": 300,
-                  "unit": "s",
                   "color": "Blue",
-                  "label": "Merge 5 min"
+                  "label": "Merge 5 min",
+                  "unit": "s",
+                  "value": 300
                 },
                 {
-                  "value": 180,
-                  "unit": "s",
                   "color": "Purple",
-                  "label": "ModelReview 3 min"
+                  "label": "ModelReview 3 min",
+                  "unit": "s",
+                  "value": 180
                 },
                 {
-                  "value": 120,
-                  "unit": "s",
                   "color": "Green",
-                  "label": "every other activity 2 min"
+                  "label": "every other activity 2 min",
+                  "unit": "s",
+                  "value": 120
                 }
-              ]
+              ],
+              "visualization": {
+                "fillSpans": false,
+                "timePreference": "global_time"
+              }
             }
           },
           "queries": [
@@ -769,79 +939,85 @@
                   "spec": {
                     "queries": [
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "A",
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.activity.open_age",
+                              "reduceTo": "",
+                              "spaceAggregation": "max",
                               "temporality": "",
-                              "timeAggregation": "max",
-                              "spaceAggregation": "max"
+                              "timeAggregation": "max"
                             }
                           ],
                           "disabled": false,
+                          "functions": null,
                           "groupBy": [
                             {
-                              "name": "activity",
-                              "signal": "",
                               "fieldContext": "attribute",
-                              "fieldDataType": "string"
+                              "fieldDataType": "string",
+                              "name": "activity",
+                              "signal": ""
                             }
                           ],
-                          "legend": "{{activity}}"
-                        }
+                          "legend": "{{activity}}",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 0
+                        },
+                        "type": "builder_query"
                       }
                     ]
                   }
                 }
               }
             }
-          ],
-          "links": []
+          ]
         }
       },
       "roll": {
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "Roll-to-live: push to apply to ready",
-            "description": ""
+            "description": "",
+            "name": "Roll-to-live: push to apply to ready"
           },
+          "links": [],
           "plugin": {
             "kind": "signoz/TimeSeriesPanel",
             "spec": {
-              "visualization": {
-                "timePreference": "global_time",
-                "fillSpans": false
-              },
-              "formatting": {
-                "unit": "s",
-                "decimalPrecision": "2"
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
               },
               "chartAppearance": {
-                "lineInterpolation": "spline",
-                "showPoints": false,
-                "lineStyle": "solid",
                 "fillMode": "none",
+                "lineInterpolation": "spline",
+                "lineStyle": "solid",
+                "showPoints": false,
                 "spanGaps": {
-                  "fillOnlyBelow": false,
-                  "fillLessThan": ""
+                  "fillLessThan": "",
+                  "fillOnlyBelow": false
                 }
               },
-              "axes": {
-                "softMin": null,
-                "softMax": null,
-                "isLogScale": false
+              "formatting": {
+                "decimalPrecision": "2",
+                "unit": "s"
               },
               "legend": {
-                "position": "bottom",
+                "customColors": null,
                 "mode": "list",
-                "customColors": null
+                "position": "bottom"
               },
-              "thresholds": []
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "timePreference": "global_time"
+              }
             }
           },
           "queries": [
@@ -853,160 +1029,90 @@
                   "spec": {
                     "queries": [
                       {
-                        "type": "builder_query",
                         "spec": {
-                          "name": "A",
-                          "signal": "metrics",
-                          "source": "",
                           "aggregations": [
                             {
                               "metricName": "factory.roll.duration",
+                              "reduceTo": "",
+                              "spaceAggregation": "p50",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p50"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
-                          "legend": "push to live"
-                        }
-                      },
-                      {
-                        "type": "builder_query",
-                        "spec": {
-                          "name": "B",
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "push to live",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
                           "signal": "metrics",
                           "source": "",
+                          "stepInterval": 0
+                        },
+                        "type": "builder_query"
+                      },
+                      {
+                        "spec": {
                           "aggregations": [
                             {
                               "metricName": "factory.roll.apply",
+                              "reduceTo": "",
+                              "spaceAggregation": "p50",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p50"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
-                          "legend": "push to apply"
-                        }
-                      },
-                      {
-                        "type": "builder_query",
-                        "spec": {
-                          "name": "C",
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "push to apply",
+                          "name": "B",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
                           "signal": "metrics",
                           "source": "",
+                          "stepInterval": 0
+                        },
+                        "type": "builder_query"
+                      },
+                      {
+                        "spec": {
                           "aggregations": [
                             {
                               "metricName": "factory.roll.ready",
+                              "reduceTo": "",
+                              "spaceAggregation": "p50",
                               "temporality": "",
-                              "timeAggregation": "",
-                              "spaceAggregation": "p50"
+                              "timeAggregation": ""
                             }
                           ],
                           "disabled": false,
-                          "legend": "apply to ready"
-                        }
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "apply to ready",
+                          "name": "C",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 0
+                        },
+                        "type": "builder_query"
                       }
                     ]
                   }
                 }
               }
             }
-          ],
-          "links": []
-        }
-      }
-    },
-    "layouts": [
-      {
-        "kind": "Grid",
-        "spec": {
-          "items": [
-            {
-              "x": 0,
-              "y": 0,
-              "width": 6,
-              "height": 6,
-              "content": {
-                "$ref": "#/spec/panels/ci-run-main"
-              }
-            },
-            {
-              "x": 6,
-              "y": 0,
-              "width": 6,
-              "height": 6,
-              "content": {
-                "$ref": "#/spec/panels/ci-run-pr"
-              }
-            },
-            {
-              "x": 0,
-              "y": 6,
-              "width": 6,
-              "height": 6,
-              "content": {
-                "$ref": "#/spec/panels/ci-job"
-              }
-            },
-            {
-              "x": 6,
-              "y": 6,
-              "width": 6,
-              "height": 6,
-              "content": {
-                "$ref": "#/spec/panels/ci-queue"
-              }
-            },
-            {
-              "x": 0,
-              "y": 12,
-              "width": 6,
-              "height": 6,
-              "content": {
-                "$ref": "#/spec/panels/buildvm-time"
-              }
-            },
-            {
-              "x": 6,
-              "y": 12,
-              "width": 6,
-              "height": 6,
-              "content": {
-                "$ref": "#/spec/panels/buildvm-cost"
-              }
-            },
-            {
-              "x": 0,
-              "y": 18,
-              "width": 6,
-              "height": 6,
-              "content": {
-                "$ref": "#/spec/panels/roll"
-              }
-            },
-            {
-              "x": 6,
-              "y": 18,
-              "width": 6,
-              "height": 6,
-              "content": {
-                "$ref": "#/spec/panels/gate-day"
-              }
-            },
-            {
-              "x": 0,
-              "y": 24,
-              "width": 6,
-              "height": 6,
-              "content": {
-                "$ref": "#/spec/panels/open-gates"
-              }
-            }
           ]
         }
       }
-    ],
-    "duration": "7d",
-    "refreshInterval": "0s"
+    },
+    "refreshInterval": "0s",
+    "variables": []
   }
 }

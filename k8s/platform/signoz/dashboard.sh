@@ -2,7 +2,7 @@
 # shellcheck shell=busybox
 # Puts dashboards/factory-pipeline.json into SigNoz: SigNoz keeps dashboards
 # in its own database on a local-path volume, which a rebuild loses. The
-# file holds the spec as SigNoz v0.143.0 stores it, so an untouched
+# file holds the spec exactly as SigNoz v0.143.0 GET returns it, so an untouched
 # dashboard compares equal and is left alone.
 set -euo pipefail
 trap '[ $? = 0 ] || echo "signoz-dashboard: failed"' EXIT
