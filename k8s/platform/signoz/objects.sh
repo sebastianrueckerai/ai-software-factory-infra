@@ -100,8 +100,10 @@ done
 # query filters on it, the labels namespace and project are set, the value
 # is annotation value, and it notifies the channel factoryd. Only builder
 # queries and formulas are taken, and filters whose brackets and quotes
-# close within themselves, so none reaches past the bound. A refused rule
-# fails the run, and its namespace's rules stay as they are. The rule's
+# close within themselves, so none reaches past the bound, and one key per
+# alert name in a namespace. A refused rule is the project's to fix: the
+# run logs it and leaves its namespace's rules as they are, and does not
+# fail (the platform's Job failed alert is not a project's). The rule's
 # sha256 in annotation factory_rule_sha256 tells an unchanged rule,
 # whatever SigNoz adds to its stored form; a rule no ConfigMap holds any
 # more is deleted.
@@ -145,13 +147,18 @@ while read -r entry; do
   if ! rule=$(echo "$entry" | jq -c -f /tmp/bind.jq 2>/tmp/why); then
     say "project rule $where refused: $(tail -c 300 /tmp/why)"
     echo "$entry" | jq -r .ns >>/tmp/held
-    rc=1
     continue
   fi
   sha=$(printf '%s' "$rule" | sha256sum | cut -c1-64)
   echo "$rule" | jq -c --arg s "$sha" '.annotations.factory_rule_sha256 = $s' >/tmp/rule-new
   title=$(jq -r .alert /tmp/rule-new) ns=$(jq -r .labels.namespace /tmp/rule-new)
-  jq -c '{alert, ns: .labels.namespace}' /tmp/rule-new >>/tmp/wanted
+  key=$(jq -c '{alert, ns: .labels.namespace}' /tmp/rule-new)
+  if grep -qxF "$key" /tmp/wanted; then
+    say "project rule $where refused: another key in $ns names the alert '$title'"
+    echo "$ns" >>/tmp/held
+    continue
+  fi
+  echo "$key" >>/tmp/wanted
   jq -c --arg t "$title" --arg ns "$ns" '[.data.rules[] | select(.alert == $t and .labels.namespace == $ns and .labels.project != null)][0] // empty' /tmp/rules >/tmp/rule
   if [ ! -s /tmp/rule ]; then
     id=$(f -X POST "$base/api/v1/rules" -d @/tmp/rule-new | jq -er .data.id)

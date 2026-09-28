@@ -1124,8 +1124,8 @@
         "kind": "Panel",
         "spec": {
           "display": {
-            "description": "factory.alert.count at the end of each week: every alerts row by kind (gate_bound, supervisor_trip, escalation, info_request, alert) and verdict (real, noise, open until one is set)",
-            "name": "Alerts per kind and verdict per week"
+            "description": "factory.alert.count sampled at the end of each week: every alerts row ever, by kind (gate_bound, supervisor_trip, escalation, info_request, alert) and verdict (real, noise, open until one is set)",
+            "name": "Alerts per kind and verdict (total at each week's end)"
           },
           "links": [],
           "plugin": {

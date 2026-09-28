@@ -287,7 +287,10 @@ filter reaches past the bound. factoryd files a firing alert as a `bug`
 issue on the project's repository, found by the label `namespace`. The
 bound rule's sha256 in annotation `factory_rule_sha256` tells an
 unchanged rule; a rule no ConfigMap holds any more is deleted. A refused
-rule fails the run, and its namespace's rules stay as they are; edits
+rule (also a second key naming an alert already taken in the namespace)
+is logged and its namespace's rules stay as they are; the run does not
+fail on it, since the platform's `Job failed` alert is not the project's
+to answer. Edits
 made in the UI to a project's rule stay until its ConfigMap changes.
 SigNoz's links (`ruleSource`, the webhook's `generatorURL`) name
 `https://signoz.aisoftwarefactory.world` through
