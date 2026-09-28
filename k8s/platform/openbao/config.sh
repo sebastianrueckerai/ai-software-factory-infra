@@ -3,6 +3,7 @@
 # README). Idempotent. BAO_TOKEN set: run with it (the bootstrap's root
 # token); unset: log in as role openbao-config with the pod's token.
 set -eu
+trap '[ $? = 0 ] || echo "openbao-config: failed"' EXIT
 if [ -z "${BAO_TOKEN:-}" ]; then
   BAO_TOKEN=$(bao write -field=token auth/kubernetes/login role=openbao-config jwt=@/var/run/secrets/openbao/token)
   export BAO_TOKEN
@@ -19,7 +20,14 @@ if ! bao secrets list -format=json | grep -q '"ssh-client-signer/"'; then
   bao secrets enable -path=ssh-client-signer ssh >/dev/null
   changed="$changed sys/mounts/ssh-client-signer"
 fi
-if ! bao read ssh-client-signer/config/ca >/dev/null 2>&1; then
+# A second write to config/ca makes a new CA the default and locks every
+# running agent server out, so it runs only on the exact "no CA yet" answer.
+# The CronJob's policy only reads config/ca; the bootstrap generates it.
+if ! err=$(bao read ssh-client-signer/config/ca 2>&1 >/dev/null); then
+  case $err in
+    *"no default issuer currently configured"*) ;;
+    *) printf '%s\n' "$err" >&2; exit 1 ;;
+  esac
   bao write ssh-client-signer/config/ca generate_signing_key=true key_type=ssh-ed25519 >/dev/null
   changed="$changed ssh-client-signer/config/ca"
 fi

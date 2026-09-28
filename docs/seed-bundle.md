@@ -78,10 +78,12 @@ this bundle.
       exists.
 - [x] Console OAuth2 client — secret console-oauth (keys client_id,
       client_secret, session_key, namespace factory). Not a seed value:
-      the Forgejo OAuth2 app `factory-console` comes back with the
-      database restore, but its client secret cannot be read back;
-      regenerate it with `PATCH /api/v1/user/applications/oauth2/{id}`
-      (as sebastian) and take client_id and client_secret from the
-      answer; mint a fresh session_key with `openssl rand -hex 32`
-      (`scripts/seed-secrets.sh` fills in only a missing session_key). factoryd
-      refuses to boot without all three keys.
+      CronJob `console-oauth` in `forgejo` makes it from the Forgejo
+      OAuth2 app `factory-console` (regenerates its client secret, mints
+      the session_key) and restarts factoryd.
+- [x] GitHub push mirror token — secret github-mirror (key token,
+      namespace forgejo), value `GITHUB_MIRROR_PAT` in `.env.tools`: a
+      fine-grained GitHub token, the two repositories only, contents
+      read and write (ruling 144). `scripts/seed-secrets.sh` creates it,
+      or prints one line and skips it when the key is missing; CronJob
+      `push-mirrors` fails until it exists.

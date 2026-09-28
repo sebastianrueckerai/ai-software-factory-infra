@@ -21,7 +21,11 @@ F=forgejo
 k -n $F create secret generic forgejo-secret-key --from-literal=SECRET_KEY="$FORGEJO_SECRET_KEY"
 k -n $F create secret generic forgejo-admin-secret --from-literal=username=sebastian --from-literal=password="$FORGEJO_ADMIN_PASSWORD"
 k -n $F create secret generic forgejo-db-creds --from-literal=password="$SF_PG_FORGEJO_PASSWORD"
-k -n $F create secret generic github-mirror --from-literal=token="$GITHUB_MIRROR_PAT"
+if [ -n "${GITHUB_MIRROR_PAT:-}" ]; then
+  k -n $F create secret generic github-mirror --from-literal=token="$GITHUB_MIRROR_PAT"
+else
+  echo "github-mirror: skipped, GITHUB_MIRROR_PAT is not in .env.tools (CronJob push-mirrors waits for it)"
+fi
 k -n $F create secret generic hetzner-s3-creds --from-literal=access-key="$HETZNER_S3_ACCESS_KEY_ID" --from-literal=secret-key="$HETZNER_S3_SECRET_ACCESS_KEY"
 A=factory
 k -n $A create secret generic factory-db-creds --from-literal=username=gateway --from-literal=password="$SF_PG_GATEWAY_PASSWORD"

@@ -1,9 +1,11 @@
 #!/bin/sh
+# shellcheck shell=busybox
 # Forgejo push mirrors to GitHub (ruling 126): one healthy mirror per
 # repository. A mirror with a last_error (a rotated token shows up only
 # there: Forgejo never returns the stored password) is deleted and posted
 # again with the token from secret github-mirror.
-set -eu
+set -euo pipefail
+trap '[ $? = 0 ] || echo "push-mirrors: failed"' EXIT
 api=http://forgejo-http.forgejo.svc.cluster.local:3000/api/v1
 owner=sebastianrueckerai
 umask 077

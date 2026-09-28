@@ -160,12 +160,17 @@ every 10 minutes and logs one line, `openbao-config: wrote <paths>` or
 `openbao-config: no change`; a run while OpenBao is sealed fails and the
 next one succeeds. It logs in as Kubernetes auth role `openbao-config`
 (ServiceAccount `openbao-config` in `platform`, audience `openbao`), whose
-policy reaches only the paths the script writes: reads of `sys/auth` and
-`sys/mounts`, and read and write on `sys/policies/acl/factory-gateway-ssh`,
-`auth/kubernetes/config`, `auth/kubernetes/role/factory-gateway`,
-`ssh-client-signer/config/ca` and `ssh-client-signer/roles/factory-agent`.
-Everything else answers 403, including its own role and policy. The root
-token never enters the cluster:
+policy reaches only the paths the script writes: reads of `sys/auth`,
+`sys/mounts` and `ssh-client-signer/config/ca`, read and write on
+`ssh-client-signer/roles/factory-agent`, and read and write on
+`sys/policies/acl/factory-gateway-ssh`, `auth/kubernetes/config` and
+`auth/kubernetes/role/factory-gateway` with every parameter pinned by
+`allowed_parameters` to the value config.sh writes. Anything else answers
+403: another policy text, another ServiceAccount, audience or policy on
+the gateway role, another `kubernetes_host`, a new CA, its own role and
+policy. Unpinned, the identity could rewrite `factory-gateway-ssh` to
+`path "*"` and bind role `factory-gateway` to itself. The root token
+never enters the cluster:
 [scripts/openbao-config-bootstrap.sh](scripts/openbao-config-bootstrap.sh)
 runs config.sh in `openbao-0` with the root token and then writes role
 and policy `openbao-config`, the token passed over stdin and never
@@ -175,8 +180,12 @@ printed:
     BAO_TOKEN="$OPENBAO_ROOT_TOKEN" scripts/openbao-config-bootstrap.sh
 
 Run it once on a new OpenBao; after that the raft snapshot carries the
-role. Enabling the engine or the auth method needs the root token, so on
-an empty OpenBao only the bootstrap does it.
+role. The CronJob's policy only reads `sys/mounts`, `sys/auth` and
+`ssh-client-signer/config/ca`, so enabling the engine or the auth method,
+and generating the CA, is the bootstrap's job. config.sh generates a CA
+only on OpenBao's exact "no default issuer currently configured" answer
+and fails the run on any other read error: a second write to `config/ca`
+makes a new CA the default and locks out every running agent server.
 
 The engine at `ssh-client-signer` holds an ed25519 CA; its public key is
 served unauthenticated at `/v1/ssh-client-signer/public_key`. Role
@@ -203,9 +212,10 @@ its policy `factory-gateway-ssh` may only sign with `factory-agent`:
 reading the role, longer TTLs and CA changes answer 400 or 403. The
 role must carry `audience=openbao` whenever a gateway with that token
 runs: OpenBao refuses its login otherwise, and commissioning and signing
-fail. A change of the audience goes into config.sh in the same infra
-commit as the roll that changes the token, and is checked with one
-signing. OpenBao
+fail. A change of the audience goes into config.sh and into the pinned
+values of the bootstrap's policy in the same infra commit as the roll
+that changes the token; run the bootstrap once for the new policy, then
+check with one signing. OpenBao
 is reached over plain HTTP inside the cluster: Cilium's WireGuard
 encrypts pod traffic between nodes.
 All of it lives in the raft storage, so the snapshot carries it.
@@ -295,12 +305,15 @@ sibling). The tree already carries origin `sf-cluster-v4` and archive
    in `forgejo` finds `console-oauth` missing, regenerates the client
    secret of sebastian's OAuth app `factory-console` with `PATCH
    /api/v1/user/applications/oauth2/{id}` (or creates the app), mints a
-   `session_key`, writes the secret and restarts factoryd, which
-   crash-loops until then; `push-mirrors` in `forgejo` keeps one healthy
+   `session_key`, writes the secret and restarts factoryd, which cannot
+   start without it; `push-mirrors` in `forgejo` keeps one healthy
    push mirror to GitHub on both repositories (ruling 126, sync_on_commit,
    8 h interval) with the token from `github-mirror` (step 4's seed), and
-   recreates a mirror whose `last_error` is set, so a rotated token needs
-   only the secret updated; `signoz-dashboard` in `platform` writes
+   recreates a mirror whose `last_error` is set. A mirror is recreated
+   only once its sync fails, so after a token change revoke the old token
+   or delete both mirrors once (Settings -> Mirror Settings); the next run
+   posts them with the new token, and the Forgejo dump after that point
+   carries it; `signoz-dashboard` in `platform` writes
    dashboard `factory pipeline` from
    `k8s/platform/signoz/dashboards/factory-pipeline.json`, which SigNoz
    loses with its volume. `signoz-root` came with step 4's seed (`scripts/seed-secrets.sh`

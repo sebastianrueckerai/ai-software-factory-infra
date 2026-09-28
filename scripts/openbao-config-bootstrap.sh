@@ -10,14 +10,33 @@ set -euo pipefail
 script=$(cat "$(dirname "$0")/../k8s/platform/openbao/config.sh")
 script+=$(cat <<'SH'
 
-bao policy write openbao-config - >/dev/null <<'HCL'
+# Pinned to config.sh's exact values: with free parameters this identity
+# could rewrite factory-gateway-ssh to "path *" and bind role factory-gateway
+# to itself. A change to those values (a new audience, say) changes both files.
+bao policy write openbao-config - >/dev/null <<HCL
 path "sys/auth" { capabilities = ["read"] }
 path "sys/mounts" { capabilities = ["read"] }
-path "sys/policies/acl/factory-gateway-ssh" { capabilities = ["read", "create", "update"] }
-path "auth/kubernetes/config" { capabilities = ["read", "create", "update"] }
-path "auth/kubernetes/role/factory-gateway" { capabilities = ["read", "create", "update"] }
-path "ssh-client-signer/config/ca" { capabilities = ["read", "create", "update"] }
+path "ssh-client-signer/config/ca" { capabilities = ["read"] }
 path "ssh-client-signer/roles/factory-agent" { capabilities = ["read", "create", "update"] }
+path "sys/policies/acl/factory-gateway-ssh" {
+  capabilities = ["read", "create", "update"]
+  allowed_parameters = { "policy" = ["path \"ssh-client-signer/sign/factory-agent\" {\n  capabilities = [\"update\"]\n}\n"] }
+}
+path "auth/kubernetes/config" {
+  capabilities = ["read", "create", "update"]
+  allowed_parameters = { "kubernetes_host" = ["https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT"] }
+}
+path "auth/kubernetes/role/factory-gateway" {
+  capabilities = ["read", "create", "update"]
+  allowed_parameters = {
+    "bound_service_account_names" = ["factory-gateway"]
+    "bound_service_account_namespaces" = ["factory"]
+    "audience" = ["openbao"]
+    "token_policies" = ["factory-gateway-ssh"]
+    "token_ttl" = ["1h"]
+    "token_max_ttl" = ["1h"]
+  }
+}
 HCL
 bao write auth/kubernetes/role/openbao-config bound_service_account_names=openbao-config \
   bound_service_account_namespaces=platform audience=openbao token_policies=openbao-config \

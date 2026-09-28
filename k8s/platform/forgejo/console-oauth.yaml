@@ -2,7 +2,11 @@
 # step (console-oauth.sh). It runs where sebastian's credentials are and
 # writes into factory through the Role below: create on secrets (a create
 # cannot be bound to a name), get and update on console-oauth, and the
-# restart of factoryd, which reads the keys only at boot.
+# restart of factoryd, which reads the keys only at boot. These rights
+# reach further than they read (create on secrets can mint a token for any
+# ServiceAccount in factory while console-oauth is absent; patch on factoryd
+# can swap its image) but raise no ceiling: the pod already holds
+# sebastian's Forgejo admin password, which owns main and so Flux.
 apiVersion: v1
 kind: ServiceAccount
 metadata: {name: console-oauth, namespace: forgejo}

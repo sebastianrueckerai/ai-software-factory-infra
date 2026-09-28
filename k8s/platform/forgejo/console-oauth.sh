@@ -1,10 +1,12 @@
 #!/bin/sh
+# shellcheck shell=busybox
 # The console's Forgejo OAuth app (user sebastian) and secret
 # factory/console-oauth. Forgejo shows a client secret once, so a missing
 # secret, a missing key or a client_id that is not the app's means: create
 # the app or regenerate its secret, mint a fresh session_key, write the
 # secret, restart factoryd (it reads the keys at boot).
-set -eu
+set -euo pipefail
+trap '[ $? = 0 ] || echo "console-oauth: failed"' EXIT
 api=http://forgejo-http.forgejo.svc.cluster.local:3000/api/v1
 app_name=factory-console
 redirect=https://console.aisoftwarefactory.world/auth/callback
@@ -40,7 +42,11 @@ else
   printf '%s' "$manifest" | kubectl create -f - >/dev/null
 fi
 if [ -n "$(kubectl -n factory get deployment factoryd --ignore-not-found -o name)" ]; then
-  kubectl -n factory rollout restart deployment/factoryd >/dev/null
+  kubectl -n factory rollout restart deployment/factoryd >/dev/null || {
+    echo "console-oauth: $why, secret written, factoryd restart FAILED: restart it by hand (kubectl -n factory rollout restart deployment/factoryd)"
+    trap - EXIT
+    exit 1
+  }
   restarted="factoryd restarted"
 else
   restarted="factoryd not deployed yet"
