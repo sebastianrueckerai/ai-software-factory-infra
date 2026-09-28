@@ -3,3 +3,22 @@ kind: Kustomization
 resources:
 - gotk-components.yaml
 - gotk-sync.yaml
+# Multi-tenancy lockdown (ruling 157, Task 65 m9): a Kustomization without
+# serviceAccountName runs as the target namespace's default account, and
+# remote bases are refused. The factory's own Kustomizations name the
+# controller's account; project ones name `flux` in their namespace.
+# Patches here survive `flux bootstrap`, which rewrites only the gotk files.
+patches:
+- target: {kind: Deployment, name: kustomize-controller}
+  patch: |
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --no-remote-bases=true
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --default-service-account=default
+- target: {kind: Kustomization, name: flux-system}
+  patch: |
+    - op: add
+      path: /spec/serviceAccountName
+      value: kustomize-controller
