@@ -118,9 +118,3 @@ envelope_default:
 # release. Forgejo's approvals whitelist on main stays the merge authority,
 # so a merge approver must be on both.
 approvers: [sebastian]
-
-# Temporary for the Task 67 live proofs (controller, reverted afterwards).
-bounds:
-  WaitChecks: 180
-supervisor:
-  no_write: 60
