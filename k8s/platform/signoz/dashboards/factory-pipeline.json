@@ -1124,8 +1124,8 @@
         "kind": "Panel",
         "spec": {
           "display": {
-            "description": "factory.alert.count sampled at the end of each week: every alerts row ever, by kind (gate_bound, supervisor_trip, escalation, info_request, alert) and verdict (real, noise, open until one is set); the largest of the factoryd pods' reports, since each reports the whole table",
-            "name": "Alerts per kind and verdict (total at each week's end)"
+            "description": "factory.alert.count sampled at the end of each day: every alerts row ever, by kind (gate_bound, supervisor_trip, escalation, info_request, alert) and verdict (real, noise, open until one is set); the largest of the factoryd pods' reports, since each reports the whole table",
+            "name": "Alerts per kind and verdict (total at each day's end)"
           },
           "links": [],
           "plugin": {
@@ -1195,7 +1195,7 @@
                           "selectFields": null,
                           "signal": "metrics",
                           "source": "",
-                          "stepInterval": 604800
+                          "stepInterval": 86400
                         },
                         "type": "builder_query"
                       }
