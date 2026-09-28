@@ -43,7 +43,12 @@ per-task default and maximum budget, the per-day cap over all tasks
 class may use, each tool with per-task `max_requests` and `max_eur`), and
 `prices`, the tool prices no provider API reports (Firecrawl's EUR per
 credit, Replicate's EUR per second by hardware SKU and the SKU of each
-usable model, fal's megapixel bound), each with its source URL. A
+usable model, fal's megapixel bound), each with its source URL, and
+`risk`, the rules that classify an agent pull request by its changed
+paths (ordered globs to a class, most severe class wins; `forbidden`
+fails the task, `requires_approval` waits for a human before
+`factory-merge` merges; `migration: true` flags schema migrations for the
+human's review). A
 Replicate model runs only once it is listed under
 `prices.replicate.models`. Its `configMapGenerator` makes it ConfigMap
 `factory-policy` in namespace `factory` (stable name, no hash suffix),
@@ -62,6 +67,44 @@ stops all spend. Every activation is an append-only `policy_activations`
 row, so the history of what was in force when stays in Postgres. Reverting to earlier content makes that
 earlier version current again. `GET /policy` on factoryd shows the version
 in force.
+
+## The merge bot (ruling 109)
+
+An approved agent pull request is merged by factoryd's `Merge` activity as
+the dedicated Forgejo user `factory-merge`, never by the agent's bot.
+Forgejo enforces the human's part: `main` of `sf/ai-software-factory-code`
+carries exactly this protection (branch protection `main`, set through
+`PATCH /repos/sf/ai-software-factory-code/branch_protections/main`):
+
+| field | value |
+|---|---|
+| `enable_push`, `enable_push_whitelist` | true |
+| `push_whitelist_usernames` | `[sebastian]` |
+| `enable_merge_whitelist` | true |
+| `merge_whitelist_usernames` | `[sebastian, factory-merge]` |
+| `enable_approvals_whitelist` | true |
+| `approvals_whitelist_username` | `[sebastian]` |
+| `required_approvals` | 1 |
+| `apply_to_admins` | true |
+| `block_on_rejected_reviews` | true |
+| `dismiss_stale_approvals` | true |
+| `protected_file_patterns`, `unprotected_file_patterns` | empty |
+| `enable_status_check` | false |
+
+`factory-merge` (created with the admin API, `POST /admin/users`, a random
+password nobody keeps) is a `write` collaborator on the code repository
+and nowhere else; its one token, named `factory-merge`, is
+`write:repository` scoped to the code repository only (minted with admin
+basic auth and `?sudo=factory-merge`) and lives in secret
+`factory/forgejo-merge`, key `token`. Its merge is refused (405) until
+sebastian's APPROVED review is on the head, which the console submits
+through his own OAuth token; a new push dismisses the approval. Its push
+to `main` is refused (git: "Not allowed to push to protected branch main";
+contents API: 403). It cannot read the infra repository (404). A leaked
+token can merge only what sebastian already approved.
+
+On a rebuild the user, its collaboration and the protection come back
+with Forgejo's database; the token is minted fresh.
 
 ## Cilium stays outside Flux
 
@@ -130,9 +173,11 @@ sibling). The tree already carries origin `sf-cluster-v4` and archive
    the `factory-ci` user in org `sf`'s Owners team (Forgejo's repository
    runner API demands the owner; rulings 101 and 101a), the code
    repository's webhook to factoryd (task
-   42, all issue and pull-request events, JSON), and `main`'s branch
-   protection (push and merge whitelisted to sebastian only, applied to
-   admins too, one approval, no file patterns).
+   42, all issue and pull-request events, JSON), the `factory-merge` user
+   as a write collaborator on the code repository, and `main`'s branch
+   protection exactly as in "The merge bot" below. Mint `factory-merge` a
+   fresh token into `forgejo-merge` either way (the old one is not in any
+   restore).
    factoryd itself recreates, at boot, the issue labels (`agent`,
    `human`, `state/*`) and the bot's private fork
    `factory-agent/ai-software-factory-code` that agent PRs come from

@@ -52,6 +52,15 @@ this bundle.
       `read:organization` and no repository (Forgejo refuses that scope on
       a repository-limited token) before factoryd starts. factoryd's trust
       gate reads org `sf`'s teams, their repositories and members with it.
+- [x] Forgejo merge token (Task 55, ruling 109) — secret forgejo-merge
+      (key token, namespace factory). Not a seed value: the dedicated user
+      `factory-merge` (a write collaborator on the code repository, on
+      `main`'s merge whitelist and not its push whitelist) and `main`'s
+      protection come back with the database restore; mint it a fresh
+      `write:repository` token scoped to the code repository only (admin
+      basic auth with `?sudo=factory-merge`) before factoryd starts.
+      factoryd's `Merge` activity merges approved pull requests with it;
+      Forgejo refuses the merge without a whitelisted human's approval.
 - [x] Forgejo webhook secret (Task 42) — secret factoryd-webhook (key
       secret, namespace factory), value `FORGEJO_WEBHOOK_SECRET` in the
       seed env: the code repo's `POST /webhooks/forgejo` webhook lives

@@ -59,3 +59,25 @@ prices:
   fal:
     # an endpoint priced per megapixel is held at this many
     max_megapixels: 4
+
+# Risk rules over a pull request's changed paths (a rename counts both its
+# names). Each path takes the class of the first rule with a matching glob,
+# else default; the pull request takes the most severe class among its paths.
+# Globs are anchored at the repository root: "**" matches any number of whole
+# directories, "*" one name. classes: most severe first. outcome: forbidden
+# fails the task (its pull request is closed), requires_approval waits for a
+# human's approval before factory-merge merges. There is no outcome without a
+# human: the privileged main CI runs merged code (rulings 76, 77, 109).
+# migration: true lists the class's paths on the approval card and the pull
+# request as "schema migration: human review required".
+risk:
+  classes:
+    - {name: forbidden, outcome: forbidden}
+    - {name: migration, outcome: requires_approval, migration: true}
+    - {name: high, outcome: requires_approval}
+    - {name: normal, outcome: requires_approval}
+  rules:
+    - {class: forbidden, paths: [".forgejo/**", ".gitea/**", ".github/**"]}
+    - {class: migration, paths: ["internal/*/migrations/**", "internal/policy/schema.sql"]}
+    - {class: high, paths: ["k8s/**", "Dockerfile*", "go.mod", "go.sum"]}
+  default: normal
