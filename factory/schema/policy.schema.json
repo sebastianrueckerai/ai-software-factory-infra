@@ -355,6 +355,10 @@
           "AutoMergeNote",
           "RequestInfo",
           "CloseNotReproduced",
+          "Screen",
+          "JudgeScreening",
+          "RunReport",
+          "RollCommit",
           "default"
         ]
       }

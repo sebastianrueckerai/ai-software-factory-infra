@@ -60,6 +60,18 @@ classes:
       release_resource: {}
       ssh_certificate: {}
       resource_request_status: {}
+  # a report session (ruling 185): the screening of an outsider's issue on
+  # coding-frontier (ruling 191), the presort of an improvement; it reads
+  # and writes one comment, changes no code and commissions nothing. Its
+  # trips and half-way check-in call the supervisor model.
+  analyzer:
+    models: [coding-cheap, coding-frontier]
+    supervisor_model: supervisor
+    tools:
+      web_scrape: {max_requests: 30, max_eur: 0.20}
+      web_search: {max_requests: 30, max_eur: 0.20}
+      request_info: {}
+      escalate_to_human: {}
 
 # Tool prices no provider API reports (USD prices booked 1:1 as EUR, as
 # LiteLLM's are). fal's prices come from its pricing API per endpoint.

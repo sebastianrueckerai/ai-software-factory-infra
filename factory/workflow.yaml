@@ -4,10 +4,15 @@
 # keeps the model, the next takes the stronger rung, limits.sessions is
 # the round cap), human opens the card with them, fail fails the task.
 # enabled: false skips a stage (the timeline records it skipped). when:
-# outsider runs the stage only on issues by an outside account. policy,
-# approval and merge are required, merge last.
+# outsider runs the stage only on issues by an outside account (the
+# screening reads an outsider's issue before the coder, ruling 182).
+# max_returns: n caps a stage's own returns to the agent before the card
+# (ruling 190); none here, so the session cap decides. policy, approval
+# and merge are required, approval right before merge, merge last;
+# checks, policy, approval and merge always run; screening is first and
+# for a human only.
 stages:
-  - {name: screening, on_findings: human, enabled: false, when: outsider}
+  - {name: screening, on_findings: human, enabled: true, when: outsider}
   - {name: checks, on_findings: agent, enabled: true}
   - {name: policy, on_findings: fail, enabled: true}
   - {name: migration, on_findings: human, enabled: true}
