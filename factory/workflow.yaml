@@ -9,7 +9,7 @@
 stages:
   - {name: screening, on_findings: human, enabled: false, when: outsider}
   - {name: checks, on_findings: agent, enabled: true}
-  - {name: policy, on_findings: maybe, enabled: true}
+  - {name: policy, on_findings: fail, enabled: true}
   - {name: migration, on_findings: human, enabled: true}
   - {name: reproduction, on_findings: agent, enabled: true}
   - {name: review, on_findings: agent, enabled: true}
