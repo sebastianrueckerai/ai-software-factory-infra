@@ -23,6 +23,9 @@ spec:
     namespace: flux-system
   values:
     replicaCount: 1
+    resources:
+      requests: {memory: 256Mi}
+      limits: {memory: 2560Mi}
     persistence:
       enabled: true
       size: 10Gi

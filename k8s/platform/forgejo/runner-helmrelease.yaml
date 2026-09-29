@@ -19,11 +19,16 @@ spec:
       requests:
         cpu: 100m
         memory: 128Mi
+      limits:
+        memory: 512Mi
     dind:
+      # main CI's jobs and image builds run in dind's cgroup
       resources:
         requests:
           cpu: 500m
           memory: 1Gi
+        limits:
+          memory: 8Gi
       # a docker-prune sidecar keeps the build cache to a day's use and
       # images plus cache under maxGB: unpruned, dind filled its 40Gi
       # volume and got evicted

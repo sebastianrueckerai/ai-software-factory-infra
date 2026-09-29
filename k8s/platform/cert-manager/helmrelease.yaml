@@ -17,4 +17,15 @@ spec:
       sourceRef: {kind: HelmRepository, name: jetstack, namespace: flux-system}
   values:
     crds: {enabled: true}
+    resources:
+      requests: {memory: 64Mi}
+      limits: {memory: 128Mi}
+    cainjector:
+      resources:
+        requests: {memory: 64Mi}
+        limits: {memory: 128Mi}
+    webhook:
+      resources:
+        requests: {memory: 32Mi}
+        limits: {memory: 128Mi}
     config: {gatewayAPI: {enabled: true}}

@@ -11,6 +11,11 @@ spec:
   postgresql:
     parameters:
       max_connections: "200"
+  # The limit covers the configured worst case: shared_buffers 128 MiB plus
+  # 200 connections with a 4 MiB work_mem each and their backend overhead.
+  resources:
+    requests: {memory: 384Mi}
+    limits: {memory: 1536Mi}
   storage:
     storageClass: local-path
     size: 20Gi

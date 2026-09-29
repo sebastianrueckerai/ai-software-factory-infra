@@ -5,6 +5,10 @@ metadata:
   namespace: platform
 spec:
   retentionPolicy: 30d
+  instanceSidecarConfiguration:
+    resources:
+      requests: {memory: 64Mi}
+      limits: {memory: 512Mi}
   configuration:
     destinationPath: s3://aisoftwarefactory-backups/cnpg/sf-cluster
     endpointURL: https://fsn1.your-objectstorage.com
