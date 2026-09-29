@@ -158,3 +158,5 @@ approvers: [sebastian]
 # command twice since ruling 167, so its bound is doubled.
 bounds:
   GateReproduction: 1800
+  # ruling 194: a review-frontier review of a 100-line diff took 210 s
+  ModelReview: 360
