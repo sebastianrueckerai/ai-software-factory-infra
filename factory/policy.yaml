@@ -24,13 +24,17 @@ budget:
 # count). supervisor_calls: supervisor model calls per session; the next
 # trip escalates without one. supervisor_timeout: one supervisor or review
 # call, at most 15m. stronger_after: returns from the same stage that keep
-# the model; the next takes the stronger rung.
+# the model; the next takes the stronger rung. steps: model turns per agent
+# session (opencode's agent steps); at the cap opencode asks the model to
+# summarise and stop. 200 outlasts the agent time at 5 to 15 s a turn and
+# cuts only a fast endless loop; absent, factoryd takes 200.
 limits:
   sessions: 3
   agent_time: 20m
   supervisor_calls: 3
   supervisor_timeout: 6m
   stronger_after: 1
+  steps: 200
 
 # Capability classes a task can hold (tasks.required_capabilities; intake
 # gives agent tasks "coder"). models: the aliases the agent may call through

@@ -49,7 +49,8 @@ editing surface, the console shows it read-only.
   `agent_time`, the agent's working time across a task's sessions;
   `supervisor_calls` per session; `supervisor_timeout` per supervisor or
   review call, at most 15m; `stronger_after`, the returns from one stage
-  that keep the model); the capability classes (the model aliases and
+  that keep the model; `steps`, the model turns per agent session, 200
+  when absent); the capability classes (the model aliases and
   tools a task class may use: a paid tool with per-task `max_requests`
   and `max_eur`, a free one, `escalate_to_human` and the commissioning
   tools, as `{}`; a tool no class of the task lists is refused, ruling
@@ -104,7 +105,7 @@ the gateway enforces the new version from Postgres within 30 s more and
 names it in every audit row. A task pins the version its workflow
 started under: its session cap, agent time and stronger rung, and in
 every session, gate-supervisor call and model review the agent time,
-`supervisor_calls`, `supervisor_timeout` and the `no_write` detector
+`steps`, `supervisor_calls`, `supervisor_timeout` and the `no_write` detector
 come from that version, and so do the activity bounds of those three.
 Everything else is read from the version in force when used: the risk
 rules, the factoryd model aliases, what the gateway enforces (classes,
