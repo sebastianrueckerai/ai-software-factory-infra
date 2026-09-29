@@ -595,7 +595,8 @@ last five minutes before the nodes were replaced, see below).
    the membership, the token and the secret, key `token`; factoryd's
    roller reads main CI's images with it and cannot overwrite a tag,
    while the `forgejo-registry` pull secret serves image pulls only;
-   factoryd cannot boot without it), `gateway-tool-keys`,
+   factoryd cannot boot without it and reads it once at boot, so a
+   rotation is: delete the secret, rerun the script, restart factoryd), `gateway-tool-keys`,
    `hetzner-agent` and `hetzner-ci` from `.env.tools` and a fresh
    `gateway-factoryd` token. Three CronJobs (every 10 minutes, one log
    line per run, `no change` once converged) take the rest: `console-oauth`

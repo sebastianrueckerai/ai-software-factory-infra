@@ -161,7 +161,7 @@ for r in json.load(sys.stdin):
     fj -o /dev/null -w 'factory-registry-read user: %{http_code}\n' -X POST $FJ/admin/users \
       -d "{\"username\":\"factory-registry-read\",\"email\":\"factory-registry-read@factory.local\",\"password\":\"$(openssl rand -hex 24)\",\"must_change_password\":false,\"visibility\":\"private\"}"
   fi
-  RUNITS='{"name":"factory-registry-read","description":"factory-registry-read: the roller reads main CI images (read:package)","includes_all_repositories":false,"can_create_org_repo":false,"units":["repo.packages"],"units_map":{"repo.packages":"read"}}'
+  RUNITS='{"name":"factory-registry-read","description":"factory-registry-read: the roller reads main CI images (read:package)","includes_all_repositories":false,"can_create_org_repo":false,"permission":"read","units":["repo.packages"],"units_map":{"repo.packages":"read"}}'
   rtid=$(fj "$FJ/orgs/sf/teams?limit=50" | python3 -c 'import json,sys; print(next((str(t["id"]) for t in json.load(sys.stdin) if t["name"]=="factory-registry-read"), ""))')
   if [ -z "$rtid" ]; then
     rtid=$(fj -X POST "$FJ/orgs/sf/teams" -d "$RUNITS" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id", ""))' || true)
@@ -176,6 +176,12 @@ if units != {"repo.packages": "read"} or t.get("includes_all_repositories") or t
     sys.exit("team factory-registry-read: units %s, all repositories %s, permission %s: want repo.packages read only" % (units, t.get("includes_all_repositories"), t.get("permission")))
 print("team factory-registry-read units: repo.packages read")'
   fj -o /dev/null -w "team factory-registry-read member factory-registry-read: %{http_code}\n" -X PUT "$FJ/teams/$rtid/members/factory-registry-read"
+  fj "$FJ/teams/$rtid/members?limit=50" | python3 -c 'import json,sys
+logins = [u["login"] for u in json.load(sys.stdin)]
+for l in logins:
+    if l != "factory-registry-read": print("team factory-registry-read: other member %s (left alone)" % l)
+if "factory-registry-read" not in logins: sys.exit("team factory-registry-read: factory-registry-read is not a member")
+print("team factory-registry-read member: factory-registry-read")'
   fj "$FJ/teams/$rtid/repos?limit=50" | python3 -c 'import json,sys
 for r in json.load(sys.stdin): print("team factory-registry-read: repository %s (left alone; the team needs none)" % r["full_name"])'
   if kubectl -n $A get secret forgejo-registry-read >/dev/null 2>&1; then
