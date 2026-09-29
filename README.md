@@ -234,8 +234,8 @@ printed:
     set -a; . ~/repos/ai-software-factory/.env.seed; set +a
     BAO_TOKEN="$OPENBAO_ROOT_TOKEN" scripts/openbao-config-bootstrap.sh
 
-Run it once on a new OpenBao; after that the raft snapshot carries the
-role. The CronJob's policy only reads `sys/mounts`, `sys/auth` and
+Run it once on a new OpenBao (Rebuild step 7 has the fresh init); after
+that the raft snapshot carries the role. The CronJob's policy only reads `sys/mounts`, `sys/auth` and
 `ssh-client-signer/config/ca`, so enabling the engine or the auth method,
 and generating the CA, is the bootstrap's job. config.sh generates a CA
 only on OpenBao's exact "no default issuer currently configured" answer
@@ -520,6 +520,18 @@ last five minutes before the nodes were replaced, see below).
    If its login fails instead, run `scripts/openbao-config-bootstrap.sh`
    once ("OpenBao SSH CA" above). A new CA key needs nothing else:
    servers read it at creation.
+   Without a snapshot of the current seed (none taken at the close, or
+   one older than the tokens), start a fresh OpenBao instead (2026-09-29):
+   `kubectl -n platform exec openbao-0 -- bao operator init
+   -key-shares=1 -key-threshold=1 -format=json` into a mode-600 file;
+   write its unseal key and root token into `.env.seed` as
+   `OPENBAO_UNSEAL_KEY` and `OPENBAO_ROOT_TOKEN`, and keep the old pair
+   under other names for as long as a snapshot taken under it is kept
+   (it cannot be unsealed without them); shred the file; unseal with the
+   new key; run `scripts/openbao-config-bootstrap.sh` with the new root
+   token. It writes the engine, a new CA, both roles and both policies;
+   the next `openbao-config` run logs `no change`. OpenBao holds nothing
+   else, so the seed and the bootstrap are the whole restore.
 8. Re-create what restores do not carry: the `factory` namespace
    secrets, `forgejo-pat` in `flux-system`, a fresh `factoryd-intake`
    token, `factoryd-webhook` from `FORGEJO_WEBHOOK_SECRET`, and a freshly
