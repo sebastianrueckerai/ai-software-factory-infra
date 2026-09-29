@@ -42,16 +42,12 @@ spec:
           litellm_params:
             model: deepseek/deepseek-chat
             api_key: os.environ/DEEPSEEK_API_KEY
-        # Model tiers (ruling 181): every deployment measured by
-        # scripts/model-tiers on 2026-09-29 (task-77-report.md), weight by rank
-        # inside its tier: all passed 9 of 9 samples, so rank is p50 latency.
+        # Model tiers (rulings 181, 192): every deployment measured by
+        # scripts/model-tiers on 2026-09-29 (task-77-report.md). tier-high is
+        # each provider's strongest general coding model, no preview or small
+        # model, equal weights; tier-mid and tier-low weight by measured rank
+        # (all passed 9 of 9 samples, so rank is p50 latency).
         # The role aliases map onto tiers in router_settings.model_group_alias.
-        - model_name: tier-high
-          litellm_params:
-            model: groq/qwen/qwen3.8-27b
-            api_key: os.environ/GROQ_KEY
-            drop_params: true
-            weight: 5
         - model_name: tier-high
           litellm_params:
             model: dashscope/qwen3.8-max
@@ -62,24 +58,13 @@ spec:
             # 60 gave 240 completion tokens), so the gateway's output clamp would not hold
             extra_body:
               enable_thinking: false
-            weight: 4
+            weight: 1
         - model_name: tier-high
           litellm_params:
             model: deepseek/deepseek-v4-pro
             api_key: os.environ/DEEPSEEK_API_KEY
             drop_params: true
-            weight: 3
-        - model_name: tier-high
-          litellm_params:
-            model: dashscope/kimi-k2.7-code
-            api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-            api_key: os.environ/ALIBABA_CLOUD_KEY
-            drop_params: true
-            # thinking is not bounded by max_tokens (verified on Qwen: max_tokens
-            # 60 gave 240 completion tokens), so the gateway's output clamp would not hold
-            extra_body:
-              enable_thinking: false
-            weight: 2
+            weight: 1
         - model_name: tier-high
           litellm_params:
             model: zai/glm-5.3
@@ -170,7 +155,7 @@ spec:
         model_group_alias:
           supervisor: tier-high
           review-frontier: tier-high
-          coding-frontier: tier-mid
+          coding-frontier: tier-high
           coding-cheap: tier-low
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
