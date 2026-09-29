@@ -39,7 +39,7 @@ else
       f -X POST "$base/api/v2/users" -d @- | jq -er .data.id)
     say "viewer $VIEWER_EMAIL created ($uid)"
   fi
-  f -X POST "$base/api/v2/users/$uid/reset_password_tokens" | jq -c '{token: .data.token, password: $ENV.VIEWER_PASSWORD}' |
+  f "$base/api/v2/users/$uid/reset_password_tokens" | jq -c '{token: .data.token, password: $ENV.VIEWER_PASSWORD}' |
     f -X POST "$base/api/v2/factor_password/reset" -d @- >/dev/null
   viewer_login
   say "viewer $VIEWER_EMAIL password set"

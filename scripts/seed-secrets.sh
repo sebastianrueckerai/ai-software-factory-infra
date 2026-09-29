@@ -58,7 +58,8 @@ shared() { # <name> <key> <namespace>...: prints the value
   for n in "$@"; do
     v=$(kubectl -n "$n" get secret "$name" -o "jsonpath={.data.$key}" 2>/dev/null | base64 -d) && [ -n "$v" ] && break
   done
-  printf '%s' "${v:-$(openssl rand -hex 32)}"
+  # the suffix meets SigNoz's password rule (upper, lower, digit, symbol)
+  printf '%s' "${v:-$(openssl rand -hex 30)Aa1-}"
 }
 # SigNoz's webhook channel factoryd authenticates to factoryd with it; the signoz-objects job writes the channel.
 pw=$(shared signoz-webhook password $A $P)
