@@ -316,7 +316,7 @@
           "description": "VolumeMaxGB is the largest volume per server: 0 for none, else at least 10."
         }
       },
-      "description": "EnvelopeDefault is the resource envelope of a project whose file sets none.",
+      "description": "EnvelopeDefault is the resource envelope of a project whose file sets none, and the most any project file's envelope may set.",
       "required": [
         "monthly_eur",
         "server_types",
@@ -440,12 +440,19 @@
           "additionalProperties": false
         }
       },
-      "description": "ProjectDefault is what a project file leaves out takes; absent: DefaultProject.",
+      "description": "ProjectDefault is what a project file leaves out takes, and the most its quota and standing may set; absent: DefaultProject.",
       "required": [
         "quota",
         "standing"
       ],
       "additionalProperties": false
+    },
+    "link_hosts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "LinkHosts are the hosts, their subdomains with them, that links in agent-written text factoryd posts on Forgejo may point at; the Forgejo host and the project's environment hosts always may. Any other link is defanged (hxxps://evil[.]example)."
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",

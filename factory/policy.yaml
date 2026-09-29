@@ -133,7 +133,23 @@ risk:
   rules:
     - {class: forbidden, paths: [".forgejo/**", ".gitea/**", ".github/**"]}
     - {class: migration, paths: ["**/migrations/**", "internal/policy/schema.sql"]}
-    - {class: high, paths: ["k8s/**", "deploy/**", "**/Dockerfile*", "go.mod", "go.sum"]}
+    # the code repository's internal/policy/risk_test.go mirrors this block
+    # (TestInfraRiskIsTheCopy compares them with INFRA_FACTORY_DIR set)
+    # protected files: manifests and lockfiles of every common ecosystem,
+    # agent instruction files and CODEOWNERS at any depth, and every
+    # top-level dot directory or file (.forgejo, .gitea, .github stay
+    # forbidden above)
+    - class: high
+      paths: ["k8s/**", "deploy/**", "**/Dockerfile*",
+        "**/go.mod", "**/go.sum", "**/go.work", "**/go.work.sum",
+        "**/package.json", "**/package-lock.json", "**/npm-shrinkwrap.json", "**/yarn.lock", "**/pnpm-lock.yaml",
+        "**/Cargo.toml", "**/Cargo.lock",
+        "**/bun.lock", "**/bun.lockb",
+        "**/pyproject.toml", "**/requirements*.txt", "**/requirements/*.txt", "**/poetry.lock", "**/uv.lock", "**/Pipfile", "**/Pipfile.lock",
+        "**/Gemfile", "**/Gemfile.lock", "**/pom.xml", "**/build.gradle*", "**/settings.gradle*", "**/gradle.lockfile",
+        "**/*.csproj", "**/packages.lock.json", "**/Directory.Packages.props", "**/composer.json", "**/composer.lock",
+        "**/AGENTS.md", "**/CLAUDE.md", "**/opencode.json", "**/opencode.jsonc", "**/CODEOWNERS",
+        ".*/**"]
   default: normal
 
 # The standard resource envelope (architecture 5.5): a project's first
@@ -160,6 +176,13 @@ envelope_default:
 # release. Forgejo's approvals whitelist on main stays the merge authority,
 # so a merge approver must be on both.
 approvers: [sebastian]
+
+# Links in agent-written text factoryd posts on Forgejo (pull request body,
+# issue and pull request comments) may point at these hosts and their
+# subdomains; the Forgejo host and the project's environment hosts always
+# may. Any other link is defanged (hxxps://evil[.]example), and mentions
+# and closing keywords are neutralised either way.
+link_hosts: [aisoftwarefactory.world]
 
 # Activity bounds in seconds (ruling 140); the reproduction gate runs its
 # command twice since ruling 167, so its bound is doubled.

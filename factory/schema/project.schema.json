@@ -90,7 +90,7 @@
           "description": "Storage bounds the persistent volume claims' requests, such as 10Gi."
         }
       },
-      "description": "Quota is each namespace's ResourceQuota; absent: project_default's.",
+      "description": "Quota is each namespace's ResourceQuota; absent: project_default's. Stricter wins: bounded by policy.yaml's project_default.quota, each value at most the policy's; a looser file is rejected.",
       "required": [
         "cpu",
         "memory",
@@ -132,7 +132,7 @@
           "description": "VolumeMaxGB is the largest volume per server: 0 for none, else at least 10."
         }
       },
-      "description": "Envelope bounds what the project's tasks commission in the agent cloud project without a human; absent: envelope_default.",
+      "description": "Envelope bounds what the project's tasks commission in the agent cloud project without a human; absent: envelope_default. Stricter wins: bounded by policy.yaml's envelope_default, each number at most the policy's, each server type one it lists; a looser file is rejected.",
       "required": [
         "monthly_eur",
         "server_types",
@@ -161,7 +161,7 @@
           "description": "MaxCount is how many standing servers may exist at once."
         }
       },
-      "description": "Standing bounds the project's standing resources; absent: project_default's.",
+      "description": "Standing bounds the project's standing resources; absent: project_default's. Stricter wins: bounded by policy.yaml's project_default.standing, each number at most the policy's, each server type one it lists; a looser file is rejected.",
       "required": [
         "monthly_eur",
         "server_types",
