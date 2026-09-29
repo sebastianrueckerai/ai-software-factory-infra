@@ -40,9 +40,9 @@ limits:
   supervisor_timeout: 6m
   stronger_after: 1
   steps: 200
-  nudge_after: 3
+  nudge_after: 2
   nudges: 1
-  same_call: 4
+  same_call: 3
 
 # Capability classes a task can hold (tasks.required_capabilities; intake
 # gives agent tasks "coder"). models: the aliases the agent may call through
