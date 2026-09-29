@@ -67,7 +67,9 @@ editing surface, the console shows it read-only.
   value or an unlisted server type rejects the commit); and
   `approvers` (ruling 128), the Forgejo users who may authorize spend in
   the console; a merge approver must also be on main's approvals
-  whitelist. A Replicate model runs only once it is listed under
+  whitelist; `link_hosts`, the hosts (with their subdomains) links in
+  agent-written text factoryd posts on Forgejo may point at besides the
+  Forgejo host and the project's own hosts, any other link defanged. A Replicate model runs only once it is listed under
   `prices.replicate.models`.
 - `workflow.yaml`: the stages a task's work passes, in order (checks,
   screening, reproduction, policy, migration, review, approval, merge),

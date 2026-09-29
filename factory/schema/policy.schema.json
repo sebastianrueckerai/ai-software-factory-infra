@@ -436,6 +436,13 @@
         "standing"
       ],
       "additionalProperties": false
+    },
+    "link_hosts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "LinkHosts are the hosts, their subdomains with them, that links in agent-written text factoryd posts on Forgejo may point at; the Forgejo host and the project's environment hosts always may. Any other link is defanged (hxxps://evil[.]example)."
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",

@@ -166,6 +166,13 @@ envelope_default:
 # so a merge approver must be on both.
 approvers: [sebastian]
 
+# Links in agent-written text factoryd posts on Forgejo (pull request body,
+# issue and pull request comments) may point at these hosts and their
+# subdomains; the Forgejo host and the project's environment hosts always
+# may. Any other link is defanged (hxxps://evil[.]example), and mentions
+# and closing keywords are neutralised either way.
+link_hosts: [aisoftwarefactory.world]
+
 # Activity bounds in seconds (ruling 140); the reproduction gate runs its
 # command twice since ruling 167, so its bound is doubled.
 bounds:
