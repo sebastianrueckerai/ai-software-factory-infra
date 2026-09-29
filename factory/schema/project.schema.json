@@ -169,6 +169,13 @@
       ],
       "additionalProperties": false
     },
+    "egress": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Egress are the host names outside the cluster the project's namespaces may reach, on 443 only; absent: none. A factory project's only: its network policy is registration's."
+    },
     "tokens": {
       "type": "object",
       "properties": {

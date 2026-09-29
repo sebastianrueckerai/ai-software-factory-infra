@@ -383,6 +383,7 @@
           "JudgeScreening",
           "RunReport",
           "RollCommit",
+          "RerunChecks",
           "GateAudit",
           "default"
         ]
