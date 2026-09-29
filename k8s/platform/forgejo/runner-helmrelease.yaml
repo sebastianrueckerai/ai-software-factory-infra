@@ -20,7 +20,7 @@ spec:
         cpu: 100m
         memory: 128Mi
       limits:
-        memory: 512Mi
+        memory: 1536Mi
     dind:
       # main CI's jobs and image builds run in dind's cgroup
       resources:
