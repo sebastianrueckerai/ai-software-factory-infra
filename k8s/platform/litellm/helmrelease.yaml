@@ -79,6 +79,87 @@ spec:
             api_base: https://api.z.ai/api/paas/v4
             api_key: os.environ/Z_AI_KEY
             drop_params: true
+        # Task 77 measurement candidates (scripts/model-tiers): removed again
+        # when the tiers land
+        - model_name: cand-zai-glm-5.3
+          litellm_params:
+            model: zai/glm-5.3
+            api_base: https://api.z.ai/api/paas/v4
+            api_key: os.environ/Z_AI_KEY
+            drop_params: true
+        - model_name: cand-dashscope-qwen3.8-max
+          litellm_params:
+            model: dashscope/qwen3.8-max
+            api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+            api_key: os.environ/ALIBABA_CLOUD_KEY
+            drop_params: true
+            extra_body:
+              enable_thinking: false
+        - model_name: cand-dashscope-kimi-k2.7-code
+          litellm_params:
+            model: dashscope/kimi-k2.7-code
+            api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+            api_key: os.environ/ALIBABA_CLOUD_KEY
+            drop_params: true
+            extra_body:
+              enable_thinking: false
+        - model_name: cand-deepseek-v4-pro
+          litellm_params:
+            model: deepseek/deepseek-v4-pro
+            api_key: os.environ/DEEPSEEK_API_KEY
+        - model_name: cand-groq-qwen3.8-27b
+          litellm_params:
+            model: groq/qwen/qwen3.8-27b
+            api_key: os.environ/GROQ_KEY
+            drop_params: true
+        - model_name: cand-zai-glm-5
+          litellm_params:
+            model: zai/glm-5
+            api_base: https://api.z.ai/api/paas/v4
+            api_key: os.environ/Z_AI_KEY
+            drop_params: true
+        - model_name: cand-zai-glm-4.7
+          litellm_params:
+            model: zai/glm-4.7
+            api_base: https://api.z.ai/api/paas/v4
+            api_key: os.environ/Z_AI_KEY
+            drop_params: true
+        - model_name: cand-dashscope-qwen3.7-plus
+          litellm_params:
+            model: dashscope/qwen3.7-plus
+            api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+            api_key: os.environ/ALIBABA_CLOUD_KEY
+            drop_params: true
+            extra_body:
+              enable_thinking: false
+        - model_name: cand-groq-gpt-oss-120b
+          litellm_params:
+            model: groq/openai/gpt-oss-120b
+            api_key: os.environ/GROQ_KEY
+            drop_params: true
+        - model_name: cand-zai-glm-5.3-flash
+          litellm_params:
+            model: zai/glm-5.3-flash
+            api_base: https://api.z.ai/api/paas/v4
+            api_key: os.environ/Z_AI_KEY
+            drop_params: true
+        - model_name: cand-dashscope-qwen3.8-flash
+          litellm_params:
+            model: dashscope/qwen3.8-flash
+            api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+            api_key: os.environ/ALIBABA_CLOUD_KEY
+            drop_params: true
+            extra_body:
+              enable_thinking: false
+        - model_name: cand-deepseek-flash
+          litellm_params:
+            model: deepseek/deepseek-flash
+            api_key: os.environ/DEEPSEEK_API_KEY
+        - model_name: cand-groq-gpt-oss-20b
+          litellm_params:
+            model: groq/openai/gpt-oss-20b
+            api_key: os.environ/GROQ_KEY
+            drop_params: true
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
         # backstop behind factory-gateway's holds: refuse a call whose
@@ -92,6 +173,7 @@ spec:
       - litellm-deepseek
       - litellm-qwen
       - litellm-glm
+      - litellm-groq
     migrationJob:
       enabled: true
       hooks:
