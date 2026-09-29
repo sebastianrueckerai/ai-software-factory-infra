@@ -126,7 +126,19 @@ risk:
   rules:
     - {class: forbidden, paths: [".forgejo/**", ".gitea/**", ".github/**"]}
     - {class: migration, paths: ["**/migrations/**", "internal/policy/schema.sql"]}
-    - {class: high, paths: ["k8s/**", "deploy/**", "**/Dockerfile*", "go.mod", "go.sum"]}
+    # protected files: manifests and lockfiles of every common ecosystem,
+    # agent instruction files and CODEOWNERS at any depth, and every
+    # top-level dot directory or file (.forgejo, .gitea, .github stay
+    # forbidden above)
+    - class: high
+      paths: ["k8s/**", "deploy/**", "**/Dockerfile*",
+        "**/go.mod", "**/go.sum", "**/go.work", "**/go.work.sum",
+        "**/package.json", "**/package-lock.json", "**/npm-shrinkwrap.json", "**/yarn.lock", "**/pnpm-lock.yaml",
+        "**/Cargo.toml", "**/Cargo.lock",
+        "**/pyproject.toml", "**/requirements*.txt", "**/poetry.lock", "**/uv.lock",
+        "**/Gemfile", "**/Gemfile.lock", "**/pom.xml", "**/build.gradle*", "**/composer.json", "**/composer.lock",
+        "**/AGENTS.md", "**/CLAUDE.md", "**/opencode.json", "**/opencode.jsonc", "**/CODEOWNERS",
+        ".*/**"]
   default: normal
 
 # The standard resource envelope (architecture 5.5): a project's first
