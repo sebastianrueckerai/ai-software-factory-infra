@@ -62,7 +62,9 @@ editing surface, the console shows it read-only.
   before `factory-merge` merges; `migration: true` flags schema
   migrations for the human's review); `envelope_default`, the resource
   envelope of a project whose file sets none; `project_default`, the
-  quota and standing block of one that sets none; and
+  quota and standing block of one that sets none (both are also caps:
+  stricter wins, a project file may only tighten them, and a looser
+  value or an unlisted server type rejects the commit); and
   `approvers` (ruling 128), the Forgejo users who may authorize spend in
   the console; a merge approver must also be on main's approvals
   whitelist. A Replicate model runs only once it is listed under
