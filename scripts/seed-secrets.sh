@@ -150,6 +150,53 @@ for u in json.load(sys.stdin):
   fj "$FJ/teams/$tid/repos?limit=50" | python3 -c 'import json,sys
 for r in json.load(sys.stdin):
     if r["full_name"] != sys.argv[1]: print("team factory-issues-infra: other repository %s (left alone)" % r["full_name"])' "$IR"
+  # forgejo-registry-read (factory): the roller reads main CI's images with
+  # it (review-task75 m1). User factory-registry-read is a member of team
+  # factory-registry-read in org sf, whose one unit is repo.packages read on
+  # no repository (org sf is private: Forgejo 15 grants its packages to team
+  # members only, services/packages/perm.go); its token has the single scope
+  # read:package, so it can overwrite no tag. The forgejo-registry pull
+  # secret (a write:package PAT) serves image pulls only.
+  if [ "$(fj -o /dev/null -w '%{http_code}' $FJ/users/factory-registry-read)" != 200 ]; then
+    fj -o /dev/null -w 'factory-registry-read user: %{http_code}\n' -X POST $FJ/admin/users \
+      -d "{\"username\":\"factory-registry-read\",\"email\":\"factory-registry-read@factory.local\",\"password\":\"$(openssl rand -hex 24)\",\"must_change_password\":false,\"visibility\":\"private\"}"
+  fi
+  RUNITS='{"name":"factory-registry-read","description":"factory-registry-read: the roller reads main CI images (read:package)","includes_all_repositories":false,"can_create_org_repo":false,"permission":"read","units":["repo.packages"],"units_map":{"repo.packages":"read"}}'
+  rtid=$(fj "$FJ/orgs/sf/teams?limit=50" | python3 -c 'import json,sys; print(next((str(t["id"]) for t in json.load(sys.stdin) if t["name"]=="factory-registry-read"), ""))')
+  if [ -z "$rtid" ]; then
+    rtid=$(fj -X POST "$FJ/orgs/sf/teams" -d "$RUNITS" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id", ""))' || true)
+    [ -n "$rtid" ] || { echo "team factory-registry-read: create failed"; exit 1; }
+    echo "team factory-registry-read: created ($rtid)"
+  fi
+  fj -o /dev/null -w "team factory-registry-read units: %{http_code}\n" -X PATCH "$FJ/teams/$rtid" -d "$RUNITS"
+  fj "$FJ/teams/$rtid" | python3 -c 'import json,sys
+t = json.load(sys.stdin)
+units = {k: v for k, v in (t.get("units_map") or {}).items() if v != "none"}
+if units != {"repo.packages": "read"} or t.get("includes_all_repositories") or t.get("permission") not in ("none", "read"):
+    sys.exit("team factory-registry-read: units %s, all repositories %s, permission %s: want repo.packages read only" % (units, t.get("includes_all_repositories"), t.get("permission")))
+print("team factory-registry-read units: repo.packages read")'
+  fj -o /dev/null -w "team factory-registry-read member factory-registry-read: %{http_code}\n" -X PUT "$FJ/teams/$rtid/members/factory-registry-read"
+  fj "$FJ/teams/$rtid/members?limit=50" | python3 -c 'import json,sys
+logins = [u["login"] for u in json.load(sys.stdin)]
+for l in logins:
+    if l != "factory-registry-read": print("team factory-registry-read: other member %s (left alone)" % l)
+if "factory-registry-read" not in logins: sys.exit("team factory-registry-read: factory-registry-read is not a member")
+print("team factory-registry-read member: factory-registry-read")'
+  fj "$FJ/teams/$rtid/repos?limit=50" | python3 -c 'import json,sys
+for r in json.load(sys.stdin): print("team factory-registry-read: repository %s (left alone; the team needs none)" % r["full_name"])'
+  if kubectl -n $A get secret forgejo-registry-read >/dev/null 2>&1; then
+    echo "$A/forgejo-registry-read: exists"
+  else
+    for id in $(fj "$FJ/users/factory-registry-read/tokens?sudo=factory-registry-read" | python3 -c 'import json,sys; print(" ".join(str(t["id"]) for t in json.load(sys.stdin) if t["name"]=="factory-registry-read"))'); do
+      fj -o /dev/null -w "factory-registry-read revoke token $id: %{http_code}\n" -X DELETE "$FJ/users/factory-registry-read/tokens/$id?sudo=factory-registry-read"
+    done
+    tok=$(fj -X POST "$FJ/users/factory-registry-read/tokens?sudo=factory-registry-read" -d '{"name":"factory-registry-read","scopes":["read:package"]}' |
+      python3 -c 'import json,sys; sys.stdout.write(json.load(sys.stdin).get("sha1", ""))' || true)
+    [ -n "$tok" ] || { echo "$A/forgejo-registry-read: mint failed, no secret written"; exit 1; }
+    kubectl -n $A create secret generic forgejo-registry-read --from-literal=token="$tok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+    echo "$A/forgejo-registry-read: created (${#tok} chars)"
+    unset tok
+  fi
 fi
 # forgejo-pat (flux-system) is the Flux bootstrap PAT from ~/.git-credentials; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
 for n in $P $F $A; do echo "$n: $(kubectl -n "$n" get secret -o name | wc -l) secrets"; done
