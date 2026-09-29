@@ -108,8 +108,9 @@ else
     unset tok
   fi
   # The infra repository is a seed project (ruling 179, agents none): the
-  # seed owns its webhook to factoryd, so its issues reach the human lane,
-  # and its labels. factoryd only reports them. Idempotent: an existing hook to factoryd is left alone.
+  # seed owns its webhook to factoryd, so its issues reach the human lane;
+  # factoryd reports it. factoryd keeps the labels itself, as the bot,
+  # with the issues write of team factory-issues-infra below. Idempotent: an existing hook to factoryd is left alone.
   HOOK=http://factoryd.factory.svc.cluster.local:8080/webhooks/forgejo
   if fj "$FJ/repos/$IR/hooks" | python3 -c 'import json,sys; sys.exit(0 if any(h["config"]["url"]==sys.argv[1] for h in json.load(sys.stdin)) else 1)' "$HOOK"; then
     echo "$IR webhook to factoryd: exists"
@@ -120,10 +121,11 @@ else
       fj -o /dev/null -w "$IR webhook to factoryd: %{http_code}\n" -X POST "$FJ/repos/$IR/hooks" -d @-
   fi
   # Team factory-issues-infra in org sf: issues write, code read, on this
-  # repository only, member factory-agent. The bot sets the state labels on
-  # this repository's human-lane issues with it; code read and main's push
-  # whitelist (unchanged) keep it from pushing. Forgejo 15's units_map sets
-  # each unit's access on its own.
+  # repository only, member factory-agent. With it the bot creates this
+  # repository's labels and sets the state labels on its human-lane issues;
+  # code read and main's push whitelist (unchanged) keep it from pushing.
+  # Forgejo 15's units_map sets each unit's access on its own; every run
+  # sets the units again and reads them back.
   tid=$(fj "$FJ/orgs/sf/teams?limit=50" | python3 -c 'import json,sys; print(next((str(t["id"]) for t in json.load(sys.stdin) if t["name"]=="factory-issues-infra"), ""))')
   if [ -z "$tid" ]; then
     tid=$(fj -X POST "$FJ/orgs/sf/teams" -d '{"name":"factory-issues-infra","description":"factory-agent: issue labels on the infra repository (ruling 179)","includes_all_repositories":false,"can_create_org_repo":false,"units":["repo.code","repo.issues"],"units_map":{"repo.code":"read","repo.issues":"write"}}' |
@@ -131,17 +133,23 @@ else
     [ -n "$tid" ] || { echo "team factory-issues-infra: create failed"; exit 1; }
     echo "team factory-issues-infra: created ($tid)"
   fi
+  UNITS='{"name":"factory-issues-infra","includes_all_repositories":false,"can_create_org_repo":false,"units":["repo.code","repo.issues"],"units_map":{"repo.code":"read","repo.issues":"write"}}'
+  fj -o /dev/null -w "team factory-issues-infra units: %{http_code}\n" -X PATCH "$FJ/teams/$tid" -d "$UNITS"
+  fj "$FJ/teams/$tid" | python3 -c 'import json,sys
+t = json.load(sys.stdin)
+units = {k: v for k, v in (t.get("units_map") or {}).items() if v != "none"}
+if units != {"repo.code": "read", "repo.issues": "write"} or t.get("includes_all_repositories"):
+    sys.exit("team factory-issues-infra: units %s, all repositories %s: want repo.code read, repo.issues write, this repository only" % (units, t.get("includes_all_repositories")))
+print("team factory-issues-infra units: repo.code read, repo.issues write")'
   fj -o /dev/null -w "team factory-issues-infra repository $IR: %{http_code}\n" -X PUT "$FJ/teams/$tid/repos/$IR"
   fj -o /dev/null -w "team factory-issues-infra member factory-agent: %{http_code}\n" -X PUT "$FJ/teams/$tid/members/factory-agent"
-  have=$(fj "$FJ/repos/$IR/labels?limit=100" | python3 -c 'import json,sys; print(" ".join(l["name"] for l in json.load(sys.stdin)))')
-  # factoryd.BootLabels
-  for kv in agent=ededed human=c2e0c6 bug=cf222e improvement=0e8a16 state/suggested=c5def5 state/queued=ededed \
-    state/running=1f6feb state/waiting-human=d4a72c state/waiting-poster=fbca04 state/in-review=8250df state/done=2da44e \
-    state/failed=cf222e state/closed=6e7781 priority/p0=b60205 priority/p1=d93f0b priority/p2=fbca04 priority/p3=c5def5 \
-    severity/critical=b60205 severity/high=d93f0b severity/medium=fbca04 severity/low=c5def5; do
-    case " $have " in *" ${kv%%=*} "*) continue ;; esac
-    fj -o /dev/null -w "$IR label ${kv%%=*}: %{http_code}\n" -X POST "$FJ/repos/$IR/labels" -d "{\"name\":\"${kv%%=*}\",\"color\":\"#${kv#*=}\"}"
-  done
+  # anyone or anything else in the team is a human's doing: logged, left alone
+  fj "$FJ/teams/$tid/members?limit=50" | python3 -c 'import json,sys
+for u in json.load(sys.stdin):
+    if u["login"] != "factory-agent": print("team factory-issues-infra: other member %s (left alone)" % u["login"])'
+  fj "$FJ/teams/$tid/repos?limit=50" | python3 -c 'import json,sys
+for r in json.load(sys.stdin):
+    if r["full_name"] != sys.argv[1]: print("team factory-issues-infra: other repository %s (left alone)" % r["full_name"])' "$IR"
 fi
 # forgejo-pat (flux-system) is the Flux bootstrap PAT from ~/.git-credentials; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
 for n in $P $F $A; do echo "$n: $(kubectl -n "$n" get secret -o name | wc -l) secrets"; done

@@ -74,9 +74,9 @@ editing surface, the console shows it read-only.
 - `projects/<name>.yaml`: one file per project, the only place its
   settings live (rulings 146, 179, 183): repository, merge rule,
   `objects: factory | seed` (who makes the repository objects:
-  factoryd's registration, or this repository and the seed; factoryd only
-  keeps the labels and the bot's fork of a seed project and reports its
-  webhook and namespace labels), `agents: coder | none` (`none`: every
+  factoryd's registration, or this repository and the seed; of a seed
+  project factoryd keeps the labels and, for agents coder, the bot's fork,
+  and only reports its webhook and namespace labels), `agents: coder | none` (`none`: every
   issue and alert goes to the human lane, `POST /tasks` answers 422),
   notify, namespaces, environments, quota, secrets, `envelope` (the task
   block) and `standing`. A seed project names the seeded secrets
@@ -515,13 +515,14 @@ archive `sf-cluster-v8` since the Stage 8 close).
    answers, lets `factory-agent` read this repository to file the
    `config_rejected` issues, and PUTs this repository's Actions secrets
    `REGISTRY_USER` and `REGISTRY_PASSWORD` for the config check, and makes
-   this repository's webhook to factoryd (issue events, the intake secret)
-   and its boot labels, which a seed project's owner keeps: factoryd only
-   reports them; and the team `factory-issues-infra` in org `sf` (units
-   `repo.issues` write, `repo.code` read, this repository only, member
-   `factory-agent`): with it the bot sets the `state/*` labels on this
-   repository's human-lane issues; code read and `main`'s unchanged push
-   whitelist keep it from pushing), `gateway-tool-keys`,
+   this repository's webhook to factoryd (issue events, the intake secret;
+   factoryd reports it) and the team `factory-issues-infra` in org `sf`
+   (units `repo.issues` write, `repo.code` read, set again and read back on
+   every run, this repository only, member `factory-agent`; other members
+   or repositories are logged, not removed): with it factoryd, as the bot,
+   creates this repository's labels and sets the `state/*` labels on its
+   human-lane issues; code read and `main`'s unchanged push whitelist keep
+   it from pushing), `gateway-tool-keys`,
    `hetzner-agent` and `hetzner-ci` from `.env.tools` and a fresh
    `gateway-factoryd` token. Three CronJobs (every 10 minutes, one log
    line per run, `no change` once converged) take the rest: `console-oauth`

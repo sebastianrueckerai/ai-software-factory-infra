@@ -322,7 +322,7 @@
       "items": {
         "type": "string"
       },
-      "description": "Approvers are the Forgejo users who may authorize spend in the console (ruling 128): approve a resource request or a merge, edit an envelope, promote a resource. Empty: nobody."
+      "description": "Approvers are the Forgejo users who may authorize spend in the console (ruling 128): approve a resource request or a merge, promote a resource. Empty: nobody."
     },
     "bounds": {
       "type": "object",

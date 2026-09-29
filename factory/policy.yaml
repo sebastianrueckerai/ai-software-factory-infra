@@ -147,8 +147,8 @@ envelope_default:
   volume_max_gb: 20
 
 # Spend approvers (ruling 128): the Forgejo users who may authorize spend
-# in the console: approve a resource request or a merge, edit an envelope,
-# promote a resource. Other writers of the code repository see the cards
+# in the console: approve a resource request or a merge, promote a
+# resource (an envelope is its project file's). Other writers of the code repository see the cards
 # without those buttons and may still deny, request changes, reject and
 # release. Forgejo's approvals whitelist on main stays the merge authority,
 # so a merge approver must be on both.
