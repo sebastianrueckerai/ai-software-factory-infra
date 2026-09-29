@@ -427,9 +427,19 @@ to it, and from there run `talosctl -e <node private ip> -n <same> patch
 mc --mode=no-reboot --patch @patch.yaml` on each node, where the patch is a
 `NetworkRuleConfig` document named `api-from-home` with the new subnet
 under `ingress` (a strategic merge, so the old subnet may stay listed until
-the next full apply). Delete the server, its firewall and its key, and put
-the new subnet into the local `talos/controlplane-*.yaml` so a later
-`apply-config` keeps it.
+the next full apply). Delete the server, its firewall and its key.
+
+Trap (2026-09-29, it cost the cluster): `hcloud_server.node` takes its
+`user_data` from `talos/controlplane-*.yaml`, and Hetzner cannot change a
+server's user data, so any edit of those files makes the next `tofu apply`
+destroy and re-create the three nodes with empty disks. Never edit the
+Talos config files while the cluster runs, and never apply a plan that
+says anything other than "0 to add, 1 to change, 0 to destroy" for a
+firewall change: read the "must be replaced" lines. Keep the home subnet
+in the files equal to what the running nodes carry only through
+`talosctl apply-config`, or leave the files alone until the next rebuild
+and carry the subnet in `home_cidr` (`talos/README.md` regenerates the
+configs from it).
 
 ## Rebuild
 
@@ -444,8 +454,10 @@ Before a destroy that must keep Postgres state: a completed CNPG
 a Forgejo dump, `flux suspend kustomization --all`, and the two-line edit
 in `k8s/platform/cnpg/cluster.yaml` (recovery origin = the newest
 generation with a completed base backup, live archive = the next unused
-sibling). The tree carries the pair for the next rebuild (origin `sf-cluster-v7`,
-archive `sf-cluster-v8` since the Stage 8 close).
+sibling). The tree carries the pair for the next rebuild (origin `sf-cluster-v8`,
+archive `sf-cluster-v9` since the Stage 9 close; v8's base backup is
+20260929T074207 and its WAL archive runs to 17:52Z on 2026-09-29, the
+last five minutes before the nodes were replaced, see below).
 
 1. A destroy releases the primary IPs, so first
    `tofu apply -target=hcloud_primary_ip.node`, point the `git` DDNS
