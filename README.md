@@ -529,7 +529,15 @@ last five minutes before the nodes were replaced, see below).
    and break ruling 164's bound that a project's jobs land only on
    runners registered to its own repository. Actions secrets stay
    readable because the `SECRET_KEY` is pinned; after any key change,
-   PUT them again.
+   PUT them again. `runner-init` keys: `CONFIG_NAME=sf-runner`,
+   `CONFIG_INSTANCE=https://git.aisoftwarefactory.world`, `CONFIG_TOKEN`.
+   `flux bootstrap gitea --token-auth` takes a token in `GITEA_TOKEN`,
+   not a password, and no copy of the first one is kept
+   (`~/.git-credentials` holds sebastian's password): mint one, `POST
+   /api/v1/users/sebastian/tokens` with scopes `read:misc` and
+   `write:repository`, piped through `jq` into a mode-600 file. [flux
+   prints the value it was given in its "access token does not exist"
+   error: never hand it a password.]
 7. OpenBao: throwaway init, ship the snapshot, `bao operator raft
    snapshot restore -force`, restart, unseal with the original key. The
    unseal is the one hand step left: the unseal key is the root of
