@@ -197,6 +197,6 @@ link_hosts: [aisoftwarefactory.world]
 bounds:
   GateReproduction: 1800
   # ruling 194: a review-frontier review of a 100-line diff took 210 s
-  ModelReview: 2
+  ModelReview: 360
   # the audit's one call on coding-frontier, the review's sibling
   GateAudit: 360
