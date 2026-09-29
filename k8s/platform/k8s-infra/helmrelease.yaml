@@ -71,8 +71,11 @@ spec:
         otlp-http: {enabled: false, hostPort: null}
         metrics: {enabled: false, hostPort: null}
         health-check: {hostPort: null}
+      # The chart adds a SigNoz Cloud access-token header from an unset
+      # SIGNOZ_API_KEY; the self-hosted collector takes none.
       config:
         receivers: {otlp: null}
+        exporters: {otlphttp: {headers: null}}
         service:
           pipelines:
             traces: {receivers: []}
@@ -92,6 +95,8 @@ spec:
       podSecurityContext:
         runAsNonRoot: true
         runAsUser: 10001
+      config:
+        exporters: {otlphttp: {headers: null}}
       additionalEnvs:
         GOMEMLIMIT: 200MiB
       resources:
