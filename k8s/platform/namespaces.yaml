@@ -2,17 +2,30 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: platform
+  # Alerts on the factory route like a project's (ruling 180): the
+  # signoz-objects job binds the rules of a namespace's signoz-rules
+  # ConfigMap to it, factoryd files a firing one on the labelled project.
+  # factory/objects=seed: a seed project's namespace, which factoryd's
+  # admission policy keeps it out of (factory, platform, forgejo alike).
+  labels:
+    factory/project: ai-software-factory-infra
+    factory/objects: seed
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: factory
+  labels:
+    factory/project: ai-software-factory-code
+    factory/objects: seed
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: forgejo
   labels:
+    factory/project: ai-software-factory-infra
+    factory/objects: seed
     pod-security.kubernetes.io/enforce: privileged
 ---
 apiVersion: v1

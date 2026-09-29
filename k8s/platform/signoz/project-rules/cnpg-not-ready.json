@@ -1,0 +1,29 @@
+{
+  "alert": "CNPG instance not ready for 5 minutes",
+  "alertType": "METRIC_BASED_ALERT",
+  "description": "A Postgres instance of the CNPG cluster sf-cluster has had its postgres container not ready for all of the last 5 minutes (k8s-infra's k8s.container.ready per pod).",
+  "ruleType": "threshold_rule",
+  "schemaVersion": "v2alpha1",
+  "version": "v5",
+  "disabled": false,
+  "labels": {"severity": "critical", "service": "sf-cluster"},
+  "annotations": {"summary": "the instance's postgres container ready (1) or not (0)"},
+  "condition": {
+    "compositeQuery": {
+      "queryType": "builder",
+      "panelType": "graph",
+      "queries": [
+        {"type": "builder_query", "spec": {"name": "A", "signal": "metrics", "stepInterval": 60,
+          "aggregations": [{"metricName": "k8s.container.ready", "timeAggregation": "latest", "spaceAggregation": "min"}],
+          "groupBy": [{"name": "k8s.pod.name", "fieldContext": "resource", "fieldDataType": "string"}],
+          "filter": {"expression": "k8s.pod.name LIKE 'sf-cluster-%' AND k8s.container.name = 'postgres'"}}}
+      ]
+    },
+    "selectedQueryName": "A",
+    "thresholds": {"kind": "basic", "spec": [
+      {"name": "critical", "target": 1, "targetUnit": "", "recoveryTarget": null, "matchType": "2", "op": "2", "channels": []}
+    ]}
+  },
+  "evaluation": {"kind": "rolling", "spec": {"evalWindow": "5m", "frequency": "1m"}},
+  "notificationSettings": {"usePolicy": false}
+}

@@ -1,0 +1,34 @@
+{
+  "alert": "ClickHouse disk above 80 %",
+  "alertType": "METRIC_BASED_ALERT",
+  "description": "The disk holding ClickHouse's hot data was more than 80 % full on average over the last 10 minutes. The local-path volume is a host path, which the kubelet reports no volume stats for; on Talos it lies on /var, the same filesystem as the pod's ephemeral storage, whose capacity and available bytes (kubeletstats k8s.pod.filesystem.*) are that filesystem's. ClickHouse moves its oldest parts to S3 at 90 %.",
+  "ruleType": "threshold_rule",
+  "schemaVersion": "v2alpha1",
+  "version": "v5",
+  "disabled": false,
+  "labels": {"severity": "critical", "service": "clickhouse"},
+  "annotations": {"summary": "used share of the filesystem holding ClickHouse's data, in %"},
+  "condition": {
+    "compositeQuery": {
+      "queryType": "builder",
+      "panelType": "graph",
+      "queries": [
+        {"type": "builder_query", "spec": {"name": "A", "signal": "metrics", "stepInterval": 60,
+          "aggregations": [{"metricName": "k8s.pod.filesystem.available", "timeAggregation": "latest", "spaceAggregation": "min"}],
+          "groupBy": [{"name": "k8s.pod.name", "fieldContext": "resource", "fieldDataType": "string"}],
+          "filter": {"expression": "k8s.pod.name LIKE 'chi-signoz-clickhouse-%'"}}},
+        {"type": "builder_query", "spec": {"name": "B", "signal": "metrics", "stepInterval": 60,
+          "aggregations": [{"metricName": "k8s.pod.filesystem.capacity", "timeAggregation": "latest", "spaceAggregation": "max"}],
+          "groupBy": [{"name": "k8s.pod.name", "fieldContext": "resource", "fieldDataType": "string"}],
+          "filter": {"expression": "k8s.pod.name LIKE 'chi-signoz-clickhouse-%'"}}},
+        {"type": "builder_formula", "spec": {"name": "F1", "expression": "(B - A) * 100 / B"}}
+      ]
+    },
+    "selectedQueryName": "F1",
+    "thresholds": {"kind": "basic", "spec": [
+      {"name": "critical", "target": 80, "targetUnit": "", "recoveryTarget": null, "matchType": "3", "op": "1", "channels": []}
+    ]}
+  },
+  "evaluation": {"kind": "rolling", "spec": {"evalWindow": "10m", "frequency": "1m"}},
+  "notificationSettings": {"usePolicy": false}
+}

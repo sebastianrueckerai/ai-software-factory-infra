@@ -1,0 +1,32 @@
+{
+  "alert": "Forgejo 5xx rate above 5 %",
+  "alertType": "LOGS_BASED_ALERT",
+  "description": "More than 5 % of Forgejo's requests answered 5xx, on average over the last 5 minutes. Forgejo exports no traces; its router logs every finished request as 'router: completed <method> <path> for <peer>, <status> <text> in <time>'.",
+  "ruleType": "threshold_rule",
+  "schemaVersion": "v2alpha1",
+  "version": "v5",
+  "disabled": false,
+  "labels": {"severity": "critical", "service": "forgejo"},
+  "annotations": {"summary": "share of Forgejo's requests that answered 5xx, in %"},
+  "condition": {
+    "compositeQuery": {
+      "queryType": "builder",
+      "panelType": "graph",
+      "queries": [
+        {"type": "builder_query", "spec": {"name": "A", "signal": "logs", "stepInterval": 60,
+          "aggregations": [{"expression": "count()"}],
+          "filter": {"expression": "k8s.pod.name LIKE 'forgejo-%' AND body CONTAINS 'router: completed ' AND body REGEXP ', 5[0-9][0-9] [A-Z]'"}}},
+        {"type": "builder_query", "spec": {"name": "B", "signal": "logs", "stepInterval": 60,
+          "aggregations": [{"expression": "count()"}],
+          "filter": {"expression": "k8s.pod.name LIKE 'forgejo-%' AND body CONTAINS 'router: completed '"}}},
+        {"type": "builder_formula", "spec": {"name": "F1", "expression": "A * 100 / B"}}
+      ]
+    },
+    "selectedQueryName": "F1",
+    "thresholds": {"kind": "basic", "spec": [
+      {"name": "critical", "target": 5, "targetUnit": "", "recoveryTarget": null, "matchType": "3", "op": "1", "channels": []}
+    ]}
+  },
+  "evaluation": {"kind": "rolling", "spec": {"evalWindow": "5m", "frequency": "1m"}},
+  "notificationSettings": {"usePolicy": false}
+}

@@ -323,6 +323,17 @@ project's alert rules and the retention of traces, metrics and logs
 through SigNoz's TTL settings API. Edits made in the UI are overwritten
 on the next run.
 
+The factory's own namespaces are projects' too (ruling 180):
+`namespaces.yaml` labels `factory` for `ai-software-factory-code` (its
+rules in that repository's `k8s/alerts`) and `platform` and `forgejo` for
+`ai-software-factory-infra` (`signoz/project-rules`: ClickHouse disk above
+80 %, a CNPG instance not ready for 5 minutes, Forgejo's 5xx rate from its
+router log, and `Job failed` bound to each), each with
+`factory/objects: seed`, which keeps factoryd's admission policy out of
+them. The infra project is on agents none: its alerts file human-lane
+issues here; the label `noise` on such an issue when it is closed makes
+the alert noise, any other close by a writer real.
+
 A project's alert rules are project code (ruling 159): a ConfigMap in its
 deploy directory labelled `factory/signoz-rules: "true"`, one rule per
 key in SigNoz v0.143.0's `v2alpha1` shape. The job lists these
