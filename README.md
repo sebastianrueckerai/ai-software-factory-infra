@@ -509,14 +509,19 @@ archive `sf-cluster-v8` since the Stage 8 close).
    cannot boot without it), a freshly minted
    `forgejo-config` token (user `factory-config`, a read collaborator on
    this repository only, `read:repository` limited to it: factoryd reads
-   `factory/` with it and cannot boot without it; `scripts/seed-secrets.sh`
+   `factory/` with it and cannot boot without it, nor without a project
+   file listing its own namespace `factory` (`projects/ai-software-factory-code.yaml`); `scripts/seed-secrets.sh`
    makes the user, the collaborator, the token and the secret once Forgejo
    answers, lets `factory-agent` read this repository to file the
    `config_rejected` issues, and PUTs this repository's Actions secrets
    `REGISTRY_USER` and `REGISTRY_PASSWORD` for the config check, and makes
    this repository's webhook to factoryd (issue events, the intake secret)
    and its boot labels, which a seed project's owner keeps: factoryd only
-   reports them), `gateway-tool-keys`,
+   reports them; and the team `factory-issues-infra` in org `sf` (units
+   `repo.issues` write, `repo.code` read, this repository only, member
+   `factory-agent`): with it the bot sets the `state/*` labels on this
+   repository's human-lane issues; code read and `main`'s unchanged push
+   whitelist keep it from pushing), `gateway-tool-keys`,
    `hetzner-agent` and `hetzner-ci` from `.env.tools` and a fresh
    `gateway-factoryd` token. Three CronJobs (every 10 minutes, one log
    line per run, `no change` once converged) take the rest: `console-oauth`

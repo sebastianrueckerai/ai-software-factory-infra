@@ -109,8 +109,7 @@ else
   fi
   # The infra repository is a seed project (ruling 179, agents none): the
   # seed owns its webhook to factoryd, so its issues reach the human lane,
-  # and its labels, which factory-agent (read) cannot create. factoryd only
-  # reports them. Idempotent: an existing hook to factoryd is left alone.
+  # and its labels. factoryd only reports them. Idempotent: an existing hook to factoryd is left alone.
   HOOK=http://factoryd.factory.svc.cluster.local:8080/webhooks/forgejo
   if fj "$FJ/repos/$IR/hooks" | python3 -c 'import json,sys; sys.exit(0 if any(h["config"]["url"]==sys.argv[1] for h in json.load(sys.stdin)) else 1)' "$HOOK"; then
     echo "$IR webhook to factoryd: exists"
@@ -120,6 +119,20 @@ else
       "config":{"url":sys.argv[1],"content_type":"json","secret":os.environ["V"]}}))' "$HOOK" |
       fj -o /dev/null -w "$IR webhook to factoryd: %{http_code}\n" -X POST "$FJ/repos/$IR/hooks" -d @-
   fi
+  # Team factory-issues-infra in org sf: issues write, code read, on this
+  # repository only, member factory-agent. The bot sets the state labels on
+  # this repository's human-lane issues with it; code read and main's push
+  # whitelist (unchanged) keep it from pushing. Forgejo 15's units_map sets
+  # each unit's access on its own.
+  tid=$(fj "$FJ/orgs/sf/teams?limit=50" | python3 -c 'import json,sys; print(next((str(t["id"]) for t in json.load(sys.stdin) if t["name"]=="factory-issues-infra"), ""))')
+  if [ -z "$tid" ]; then
+    tid=$(fj -X POST "$FJ/orgs/sf/teams" -d '{"name":"factory-issues-infra","description":"factory-agent: issue labels on the infra repository (ruling 179)","includes_all_repositories":false,"can_create_org_repo":false,"units":["repo.code","repo.issues"],"units_map":{"repo.code":"read","repo.issues":"write"}}' |
+      python3 -c 'import json,sys; print(json.load(sys.stdin).get("id", ""))' || true)
+    [ -n "$tid" ] || { echo "team factory-issues-infra: create failed"; exit 1; }
+    echo "team factory-issues-infra: created ($tid)"
+  fi
+  fj -o /dev/null -w "team factory-issues-infra repository $IR: %{http_code}\n" -X PUT "$FJ/teams/$tid/repos/$IR"
+  fj -o /dev/null -w "team factory-issues-infra member factory-agent: %{http_code}\n" -X PUT "$FJ/teams/$tid/members/factory-agent"
   have=$(fj "$FJ/repos/$IR/labels?limit=100" | python3 -c 'import json,sys; print(" ".join(l["name"] for l in json.load(sys.stdin)))')
   # factoryd.BootLabels
   for kv in agent=ededed human=c2e0c6 bug=cf222e improvement=0e8a16 state/suggested=c5def5 state/queued=ededed \
