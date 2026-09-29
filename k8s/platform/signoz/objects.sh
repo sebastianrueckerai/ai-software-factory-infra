@@ -97,7 +97,9 @@ done
 # A project's rules (ruling 159): each key of a ConfigMap labelled
 # factory/signoz-rules=true in a namespace labelled factory/project is one
 # rule in SigNoz's v2alpha1 shape, bound to that namespace: every builder
-# query filters on it, the labels namespace and project are set, the value
+# query filters on it, as a resource attribute (spans, metrics, pod logs)
+# or a log attribute (the collector's Kubernetes events carry it only so;
+# the bare key resolves to the resource alone), the labels namespace and project are set, the value
 # is annotation value, and it notifies the channel factoryd. Only builder
 # queries and formulas are taken, and filters whose brackets and quotes
 # close within themselves, so none reaches past the bound, and one key per
@@ -133,7 +135,7 @@ def closed:
     | .labels = ((.labels // {}) + {namespace: $ns, project: $project})
     | .annotations = ({value: "{{$value}}"} + (.annotations // {}))
     | .condition.compositeQuery.queries |= map(if .type == "builder_query" then
-        .spec.filter.expression = ("k8s.namespace.name = '" + $ns + "'" +
+        .spec.filter.expression = ("(resource.k8s.namespace.name = '" + $ns + "' OR attribute.k8s.namespace.name = '" + $ns + "')" +
           (if (.spec.filter.expression // "") == "" then "" else " AND (" + .spec.filter.expression + ")" end))
       else . end)
     | .condition.thresholds.spec |= map(.channels = ["factoryd"])

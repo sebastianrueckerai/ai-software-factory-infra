@@ -340,7 +340,7 @@ key in SigNoz v0.143.0's `v2alpha1` shape. The job lists these
 ConfigMaps in the namespaces labelled `factory/project` (ClusterRole
 `signoz-objects`: list namespaces and ConfigMaps) and binds each rule to
 its namespace: every builder query's filter becomes
-`k8s.namespace.name = '<ns>' AND (<the rule's filter>)`, the labels
+`(resource.k8s.namespace.name = '<ns>' OR attribute.k8s.namespace.name = '<ns>') AND (<the rule's filter>)` (Kubernetes events carry the namespace as a log attribute only), the labels
 `namespace` and `project` are set from the namespace, annotation `value`
 carries `{{$value}}` unless the rule sets it, and every threshold
 notifies the channel `factoryd` (`usePolicy: false`). Only builder
