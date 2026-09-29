@@ -61,6 +61,16 @@
           "type": "integer",
           "description": "Steps caps one agent session's model turns (opencode's agent steps), at least 1: at the cap the harness asks the model to summarise and stop. Absent: DefaultSteps.",
           "minimum": 1
+        },
+        "nudge_after": {
+          "type": "integer",
+          "description": "NudgeAfter is how many identical tool calls in a row (same tool, same input) earn the running session a message to change approach, at least 2. Absent: DefaultNudgeAfter.",
+          "minimum": 2
+        },
+        "nudges": {
+          "type": "integer",
+          "description": "Nudges is how many such messages one repetition gets; the next run of the same call trips the supervisor, at least 1. Absent: DefaultNudges.",
+          "minimum": 1
         }
       },
       "description": "Limits bound every task's work: sessions, agent time, supervisor calls.",

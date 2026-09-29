@@ -27,7 +27,10 @@ budget:
 # the model; the next takes the stronger rung. steps: model turns per agent
 # session (opencode's agent steps); at the cap opencode asks the model to
 # summarise and stop. 200 outlasts the agent time at 5 to 15 s a turn and
-# cuts only a fast endless loop; absent, factoryd takes 200.
+# cuts only a fast endless loop; absent, factoryd takes 200. nudge_after:
+# identical tool calls in a row (same tool, same input) that get the running
+# session a message to change approach, nudges times per repetition; the
+# next such run trips same_call to the supervisor (absent: 3 and 1).
 limits:
   sessions: 3
   agent_time: 20m
@@ -35,6 +38,8 @@ limits:
   supervisor_timeout: 6m
   stronger_after: 1
   steps: 200
+  nudge_after: 3
+  nudges: 1
 
 # Capability classes a task can hold (tasks.required_capabilities; intake
 # gives agent tasks "coder"). models: the aliases the agent may call through
