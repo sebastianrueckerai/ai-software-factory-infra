@@ -5,7 +5,7 @@
   "tags": [],
   "spec": {
     "display": {
-      "description": "CI, build VMs, rolls and task gates from factoryd's OTel metrics. Applied by the signoz-dashboard CronJob from the infra repository; edits in the UI are overwritten.",
+      "description": "CI, build VMs, rolls, task gates and task analytics from factoryd's OTel metrics. Applied by the signoz-dashboard CronJob from the infra repository; edits in the UI are overwritten.",
       "name": "factory pipeline"
     },
     "duration": "7d",
@@ -103,6 +103,42 @@
               "width": 6,
               "x": 6,
               "y": 24
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/task-outcomes"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 0,
+              "y": 30
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/task-cost"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 6,
+              "y": 30
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/review-verdicts"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 0,
+              "y": 36
+            },
+            {
+              "content": {
+                "$ref": "#/spec/panels/interventions"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 6,
+              "y": 36
             }
           ]
         }
@@ -1189,6 +1225,408 @@
                             }
                           ],
                           "legend": "{{kind}} {{verdict}}",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "task-outcomes": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "description": "factory.task.outcome: tasks finished that day by final state (done, failed, closed), counted at Finish; reverted: factory.task.reverted, the merged agent tasks the daily revert pass marked that day (a revert of their pull request or their alert filed again, within 14 days), a share of earlier done tasks drawn on the same stack because SigNoz draws no line on a bar panel. Each factoryd pod counts its own tasks, so the pods are summed.",
+            "name": "Tasks per outcome per day, and reverts"
+          },
+          "links": [],
+          "plugin": {
+            "kind": "signoz/BarChartPanel",
+            "spec": {
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
+              },
+              "formatting": {
+                "decimalPrecision": "0",
+                "unit": "none"
+              },
+              "legend": {
+                "customColors": null,
+                "mode": "list",
+                "position": "bottom"
+              },
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "stackedBarChart": true,
+                "timePreference": "global_time"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "spec": {
+                          "aggregations": [
+                            {
+                              "metricName": "factory.task.outcome",
+                              "reduceTo": "",
+                              "spaceAggregation": "sum",
+                              "temporality": "",
+                              "timeAggregation": "increase"
+                            }
+                          ],
+                          "disabled": false,
+                          "functions": null,
+                          "groupBy": [
+                            {
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string",
+                              "name": "state",
+                              "signal": ""
+                            }
+                          ],
+                          "legend": "{{state}}",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
+                      },
+                      {
+                        "spec": {
+                          "aggregations": [
+                            {
+                              "metricName": "factory.task.reverted",
+                              "reduceTo": "",
+                              "spaceAggregation": "sum",
+                              "temporality": "",
+                              "timeAggregation": "increase"
+                            }
+                          ],
+                          "disabled": false,
+                          "functions": null,
+                          "groupBy": null,
+                          "legend": "reverted",
+                          "name": "B",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "task-cost": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "description": "factory.task.cost of the tasks that finished with their pull request merged, by the alias of the task's last session (none: a roll, which runs no session), p50 and p95 per day from the histogram buckets 0.01 to 10 EUR; the spend booked by Finish, not LiteLLM's later settlement.",
+            "name": "Cost per merged pull request per alias (EUR)"
+          },
+          "links": [],
+          "plugin": {
+            "kind": "signoz/TimeSeriesPanel",
+            "spec": {
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
+              },
+              "chartAppearance": {
+                "fillMode": "none",
+                "lineInterpolation": "spline",
+                "lineStyle": "solid",
+                "showPoints": false,
+                "spanGaps": {
+                  "fillLessThan": "",
+                  "fillOnlyBelow": false
+                }
+              },
+              "formatting": {
+                "decimalPrecision": "2",
+                "unit": "EUR"
+              },
+              "legend": {
+                "customColors": null,
+                "mode": "list",
+                "position": "bottom"
+              },
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "timePreference": "global_time"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "spec": {
+                          "aggregations": [
+                            {
+                              "metricName": "factory.task.cost",
+                              "reduceTo": "",
+                              "spaceAggregation": "p50",
+                              "temporality": "",
+                              "timeAggregation": ""
+                            }
+                          ],
+                          "disabled": false,
+                          "filter": {
+                            "expression": "outcome = 'merged'"
+                          },
+                          "functions": null,
+                          "groupBy": [
+                            {
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string",
+                              "name": "model_alias",
+                              "signal": ""
+                            }
+                          ],
+                          "legend": "p50 {{model_alias}}",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
+                      },
+                      {
+                        "spec": {
+                          "aggregations": [
+                            {
+                              "metricName": "factory.task.cost",
+                              "reduceTo": "",
+                              "spaceAggregation": "p95",
+                              "temporality": "",
+                              "timeAggregation": ""
+                            }
+                          ],
+                          "disabled": false,
+                          "filter": {
+                            "expression": "outcome = 'merged'"
+                          },
+                          "functions": null,
+                          "groupBy": [
+                            {
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string",
+                              "name": "model_alias",
+                              "signal": ""
+                            }
+                          ],
+                          "legend": "p95 {{model_alias}}",
+                          "name": "B",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "review-verdicts": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "description": "factory.review.verdict: every model review answer by its round on the task and its verdict (approve, concerns, none for a refused, failed or invalid answer), summed over the factoryd pods.",
+            "name": "Model review verdicts per round per day"
+          },
+          "links": [],
+          "plugin": {
+            "kind": "signoz/BarChartPanel",
+            "spec": {
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
+              },
+              "formatting": {
+                "decimalPrecision": "0",
+                "unit": "none"
+              },
+              "legend": {
+                "customColors": null,
+                "mode": "list",
+                "position": "bottom"
+              },
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "stackedBarChart": true,
+                "timePreference": "global_time"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "spec": {
+                          "aggregations": [
+                            {
+                              "metricName": "factory.review.verdict",
+                              "reduceTo": "",
+                              "spaceAggregation": "sum",
+                              "temporality": "",
+                              "timeAggregation": "increase"
+                            }
+                          ],
+                          "disabled": false,
+                          "functions": null,
+                          "groupBy": [
+                            {
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string",
+                              "name": "round",
+                              "signal": ""
+                            },
+                            {
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string",
+                              "name": "verdict",
+                              "signal": ""
+                            }
+                          ],
+                          "legend": "round {{round}} {{verdict}}",
+                          "name": "A",
+                          "order": null,
+                          "secondaryAggregations": null,
+                          "selectFields": null,
+                          "signal": "metrics",
+                          "source": "",
+                          "stepInterval": 86400
+                        },
+                        "type": "builder_query"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "interventions": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "description": "factory.human.intervention: approve, request_changes and reject on a console merge card, alert_verdict_click, escalation_answer and poster_answer (new comments answering a waiting task, typed in the console or in Forgejo), extra_time (an answer that raised the agent time), summed over the factoryd pods.",
+            "name": "Human interventions per kind per day"
+          },
+          "links": [],
+          "plugin": {
+            "kind": "signoz/BarChartPanel",
+            "spec": {
+              "axes": {
+                "isLogScale": false,
+                "softMax": null,
+                "softMin": null
+              },
+              "formatting": {
+                "decimalPrecision": "0",
+                "unit": "none"
+              },
+              "legend": {
+                "customColors": null,
+                "mode": "list",
+                "position": "bottom"
+              },
+              "thresholds": [],
+              "visualization": {
+                "fillSpans": false,
+                "stackedBarChart": true,
+                "timePreference": "global_time"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "time_series",
+              "spec": {
+                "plugin": {
+                  "kind": "signoz/CompositeQuery",
+                  "spec": {
+                    "queries": [
+                      {
+                        "spec": {
+                          "aggregations": [
+                            {
+                              "metricName": "factory.human.intervention",
+                              "reduceTo": "",
+                              "spaceAggregation": "sum",
+                              "temporality": "",
+                              "timeAggregation": "increase"
+                            }
+                          ],
+                          "disabled": false,
+                          "functions": null,
+                          "groupBy": [
+                            {
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string",
+                              "name": "kind",
+                              "signal": ""
+                            }
+                          ],
+                          "legend": "{{kind}}",
                           "name": "A",
                           "order": null,
                           "secondaryAggregations": null,
