@@ -388,6 +388,25 @@ values). It is installed and upgraded imperatively alongside Talos and
 deliberately not in the Flux tree, so no sync can break the network the
 sync depends on.
 
+## Home address change
+
+Both firewalls admit the Kubernetes API (6443) and the Talos API (50000)
+from the home address only: the Hetzner firewall (`home_cidr` in
+`terraform.tfvars`) and the Talos `NetworkRuleConfig` `api-from-home` in
+every machine config. When the home address changes, the controller is
+locked out of both while git and the edge keep working. Recovery
+(2026-09-29): set `home_cidr` to the new address and `tofu apply` (one
+firewall change); then create a throwaway Hetzner server in the cluster's
+private network (`node-mesh-tcp` admits 10.0.1.0/24) with its own SSH key
+and a firewall for port 22 from the new address, copy `talos/talosconfig`
+to it, and from there run `talosctl -e <node private ip> -n <same> patch
+mc --mode=no-reboot --patch @patch.yaml` on each node, where the patch is a
+`NetworkRuleConfig` document named `api-from-home` with the new subnet
+under `ingress` (a strategic merge, so the old subnet may stay listed until
+the next full apply). Delete the server, its firewall and its key, and put
+the new subnet into the local `talos/controlplane-*.yaml` so a later
+`apply-config` keeps it.
+
 ## Rebuild
 
 The cluster is disposable. `tofu destroy` is the off-switch, and this is
