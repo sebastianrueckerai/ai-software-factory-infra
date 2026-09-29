@@ -446,7 +446,12 @@ archive `sf-cluster-v8` since the Stage 8 close).
    reached GitHub only; Flux otherwise converges to the dump's stale
    tree.]
 6. Mint `runner-init`, `flux bootstrap` (pinned v2.9.5), let the cascade
-   converge. Actions secrets stay readable because the `SECRET_KEY` is
+   converge. `runner-init` is always an organisation registration token
+   of `sf` (`GET /api/v1/orgs/sf/actions/runners/registration-token`),
+   never an instance token: an instance runner takes every repository's
+   jobs, which would put project jobs back on the privileged dind runner
+   and break ruling 164's bound that a project's jobs land only on
+   runners registered to its own repository. Actions secrets stay readable because the `SECRET_KEY` is
    pinned; after any key change, PUT them again.
 7. OpenBao: throwaway init, ship the snapshot, `bao operator raft
    snapshot restore -force`, restart, unseal with the original key. The
@@ -489,10 +494,14 @@ archive `sf-cluster-v8` since the Stage 8 close).
    that secret exists the job idles and logs `push-mirrors: secret
    github-mirror missing, nothing to do`), and
    recreates a mirror whose `last_error` is set. A mirror is recreated
-   only once its sync fails, so after a token change revoke the old token
-   or delete both mirrors once (Settings -> Mirror Settings); the next run
-   posts them with the new token, and the Forgejo dump after that point
-   carries it; `signoz-objects` in `platform` writes SigNoz's
+   only once its sync fails, so after a restore or a token change delete
+   both mirrors once (Settings -> Mirror Settings); the next run posts
+   them with the new token, and the Forgejo dump after that point carries
+   it. A sync fails with `GH007: Your push would publish a private email
+   address` until GitHub's email privacy block on the account is lifted
+   or the pushed commits carry a noreply address; while it stands, every
+   run recreates both mirrors and ends Failed, which fires the platform's
+   `Job failed` alert; `signoz-objects` in `platform` writes SigNoz's
    viewer account for factoryd, the webhook channel, dashboards, alert
    rules (the platform's and every project's) and retention (see
    Telemetry), which SigNoz loses with its volumes. `signoz-root` came with step 4's seed (`scripts/seed-secrets.sh`
