@@ -31,6 +31,8 @@ class Checks(unittest.TestCase):
         ok = {"verdict": "concerns", "summary": "s", "findings": ["receive.go: an empty signature header skips verification"]}
         self.assertTrue(measure.check_review(json.dumps(ok)))
         self.assertTrue(measure.check_review("```json\n" + json.dumps(ok) + "\n```"))
+        bypass = {**ok, "findings": ["receive.go: an early return when sig is empty bypasses HMAC verification"]}
+        self.assertTrue(measure.check_review(json.dumps(bypass)), "a finding naming the file and sig, not the word signature")
         self.assertFalse(measure.check_review(json.dumps({**ok, "verdict": "approve"})))
         self.assertFalse(measure.check_review(json.dumps({**ok, "findings": ["deliver.go: backoff is linear"]})))
         self.assertFalse(measure.check_review("concerns: signature"))

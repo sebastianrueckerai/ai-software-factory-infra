@@ -11,7 +11,7 @@
 The samples are factoryd's own tasks: a coding fix (the answer's lru.go must
 pass lru_test.go, run by `go test` in a golang container without network),
 a model review of a diff with a planted defect (verdict concerns and a
-finding naming the unsigned-request bypass) and a supervisor judgement of a
+finding naming receive.go, the signature or the HMAC check) and a supervisor judgement of a
 stuck session (action redirect, guidance naming parse.go). The review and
 supervisor prompts are factoryd's (samples/*-prompt.txt, copied from
 internal/factoryd gates.go and supervisor.go).
@@ -162,7 +162,7 @@ def check_review(content):
         return False
     if not isinstance(v, dict) or v.get("verdict") != "concerns" or not isinstance(v.get("findings"), list):
         return False
-    return any(isinstance(f, str) and re.search(r"sign|unsigned|X-Factory-Signature", f, re.I) for f in v["findings"])
+    return any(isinstance(f, str) and re.search(r"receive\.go|\bsig\b|sign|hmac", f, re.I) for f in v["findings"])
 
 
 def check_supervisor(content):
