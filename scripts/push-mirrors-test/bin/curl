@@ -1,0 +1,21 @@
+#!/bin/sh
+# stub: state in $STATE/<repo>.json, calls logged to $STATE/calls
+m=GET; url=""
+while [ $# -gt 0 ]; do
+  case $1 in -X) m=$2; shift ;; -H|-d) shift ;; http*) url=$1 ;; esac; shift
+done
+repo=$(echo "$url" | sed -E 's#.*/repos/sf/([^/]+)/push_mirrors.*#\1#')
+st=$STATE/$repo.json
+echo "$m ${url#*/api/v1}" >> "$STATE/calls"
+case "$m $url" in
+  "GET "*push_mirrors\?*) cat "$st" ;;
+  "DELETE "*) n=${url##*/}; jq -c --arg n "$n" '[.[] | select(.remote_name != $n)]' "$st" > "$st.t" && mv "$st.t" "$st" ;;
+  "POST "*push_mirrors-sync)
+    e=$(cat "$STATE/$repo.syncerr" 2>/dev/null || true)
+    [ -z "$e" ] && exit 0
+    jq -c --arg e "$e" '[.[] | .last_error = $e]' "$st" > "$st.t" && mv "$st.t" "$st"; exit 22 ;;
+  "POST "*push_mirrors)
+    body=$(cat); echo "$body" | jq -e '.remote_password == "tok" and .sync_on_commit' >/dev/null || exit 99
+    jq -c --arg a "$(echo "$body" | jq -r .remote_address)" '. + [{remote_name: "new", remote_address: $a, last_error: ""}]' "$st" > "$st.t" && mv "$st.t" "$st" ;;
+  *) exit 98 ;;
+esac

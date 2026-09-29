@@ -493,15 +493,20 @@ archive `sf-cluster-v8` since the Stage 8 close).
    8 h interval) with the token from `github-mirror` (step 4's seed; until
    that secret exists the job idles and logs `push-mirrors: secret
    github-mirror missing, nothing to do`), and
-   recreates a mirror whose `last_error` is set. A mirror is recreated
-   only once its sync fails, so after a restore or a token change delete
-   both mirrors once (Settings -> Mirror Settings); the next run posts
-   them with the new token, and the Forgejo dump after that point carries
-   it. A sync fails with `GH007: Your push would publish a private email
-   address` until GitHub's email privacy block on the account is lifted
-   or the pushed commits carry a noreply address; while it stands, every
-   run recreates both mirrors and ends Failed, which fires the platform's
-   `Job failed` alert; `signoz-objects` in `platform` writes SigNoz's
+   recreates a mirror whose `last_error` is a credential failure
+   (`Authentication failed`, `Invalid username or token`, `Permission to
+   ... denied`, `returned error: 401` or `403`). Any other error a new
+   token cannot fix: the run logs `<mirror> left alone, sync failing:
+   <first line>` and exits 0, and the mirror retries on its next sync. A
+   still-valid old token never fails, so after a restore or a token
+   change delete both mirrors once (Settings -> Mirror Settings); the
+   next run posts them with the new token, and the Forgejo dump after
+   that point carries it. A sync fails with `GH007: Your push would
+   publish a private email address` until GitHub's email privacy block on
+   the account is lifted or the pushed commits carry a noreply address;
+   the job leaves such a mirror alone, and only the run that creates a
+   mirror and syncs it into a credential failure ends Failed (`Job
+   failed` alert); `signoz-objects` in `platform` writes SigNoz's
    viewer account for factoryd, the webhook channel, dashboards, alert
    rules (the platform's and every project's) and retention (see
    Telemetry), which SigNoz loses with its volumes. `signoz-root` came with step 4's seed (`scripts/seed-secrets.sh`
