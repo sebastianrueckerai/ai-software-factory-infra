@@ -29,6 +29,10 @@
         "none"
       ]
     },
+    "audit": {
+      "type": "boolean",
+      "description": "Audit runs the workflow's audit stage on the project's pull requests (ruling 188); absent: it does not."
+    },
     "notify": {
       "type": "array",
       "items": {
