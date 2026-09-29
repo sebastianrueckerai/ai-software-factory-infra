@@ -47,6 +47,10 @@ spec:
         # each provider's strongest general coding model, no preview or small
         # model, equal weights; tier-mid and tier-low weight by measured rank
         # (all passed 9 of 9 samples, so rank is p50 latency).
+        # Groq is in no tier: an agent session's later turns carry the
+        # reasoning_content of earlier answers, which Groq rejects with a 400
+        # (live 2026-09-29: 24 rejected turns in one session), so it only
+        # answered first turns.
         # The role aliases map onto tiers in router_settings.model_group_alias.
         - model_name: tier-high
           litellm_params:
@@ -75,12 +79,6 @@ spec:
             weight: 1
         - model_name: tier-mid
           litellm_params:
-            model: groq/openai/gpt-oss-120b
-            api_key: os.environ/GROQ_KEY
-            drop_params: true
-            weight: 4
-        - model_name: tier-mid
-          litellm_params:
             model: dashscope/qwen3.7-plus
             api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
             api_key: os.environ/ALIBABA_CLOUD_KEY
@@ -106,12 +104,6 @@ spec:
             # opencode sends reasoning_effort, which zai rejects with a 400
             drop_params: true
             weight: 1
-        - model_name: tier-low
-          litellm_params:
-            model: groq/openai/gpt-oss-20b
-            api_key: os.environ/GROQ_KEY
-            drop_params: true
-            weight: 4
         - model_name: tier-low
           litellm_params:
             model: deepseek/deepseek-flash
