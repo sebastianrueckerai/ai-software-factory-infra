@@ -15,8 +15,9 @@ budget:
   task_max_eur: 5
   day_eur: 20
 
-# Limits on every task's work (rulings 177, 183, 186); a task keeps the
-# limits of the version its workflow started under. sessions: agent
+# Limits on every task's work (rulings 177, 183, 186); a task keeps all of
+# them from the version its workflow started under, in every session and
+# supervisor or review call too. sessions: agent
 # sessions before the task goes to a human with every finding (the round
 # cap; a human's answer buys one more). agent_time: the agent's working
 # time across its sessions (waiting on checks or a reviewer does not

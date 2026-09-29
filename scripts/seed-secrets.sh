@@ -79,28 +79,34 @@ unset pw
 FJ=https://git.aisoftwarefactory.world/api/v1
 IR=sf/ai-software-factory-infra
 fj() { curl -sS -u "sebastian:$FORGEJO_ADMIN_PASSWORD" -H 'Content-Type: application/json' "$@"; }
-if kubectl -n $A get secret forgejo-config >/dev/null 2>&1; then
-  echo "$A/forgejo-config: exists"
-elif [ "$(fj -o /dev/null -w '%{http_code}' $FJ/repos/$IR)" != 200 ]; then
+if [ "$(fj -o /dev/null -w '%{http_code}' $FJ/repos/$IR)" != 200 ]; then
   echo "$A/forgejo-config: skipped, Forgejo does not answer for $IR yet; run this script again after step 6"
 else
   if [ "$(fj -o /dev/null -w '%{http_code}' $FJ/users/factory-config)" != 200 ]; then
     fj -o /dev/null -w 'factory-config user: %{http_code}\n' -X POST $FJ/admin/users \
       -d "{\"username\":\"factory-config\",\"email\":\"factory-config@factory.local\",\"password\":\"$(openssl rand -hex 24)\",\"must_change_password\":false,\"visibility\":\"private\"}"
   fi
+  # idempotent: every run converges them
   fj -o /dev/null -w 'factory-config read collaborator: %{http_code}\n' -X PUT $FJ/repos/$IR/collaborators/factory-config -d '{"permission":"read"}'
   fj -o /dev/null -w 'factory-agent read collaborator: %{http_code}\n' -X PUT $FJ/repos/$IR/collaborators/factory-agent -d '{"permission":"read"}'
-  for id in $(fj "$FJ/users/factory-config/tokens?sudo=factory-config" | python3 -c 'import json,sys; print(" ".join(str(t["id"]) for t in json.load(sys.stdin) if t["name"]=="factory-config"))'); do
-    fj -o /dev/null -w "factory-config revoke token $id: %{http_code}\n" -X DELETE "$FJ/users/factory-config/tokens/$id?sudo=factory-config"
-  done
-  fj -X POST "$FJ/users/factory-config/tokens?sudo=factory-config" \
-    -d '{"name":"factory-config","scopes":["read:repository"],"repositories":[{"owner":"sf","name":"ai-software-factory-infra"}]}' |
-    python3 -c 'import json,sys; sys.stdout.write(json.load(sys.stdin)["sha1"])' |
-    { tok=$(cat); kubectl -n $A create secret generic forgejo-config --from-literal=token="$tok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null; echo "$A/forgejo-config: created (${#tok} chars)"; }
   for kv in "REGISTRY_USER=sebastian" "REGISTRY_PASSWORD=$FORGEJO_CI_REGISTRY_PAT"; do
     V="${kv#*=}" python3 -c 'import json,os; print(json.dumps({"data": os.environ["V"]}))' |
       fj -o /dev/null -w "$IR Actions secret ${kv%%=*}: %{http_code}\n" -X PUT "$FJ/repos/$IR/actions/secrets/${kv%%=*}" -d @-
   done
+  if kubectl -n $A get secret forgejo-config >/dev/null 2>&1; then
+    echo "$A/forgejo-config: exists"
+  else
+    for id in $(fj "$FJ/users/factory-config/tokens?sudo=factory-config" | python3 -c 'import json,sys; print(" ".join(str(t["id"]) for t in json.load(sys.stdin) if t["name"]=="factory-config"))'); do
+      fj -o /dev/null -w "factory-config revoke token $id: %{http_code}\n" -X DELETE "$FJ/users/factory-config/tokens/$id?sudo=factory-config"
+    done
+    tok=$(fj -X POST "$FJ/users/factory-config/tokens?sudo=factory-config" \
+      -d '{"name":"factory-config","scopes":["read:repository"],"repositories":[{"owner":"sf","name":"ai-software-factory-infra"}]}' |
+      python3 -c 'import json,sys; sys.stdout.write(json.load(sys.stdin).get("sha1", ""))' || true)
+    [ -n "$tok" ] || { echo "$A/forgejo-config: mint failed, no secret written"; exit 1; }
+    kubectl -n $A create secret generic forgejo-config --from-literal=token="$tok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+    echo "$A/forgejo-config: created (${#tok} chars)"
+    unset tok
+  fi
 fi
 # forgejo-pat (flux-system) is the Flux bootstrap PAT from ~/.git-credentials; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
 for n in $P $F $A; do echo "$n: $(kubectl -n "$n" get secret -o name | wc -l) secrets"; done

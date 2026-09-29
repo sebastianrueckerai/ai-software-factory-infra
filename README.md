@@ -88,14 +88,25 @@ repository), commit, push to main. factoryd polls the head of `main`
 every 30 s with the read-only `forgejo-config` token, and records a
 valid tree as an immutable `policy_versions` row keyed by the commit;
 the gateway enforces the new version from Postgres within 30 s more and
-names it in every audit row. A task keeps the limits of the version its
-workflow started under. An invalid commit (unknown key, second YAML
+names it in every audit row. A task pins the version its workflow
+started under: its session cap, agent time and stronger rung, and in
+every session, gate-supervisor call and model review the agent time,
+`supervisor_calls`, `supervisor_timeout` and the `no_write` detector
+come from that version. Everything else is read from the version in
+force when used: the risk rules, the factoryd model aliases, what the
+gateway enforces (classes, tool caps, prices, the day cap), the budget
+at intake, the approvers, the bounds and the envelope defaults. An
+invalid commit (unknown key, second YAML
 document, a value outside its enumeration, a missing required key, a
 missing schema header, an unknown file, a `coder` class that leaves out
 a model of factoryd's ladder `MODEL`, `STRONGER_MODEL`) is logged
 (`CONFIG REJECTED`), the previous version stays in force, and factoryd
 files one issue here per refused commit (a human-lane task, source
-`config`) with an alerts row of kind `config_rejected`. The workflow
+`config`) with an alerts row of kind `config_rejected`; the next valid
+commit comments on it, closes it, ends the task and judges the alert
+real. Ten failed reads in a row (a revoked `forgejo-config` token,
+Forgejo unreachable; about five minutes) raise one `config_rejected`
+alert of source `read`, without an issue. The workflow
 `.forgejo/workflows/config-check.yml` runs the same check on every push
 to main and is red for such a commit; it also fails when `schema/`
 differs from what the pinned factoryd generates. It runs on the org
