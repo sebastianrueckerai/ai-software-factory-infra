@@ -9,7 +9,7 @@ on:
   push:
     branches: [main]
 env:
-  FACTORYD_IMAGE: git.aisoftwarefactory.world/sf/factory-gateway@sha256:769956dfd24d078716f614b95bc803882d972cda7e083c0136f768ae7be7e128
+  FACTORYD_IMAGE: git.aisoftwarefactory.world/sf/factory-gateway@sha256:2a7b7c2c4788021cbb61108d9a15242a2db47ef99fa1dd5bec0f90abc2ac41fb
 jobs:
   config-check:
     # the org runner: this repository is human-only, so it runs only what
