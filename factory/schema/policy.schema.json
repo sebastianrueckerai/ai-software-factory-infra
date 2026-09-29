@@ -56,6 +56,10 @@
         "stronger_after": {
           "type": "integer",
           "description": "StrongerAfter is how many returns from the same stage a task takes on its model; the next return takes the stronger rung."
+        },
+        "steps": {
+          "type": "integer",
+          "description": "Steps caps one agent session's model turns (opencode's agent steps): at the cap the harness asks the model to summarise and stop. Absent: DefaultSteps."
         }
       },
       "description": "Limits bound every task's work: sessions, agent time, supervisor calls.",
