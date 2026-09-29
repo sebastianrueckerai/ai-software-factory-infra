@@ -56,6 +56,11 @@
         "stronger_after": {
           "type": "integer",
           "description": "StrongerAfter is how many returns from the same stage a task takes on its model; the next return takes the stronger rung."
+        },
+        "steps": {
+          "type": "integer",
+          "description": "Steps caps one agent session's model turns (opencode's agent steps), at least 1: at the cap the harness asks the model to summarise and stop. Absent: DefaultSteps.",
+          "minimum": 1
         }
       },
       "description": "Limits bound every task's work: sessions, agent time, supervisor calls.",
@@ -123,6 +128,10 @@
           "supervisor_model": {
             "type": "string",
             "description": "SupervisorModel is the alias the session and gate supervisors call on the task's account."
+          },
+          "audit_model": {
+            "type": "string",
+            "description": "AuditModel is the alias factoryd's security audit calls on the task's account (ruling 188)."
           }
         },
         "description": "Class is a capability class a task can hold: the model aliases it may call through the gateway and its tools with per-task caps, and the aliases factoryd calls on the task's account, which the agent may not.",
@@ -359,6 +368,7 @@
           "JudgeScreening",
           "RunReport",
           "RollCommit",
+          "GateAudit",
           "default"
         ]
       }

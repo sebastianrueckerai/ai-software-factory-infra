@@ -16,6 +16,7 @@
               "policy",
               "migration",
               "review",
+              "audit",
               "approval",
               "merge"
             ]
@@ -35,7 +36,7 @@
           },
           "when": {
             "type": "string",
-            "description": "When limits the stage to some tasks: outsider runs it only on issues whose author is an outside account. Absent: every task.",
+            "description": "When limits the stage to some tasks: outsider runs it only on issues whose author is an outside account. Absent: every task. The review takes no when (enabled: false is its only off switch).",
             "enum": [
               "outsider"
             ]
