@@ -1086,8 +1086,15 @@
                           ],
                           "disabled": false,
                           "functions": null,
-                          "groupBy": null,
-                          "legend": "push to live",
+                          "groupBy": [
+                            {
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string",
+                              "name": "deployment",
+                              "signal": ""
+                            }
+                          ],
+                          "legend": "push to live {{deployment}}",
                           "name": "A",
                           "order": null,
                           "secondaryAggregations": null,
@@ -1111,8 +1118,15 @@
                           ],
                           "disabled": false,
                           "functions": null,
-                          "groupBy": null,
-                          "legend": "push to apply",
+                          "groupBy": [
+                            {
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string",
+                              "name": "deployment",
+                              "signal": ""
+                            }
+                          ],
+                          "legend": "push to apply {{deployment}}",
                           "name": "B",
                           "order": null,
                           "secondaryAggregations": null,
@@ -1136,8 +1150,15 @@
                           ],
                           "disabled": false,
                           "functions": null,
-                          "groupBy": null,
-                          "legend": "apply to ready",
+                          "groupBy": [
+                            {
+                              "fieldContext": "attribute",
+                              "fieldDataType": "string",
+                              "name": "deployment",
+                              "signal": ""
+                            }
+                          ],
+                          "legend": "apply to ready {{deployment}}",
                           "name": "C",
                           "order": null,
                           "secondaryAggregations": null,
