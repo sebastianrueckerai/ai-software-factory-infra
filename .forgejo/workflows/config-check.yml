@@ -1,0 +1,29 @@
+# factoryd's own check of the configuration tree factory/ (ruling 183) on
+# every push to main: the decoder factoryd's loader runs, and the committed
+# schema/ against the one the binary generates. The factoryd binary comes
+# from the code repository's image, pinned by digest to the one that runs:
+# every roll of factoryd updates FACTORYD_IMAGE here. Red means factoryd
+# refused (or will refuse) the commit and keeps its previous version.
+name: config-check
+on:
+  push:
+    branches: [main]
+env:
+  FACTORYD_IMAGE: git.aisoftwarefactory.world/sf/factory-gateway@sha256:6f55dfa0f7862b2135da5f19d05ee6bacac1f32935737ab9e1e6051ff7e94bb1
+jobs:
+  config-check:
+    # the org runner: this repository is human-only, so it runs only what
+    # a human pushed to main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: registry login
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login git.aisoftwarefactory.world -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+      - name: factoryd from the pinned image
+        # the job's docker is the runner's dind, which cannot see the job's
+        # files: the static binary is copied out instead of the tree in
+        run: |
+          id=$(docker create "$FACTORYD_IMAGE")
+          docker cp "$id:/usr/local/bin/factoryd" ./factoryd
+          docker rm "$id" >/dev/null
+      - run: ./factoryd config check factory

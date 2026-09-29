@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../schema/project.schema.json
+# This repository: human-only, every issue goes to the human lane.
+repository: sf/ai-software-factory-infra
+merge_rule: human
+objects: seed
+agents: none

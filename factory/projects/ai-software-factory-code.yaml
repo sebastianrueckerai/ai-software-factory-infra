@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../schema/project.schema.json
+# The factory's own code: its objects are the infra repository's and the
+# seed's (ruling 164), agents fix it, a human approves every merge.
+repository: sf/ai-software-factory-code
+merge_rule: human
+objects: seed
+agents: coder
+namespaces: [factory]

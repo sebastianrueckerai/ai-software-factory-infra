@@ -1,0 +1,115 @@
+{
+  "type": "object",
+  "properties": {
+    "repository": {
+      "type": "string",
+      "description": "Repository is the project's Forgejo repository, owner/name."
+    },
+    "merge_rule": {
+      "type": "string",
+      "description": "MergeRule: auto merges a clean agent pull request without a human, human waits for an approver.",
+      "enum": [
+        "auto",
+        "human"
+      ]
+    },
+    "objects": {
+      "type": "string",
+      "description": "Objects names who creates and reconciles the project's repository objects: factory (registration) or seed (the infra repository and the seed; factoryd only reads).",
+      "enum": [
+        "factory",
+        "seed"
+      ]
+    },
+    "agents": {
+      "type": "string",
+      "description": "Agents: coder lets agent tasks run, none sends every issue to the human lane and refuses tasks.",
+      "enum": [
+        "coder",
+        "none"
+      ]
+    },
+    "notify": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Notify are the Forgejo users told about the project's cards; empty: the policy's approvers."
+    },
+    "namespaces": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Namespaces are the cluster namespaces the project deploys into."
+    },
+    "environments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "description": "Namespace is one of the project's namespaces."
+          },
+          "path": {
+            "type": "string",
+            "description": "Path is the repository directory applied into it, such as deploy/staging."
+          },
+          "hostname": {
+            "type": "string",
+            "description": "Hostname is the environment's public host name, if any."
+          }
+        },
+        "description": "Environment is one Flux Kustomization: path of the repository applied into namespace (ruling 157), and the public hostname, if any (ruling 155).",
+        "required": [
+          "namespace",
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Environments are the project's deploy directories, one Flux Kustomization each."
+    },
+    "quota": {
+      "type": "object",
+      "properties": {
+        "cpu": {
+          "type": "string",
+          "description": "CPU bounds CPU requests and limits, such as 2 or 500m."
+        },
+        "memory": {
+          "type": "string",
+          "description": "Memory bounds memory requests and limits, such as 4Gi."
+        },
+        "storage": {
+          "type": "string",
+          "description": "Storage bounds the persistent volume claims' requests, such as 10Gi."
+        }
+      },
+      "description": "Quota is each namespace's ResourceQuota; absent: project_default's.",
+      "required": [
+        "cpu",
+        "memory",
+        "storage"
+      ],
+      "additionalProperties": false
+    },
+    "secrets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Secrets are secret/key entries: each namespace gets the secret with a random value for the key when it is missing."
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "factory/project",
+  "description": "ProjectConfig is projects/\u003cname\u003e.yaml: one project, the file name its name (rulings 146, 179).",
+  "required": [
+    "repository",
+    "merge_rule",
+    "objects",
+    "agents"
+  ],
+  "additionalProperties": false
+}

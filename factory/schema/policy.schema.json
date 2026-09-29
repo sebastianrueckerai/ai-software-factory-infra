@@ -1,0 +1,458 @@
+{
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "description": "Version is the file's schema version.",
+      "enum": [
+        1
+      ]
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "task_default_eur": {
+          "type": "number",
+          "description": "TaskDefaultEUR is a task's budget when its intake asks for none."
+        },
+        "task_max_eur": {
+          "type": "number",
+          "description": "TaskMaxEUR is the most a task may be given."
+        },
+        "day_eur": {
+          "type": "number",
+          "description": "DayEUR caps all tasks together per UTC day; 0 stops all spend."
+        }
+      },
+      "description": "Budget caps spend in EUR per task and per UTC day.",
+      "required": [
+        "task_default_eur",
+        "task_max_eur",
+        "day_eur"
+      ],
+      "additionalProperties": false
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "sessions": {
+          "type": "integer",
+          "description": "Sessions is how many agent sessions a task gets before it goes to a human with every finding so far (the round cap); a human may grant more."
+        },
+        "agent_time": {
+          "type": "string",
+          "description": "AgentTime is the agent's working time across all sessions of a task, such as 20m; waiting on checks or on a reviewer does not count.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "supervisor_calls": {
+          "type": "integer",
+          "description": "SupervisorCalls is how many supervisor model calls one session may make; the next trip escalates without one."
+        },
+        "supervisor_timeout": {
+          "type": "string",
+          "description": "SupervisorTimeout bounds one supervisor or review model call, such as 6m.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "stronger_after": {
+          "type": "integer",
+          "description": "StrongerAfter is how many returns from the same stage a task takes on its model; the next return takes the stronger rung."
+        }
+      },
+      "description": "Limits bound every task's work: sessions, agent time, supervisor calls.",
+      "required": [
+        "sessions",
+        "agent_time",
+        "supervisor_calls",
+        "supervisor_timeout",
+        "stronger_after"
+      ],
+      "additionalProperties": false
+    },
+    "classes": {
+      "type": "object",
+      "description": "Classes are the capability classes a task can hold, by name.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Models are the aliases the agent may call through the gateway."
+          },
+          "tools": {
+            "type": "object",
+            "description": "Tools are the gateway tools the class may call: a paid tool with its per-task caps, a free tool as {}.",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "max_requests": {
+                  "type": "integer",
+                  "description": "MaxRequests is how many calls of the tool a task may make."
+                },
+                "max_eur": {
+                  "type": "number",
+                  "description": "MaxEUR is how much a task may spend on the tool."
+                }
+              },
+              "description": "ToolCap caps a paid tool per task; a free tool carries none.",
+              "additionalProperties": false
+            },
+            "propertyNames": {
+              "enum": [
+                "web_scrape",
+                "web_search",
+                "replicate_predict",
+                "fal_run",
+                "escalate_to_human",
+                "request_info",
+                "cloud_prices",
+                "commission_server",
+                "list_resources",
+                "release_resource",
+                "ssh_certificate",
+                "resource_request_status"
+              ]
+            }
+          },
+          "review_model": {
+            "type": "string",
+            "description": "ReviewModel is the alias factoryd's model review calls on the task's account."
+          },
+          "supervisor_model": {
+            "type": "string",
+            "description": "SupervisorModel is the alias the session and gate supervisors call on the task's account."
+          }
+        },
+        "description": "Class is a capability class a task can hold: the model aliases it may call through the gateway and its tools with per-task caps, and the aliases factoryd calls on the task's account, which the agent may not.",
+        "required": [
+          "models"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "prices": {
+      "type": "object",
+      "properties": {
+        "firecrawl": {
+          "type": "object",
+          "properties": {
+            "eur_per_credit": {
+              "type": "number",
+              "description": "EURPerCredit is what one Firecrawl credit costs."
+            },
+            "scrape_credits": {
+              "type": "integer",
+              "description": "ScrapeCredits is the most credits one scrape is held at."
+            },
+            "search_credits": {
+              "type": "integer",
+              "description": "SearchCredits is the most credits one search is held at."
+            }
+          },
+          "description": "Firecrawl prices web_scrape and web_search.",
+          "required": [
+            "eur_per_credit",
+            "scrape_credits",
+            "search_credits"
+          ],
+          "additionalProperties": false
+        },
+        "replicate": {
+          "type": "object",
+          "properties": {
+            "eur_per_second": {
+              "type": "object",
+              "description": "EURPerSecond is the price of a second of predict_time by hardware SKU.",
+              "additionalProperties": {
+                "type": "number"
+              }
+            },
+            "models": {
+              "type": "object",
+              "description": "Models maps each usable model (owner/name) to its hardware SKU.",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "max_seconds": {
+              "type": "number",
+              "description": "MaxSeconds is how many seconds of its hardware a prediction is held at, whole seconds, at least 10."
+            }
+          },
+          "description": "Replicate prices replicate_predict.",
+          "required": [
+            "eur_per_second",
+            "models",
+            "max_seconds"
+          ],
+          "additionalProperties": false
+        },
+        "fal": {
+          "type": "object",
+          "properties": {
+            "max_megapixels": {
+              "type": "number",
+              "description": "MaxMegapixels is how many megapixels a call priced per megapixel is held at."
+            }
+          },
+          "description": "Fal bounds fal_run.",
+          "required": [
+            "max_megapixels"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "description": "Prices are the tool prices no provider API reports.",
+      "additionalProperties": false
+    },
+    "risk": {
+      "type": "object",
+      "properties": {
+        "classes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Name is the class's name; auto is allowed on class normal only."
+              },
+              "outcome": {
+                "type": "string",
+                "description": "Outcome: forbidden fails the task, requires_approval waits for a human, auto merges without one where the merge rule allows it.",
+                "enum": [
+                  "forbidden",
+                  "requires_approval",
+                  "auto"
+                ]
+              },
+              "migration": {
+                "type": "boolean",
+                "description": "Migration marks paths whose change needs the human's schema review."
+              }
+            },
+            "description": "RiskClass is a named class and what it means for the pull request.",
+            "required": [
+              "name",
+              "outcome"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Classes are the risk classes, most severe first."
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Paths are the rule's globs."
+              },
+              "class": {
+                "type": "string",
+                "description": "Class is the risk class of a matching path."
+              }
+            },
+            "description": "RiskRule: Paths are globs anchored at the repository root, \"/\" separated; \"**\" matches any number of whole segments, other segments match as path.Match.",
+            "required": [
+              "paths",
+              "class"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Rules map path globs to a class; a path takes the first match."
+        },
+        "default": {
+          "type": "string",
+          "description": "Default is the class of a path no rule matches."
+        }
+      },
+      "description": "Risk classifies a pull request by the paths it changes.",
+      "required": [
+        "classes",
+        "default"
+      ],
+      "additionalProperties": false
+    },
+    "envelope_default": {
+      "type": "object",
+      "properties": {
+        "monthly_eur": {
+          "type": "number",
+          "description": "MonthlyEUR caps a calendar month (UTC), reservations and accrued cost together, in net EUR."
+        },
+        "server_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ServerTypes are the Hetzner server types a task may commission."
+        },
+        "max_count": {
+          "type": "integer",
+          "description": "MaxCount is how many servers may run at once."
+        },
+        "max_lease_hours": {
+          "type": "integer",
+          "description": "MaxLeaseHours is the longest lease."
+        },
+        "volume_max_gb": {
+          "type": "integer",
+          "description": "VolumeMaxGB is the largest volume per server: 0 for none, else at least 10."
+        }
+      },
+      "description": "EnvelopeDefault is the resource envelope a project's first commissioning request copies into its envelopes row.",
+      "required": [
+        "monthly_eur",
+        "server_types",
+        "max_count",
+        "max_lease_hours",
+        "volume_max_gb"
+      ],
+      "additionalProperties": false
+    },
+    "approvers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Approvers are the Forgejo users who may authorize spend in the console (ruling 128): approve a resource request or a merge, edit an envelope, promote a resource. Empty: nobody."
+    },
+    "bounds": {
+      "type": "object",
+      "description": "Bounds are how many seconds one run of an activity may take before it raises a gate_bound alert, per activity name and a default for the rest; absent keys take DefaultBounds.",
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "EnsureIssue",
+          "SetState",
+          "RunSession",
+          "OpenPullRequest",
+          "WaitChecks",
+          "PullRequestMerged",
+          "RecordStep",
+          "Finish",
+          "Reconcile",
+          "Escalate",
+          "RecordUsage",
+          "GatePolicy",
+          "GateMigration",
+          "GateReproduction",
+          "ModelReview",
+          "RequestApproval",
+          "Merge",
+          "ReportMergeFailure",
+          "ReportMergeRetriesExhausted",
+          "SuperviseGate",
+          "AutoMergeNote",
+          "RequestInfo",
+          "CloseNotReproduced",
+          "default"
+        ]
+      }
+    },
+    "supervisor": {
+      "type": "object",
+      "description": "Supervisor holds the session supervisor's progress detectors: how many seconds without the progress each names before it trips; absent keys take DefaultDetectors (ruling 161: no_write only).",
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "no_write"
+        ]
+      }
+    },
+    "project_default": {
+      "type": "object",
+      "properties": {
+        "merge_rule": {
+          "type": "string",
+          "description": "MergeRule: auto merges a clean agent pull request without a human, human waits for an approver.",
+          "enum": [
+            "auto",
+            "human"
+          ]
+        },
+        "quota": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU bounds CPU requests and limits, such as 2 or 500m."
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory bounds memory requests and limits, such as 4Gi."
+            },
+            "storage": {
+              "type": "string",
+              "description": "Storage bounds the persistent volume claims' requests, such as 10Gi."
+            }
+          },
+          "description": "Quota is each of the project's namespaces' ResourceQuota.",
+          "required": [
+            "cpu",
+            "memory",
+            "storage"
+          ],
+          "additionalProperties": false
+        },
+        "standing": {
+          "type": "object",
+          "properties": {
+            "monthly_eur": {
+              "type": "number",
+              "description": "MonthlyEUR is the fixed monthly line for standing resources."
+            },
+            "server_types": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "ServerTypes are the server types a standing resource may have."
+            },
+            "max_count": {
+              "type": "integer",
+              "description": "MaxCount is how many standing servers may exist at once."
+            }
+          },
+          "description": "Standing bounds the project's standing resources.",
+          "required": [
+            "monthly_eur",
+            "server_types",
+            "max_count"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "description": "ProjectDefault is what a registered project starts with; absent: DefaultProject.",
+      "required": [
+        "merge_rule",
+        "quota",
+        "standing"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "factory/policy",
+  "description": "Document is policy.yaml, schema version 1: budgets, limits, capability classes, prices, risk rules, the default envelope, approvers, activity bounds and the supervisor's detectors.",
+  "required": [
+    "version",
+    "budget",
+    "limits",
+    "classes",
+    "risk",
+    "envelope_default"
+  ],
+  "additionalProperties": false
+}

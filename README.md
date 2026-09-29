@@ -38,48 +38,75 @@ sync path `clusters/sf`:
   `litellm-deepseek` also requires `kubectl -n platform rollout restart
   deployment/litellm`, because no reloader watches those secrets.
 
-## Policy
+## Configuration
 
-`k8s/platform/policy/policy.yaml` is the factory's capability policy:
-per-task default and maximum budget, the per-day cap over all tasks
-(UTC day), the capability classes (the model aliases and tools a task
-class may use: a paid tool with per-task `max_requests` and `max_eur`, a
-free one, `escalate_to_human` and the commissioning tools, as `{}`; a tool
-no class of the task lists is refused, ruling 132), and
-`prices`, the tool prices no provider API reports (Firecrawl's EUR per
-credit, Replicate's EUR per second by hardware SKU and the SKU of each
-usable model, fal's megapixel bound), each with its source URL;
-`risk`, the rules that classify an agent pull request by its changed
-paths (ordered globs to a class, most severe class wins; `forbidden`
-fails the task, `requires_approval` waits for a human before
-`factory-merge` merges; `migration: true` flags schema migrations for the
-human's review), and
-`envelope_default`, the standard resource envelope a project's first
-commissioning request copies (monthly EUR cap, server types, count,
-longest lease, largest volume), and
-`approvers` (ruling 128), the Forgejo users who may authorize spend in the
-console (approve a resource request or a merge, edit an envelope, promote);
-a merge approver must also be on main's approvals whitelist. A
-Replicate model runs only once it is listed under
-`prices.replicate.models`. Its `configMapGenerator` makes it ConfigMap
-`factory-policy` in namespace `factory` (stable name, no hash suffix),
-which factoryd mounts read-only. factoryd refuses to boot without a
-`risk` section, and refuses one with unknown keys just as a live reload
-does, so infra must land this ConfigMap before factoryd itself rolls.
+`factory/` is factoryd's configuration (ruling 183), read straight from
+this repository's `main`; no ConfigMap, no custom resource. Git is the
+editing surface, the console shows it read-only.
 
-To change policy: edit the file, commit, push. Flux applies the
-ConfigMap, kubelet updates the mounted file, and factoryd, which reads it
-every 30 s, records the new content as an immutable `policy_versions` row
-and makes it current (log line `policy: version N loaded`); about two
-minutes end to end. The gateway enforces the current version from
-Postgres within 30 s more and names it in every audit row. An invalid
-edit is logged (`POLICY REJECTED`) and the previous version stays in
-force; unknown keys are rejected, and so is a `coder` class that leaves
-out a model of factoryd's ladder (`MODEL`, `STRONGER_MODEL`). `day_eur: 0`
-stops all spend. Every activation is an append-only `policy_activations`
-row, so the history of what was in force when stays in Postgres. Reverting to earlier content makes that
-earlier version current again. `GET /policy` on factoryd shows the version
-in force.
+- `policy.yaml`: per-task default and maximum budget and the per-day cap
+  over all tasks (UTC day); `limits` (`sessions`, the round cap;
+  `agent_time`, the agent's working time across a task's sessions;
+  `supervisor_calls` per session; `supervisor_timeout` per supervisor or
+  review call, at most 15m; `stronger_after`, the returns from one stage
+  that keep the model); the capability classes (the model aliases and
+  tools a task class may use: a paid tool with per-task `max_requests`
+  and `max_eur`, a free one, `escalate_to_human` and the commissioning
+  tools, as `{}`; a tool no class of the task lists is refused, ruling
+  132); `prices`, the tool prices no provider API reports (Firecrawl's
+  EUR per credit, Replicate's EUR per second by hardware SKU and the SKU
+  of each usable model, fal's megapixel bound), each with its source
+  URL; `risk`, the rules that classify an agent pull request by its
+  changed paths (ordered globs to a class, most severe class wins;
+  `forbidden` fails the task, `requires_approval` waits for a human
+  before `factory-merge` merges; `migration: true` flags schema
+  migrations for the human's review); `envelope_default`, the standard
+  resource envelope a project's first commissioning request copies; and
+  `approvers` (ruling 128), the Forgejo users who may authorize spend in
+  the console; a merge approver must also be on main's approvals
+  whitelist. A Replicate model runs only once it is listed under
+  `prices.replicate.models`.
+- `workflow.yaml`: the stages a task's work passes, in order (checks,
+  screening, reproduction, policy, migration, review, approval, merge),
+  each with `on_findings: agent | human | fail`, `enabled` and an
+  optional `when: outsider` (ruling 177).
+- `projects/<name>.yaml`: one file per project row (rulings 146, 179):
+  repository, merge rule, `objects: factory | seed` (who makes the
+  repository objects: factoryd's registration, or this repository and
+  the seed), `agents: coder | none`, notify, namespaces, environments,
+  quota, secrets.
+- `schema/`: the JSON Schemas `factoryd schema --out factory/schema`
+  generates from factoryd's Go types. Each YAML file's first line
+  references its schema (`# yaml-language-server:
+  $schema=schema/policy.schema.json`, `../schema/project.schema.json`
+  under `projects/`), so an editor with the YAML language server
+  completes keys, lists every enumerated value and marks mistakes.
+
+To change it: edit, run `factoryd config check factory` (the image's
+binary, or `go run ./cmd/factoryd config check <path>` in the code
+repository), commit, push to main. factoryd polls the head of `main`
+every 30 s with the read-only `forgejo-config` token, and records a
+valid tree as an immutable `policy_versions` row keyed by the commit;
+the gateway enforces the new version from Postgres within 30 s more and
+names it in every audit row. A task keeps the limits of the version its
+workflow started under. An invalid commit (unknown key, second YAML
+document, a value outside its enumeration, a missing required key, a
+missing schema header, an unknown file, a `coder` class that leaves out
+a model of factoryd's ladder `MODEL`, `STRONGER_MODEL`) is logged
+(`CONFIG REJECTED`), the previous version stays in force, and factoryd
+files one issue here per refused commit (a human-lane task, source
+`config`) with an alerts row of kind `config_rejected`. The workflow
+`.forgejo/workflows/config-check.yml` runs the same check on every push
+to main and is red for such a commit; it also fails when `schema/`
+differs from what the pinned factoryd generates. It runs on the org
+runner (`ubuntu-latest`): this repository is human-only, so the
+privileged runner only ever runs what a human pushed to `main`, the
+same trust as the code repository's main CI. Its `FACTORYD_IMAGE`
+digest follows factoryd: every factoryd roll updates it (and
+`factory/schema/` when the types changed). `day_eur: 0` stops all spend.
+Every activation is an append-only `policy_activations` row, so the
+history of what was in force when stays in Postgres. `GET /policy` on
+factoryd and the console's Policy page show the version in force.
 
 ## The merge bot (ruling 109)
 
@@ -429,7 +456,14 @@ archive `sf-cluster-v8` since the Stage 8 close).
    `read:organization` only, no repository), a freshly minted
    `forgejo-projects` token (user `factory-projects`, `write:repository`,
    token name `factory-projects`: revoke the restored one first; factoryd
-   cannot boot without it), `gateway-tool-keys`,
+   cannot boot without it), a freshly minted
+   `forgejo-config` token (user `factory-config`, a read collaborator on
+   this repository only, `read:repository` limited to it: factoryd reads
+   `factory/` with it and cannot boot without it; `scripts/seed-secrets.sh`
+   makes the user, the collaborator, the token and the secret once Forgejo
+   answers, lets `factory-agent` read this repository to file the
+   `config_rejected` issues, and PUTs this repository's Actions secrets
+   `REGISTRY_USER` and `REGISTRY_PASSWORD` for the config check), `gateway-tool-keys`,
    `hetzner-agent` and `hetzner-ci` from `.env.tools` and a fresh
    `gateway-factoryd` token. Three CronJobs (every 10 minutes, one log
    line per run, `no change` once converged) take the rest: `console-oauth`

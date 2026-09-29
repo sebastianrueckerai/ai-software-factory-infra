@@ -1,0 +1,62 @@
+{
+  "type": "object",
+  "properties": {
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name is the stage's implementation.",
+            "enum": [
+              "checks",
+              "screening",
+              "reproduction",
+              "policy",
+              "migration",
+              "review",
+              "approval",
+              "merge"
+            ]
+          },
+          "on_findings": {
+            "type": "string",
+            "description": "OnFindings: agent gives the findings to the next session, human opens the card with them, fail fails the task.",
+            "enum": [
+              "agent",
+              "human",
+              "fail"
+            ]
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Enabled false skips the stage; the timeline records it skipped."
+          },
+          "when": {
+            "type": "string",
+            "description": "When limits the stage to some tasks: outsider runs it only on issues whose author is an outside account. Absent: every task.",
+            "enum": [
+              "outsider"
+            ]
+          }
+        },
+        "description": "Stage is one named stage of the workflow and what its findings do.",
+        "required": [
+          "name",
+          "on_findings",
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Stages run in this order; policy, approval and merge are required, merge last."
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "factory/workflow",
+  "description": "Workflow is workflow.yaml: the stages a task's work passes, in order (ruling 177).",
+  "required": [
+    "stages"
+  ],
+  "additionalProperties": false
+}

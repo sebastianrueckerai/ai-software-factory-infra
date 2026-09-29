@@ -1,8 +1,9 @@
-# Factory capability policy, schema version 1. Edit here, commit, push:
-# Flux applies the ConfigMap, factoryd records the new content as a policy
-# version within about two minutes, and the gateway enforces it within 30 s
-# more. An invalid edit is logged by factoryd and the previous version stays
-# in force. Unknown keys are rejected.
+# yaml-language-server: $schema=schema/policy.schema.json
+# Factory policy, schema version 1: part of the configuration tree factory/
+# (README "Configuration"). Edit here, commit, push to main: factoryd loads
+# the commit within 30 s and the gateway enforces it within 30 s more. A
+# refused commit keeps the previous version and files an issue here.
+# Unknown keys are rejected; `factoryd config check factory/` shows why.
 version: 1
 
 # EUR caps. A task gets task_default_eur unless its intake asks for less or
@@ -13,6 +14,22 @@ budget:
   task_default_eur: 2
   task_max_eur: 5
   day_eur: 20
+
+# Limits on every task's work (rulings 177, 183, 186); a task keeps the
+# limits of the version its workflow started under. sessions: agent
+# sessions before the task goes to a human with every finding (the round
+# cap; a human's answer buys one more). agent_time: the agent's working
+# time across its sessions (waiting on checks or a reviewer does not
+# count). supervisor_calls: supervisor model calls per session; the next
+# trip escalates without one. supervisor_timeout: one supervisor or review
+# call, at most 15m. stronger_after: returns from the same stage that keep
+# the model; the next takes the stronger rung.
+limits:
+  sessions: 3
+  agent_time: 20m
+  supervisor_calls: 3
+  supervisor_timeout: 6m
+  stronger_after: 1
 
 # Capability classes a task can hold (tasks.required_capabilities; intake
 # gives agent tasks "coder"). models: the aliases the agent may call through
