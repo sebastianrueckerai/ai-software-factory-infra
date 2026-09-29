@@ -281,7 +281,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.ci.buildvm.lifetime",
+                              "metricName": "factory.ci.buildvm.lifetime.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p50",
                               "temporality": "",
@@ -306,7 +306,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.ci.buildvm.lifetime",
+                              "metricName": "factory.ci.buildvm.lifetime.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p95",
                               "temporality": "",
@@ -331,7 +331,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.ci.buildvm.ready",
+                              "metricName": "factory.ci.buildvm.ready.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p50",
                               "temporality": "",
@@ -356,7 +356,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.ci.buildvm.ready",
+                              "metricName": "factory.ci.buildvm.ready.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p95",
                               "temporality": "",
@@ -420,7 +420,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.ci.job.duration",
+                              "metricName": "factory.ci.job.duration.bucket",
                               "reduceTo": "avg",
                               "spaceAggregation": "p95",
                               "temporality": "",
@@ -510,7 +510,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.ci.job.queue",
+                              "metricName": "factory.ci.job.queue.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p95",
                               "temporality": "",
@@ -600,7 +600,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.ci.run.duration",
+                              "metricName": "factory.ci.run.duration.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p50",
                               "temporality": "",
@@ -628,7 +628,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.ci.run.duration",
+                              "metricName": "factory.ci.run.duration.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p95",
                               "temporality": "",
@@ -714,7 +714,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.ci.run.duration",
+                              "metricName": "factory.ci.run.duration.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p50",
                               "temporality": "",
@@ -742,7 +742,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.ci.run.duration",
+                              "metricName": "factory.ci.run.duration.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p95",
                               "temporality": "",
@@ -828,7 +828,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.task.gate.duration",
+                              "metricName": "factory.task.gate.duration.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p50",
                               "temporality": "",
@@ -860,7 +860,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.task.gate.duration",
+                              "metricName": "factory.task.gate.duration.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p95",
                               "temporality": "",
@@ -1077,7 +1077,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.roll.duration",
+                              "metricName": "factory.roll.duration.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p50",
                               "temporality": "",
@@ -1109,7 +1109,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.roll.apply",
+                              "metricName": "factory.roll.apply.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p50",
                               "temporality": "",
@@ -1141,7 +1141,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.roll.ready",
+                              "metricName": "factory.roll.ready.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p50",
                               "temporality": "",
@@ -1424,7 +1424,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.task.cost",
+                              "metricName": "factory.task.cost.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p50",
                               "temporality": "",
@@ -1459,7 +1459,7 @@
                         "spec": {
                           "aggregations": [
                             {
-                              "metricName": "factory.task.cost",
+                              "metricName": "factory.task.cost.bucket",
                               "reduceTo": "",
                               "spaceAggregation": "p95",
                               "temporality": "",
