@@ -496,6 +496,27 @@ last five minutes before the nodes were replaced, see below).
    run it again), Forgejo. Restore the
    repositories from the dump's `repos/` into `/data/git/gitea-repositories`
    (a fresh volume lacks the directory: create it first).
+   Without a dump (2026-09-29: the close lost the nodes first), every
+   repository row stands with no bare repository behind it, and a push
+   fails with "Could not read from remote repository". Forgejo has no
+   command that re-creates one (`doctor`'s checks repair hooks and
+   settings; "adopt" is the reverse case). For each row
+   (`select u.lower_name, r.lower_name from repository r join "user" u
+   on u.id = r.owner_id`): `git init --bare --initial-branch=main
+   /data/git/gitea-repositories/<owner>/<name>.git` in the forgejo
+   container, then `forgejo doctor check --run hooks --fix` and `--run
+   enable-push-options --fix`. `fix-push-mirrors-without-git-remote --fix`
+   deletes the push mirror rows (none has its remote now); CronJob
+   `push-mirrors` makes them anew. The merged pull requests' refs are
+   gone too, and factoryd's revert pass fails on their diffs (500):
+   `git update-ref refs/pull/<index>/head <merged_commit_id>^2` in the
+   bare repository for each merged row of `pull_request`. A protected
+   `deploy` branch refuses every push but the deploy key's: the project's
+   own main CI starts it again (`roll.sh`: "no deploy branch yet").
+   Forgejo's SSH host key is new with the volume; factoryd's reconcile of
+   such a project stops at "branch deploy" (500) before it sets
+   `FACTORY_SSH_HOST_KEY`, so PUT that Actions secret from
+   `/data/ssh/gitea.rsa.pub` by hand before the staging job runs.
 5. Fast-forward push every repository from the local clones to `origin`
    NOW, before Flux's first sync. [Pushes made while Forgejo was down
    reached GitHub only; Flux otherwise converges to the dump's stale
