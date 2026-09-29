@@ -16,6 +16,9 @@ error: failed to push some refs to 'https://github.com/sebastianrueckerai/REPO.g
 "
 NET="push failed: fatal: unable to access 'https://github.com/sebastianrueckerai/REPO.git/': Could not resolve host: github.com
 "
+NF="push failed: remote: Repository not found.
+fatal: repository 'https://github.com/sebastianrueckerai/REPO.git/' not found
+"
 DENY="push failed: remote: Permission to sebastianrueckerai/REPO.git denied to sebastianrueckerai.
 fatal: unable to access 'https://github.com/sebastianrueckerai/REPO.git/': The requested URL returned error: 403
 "
@@ -58,4 +61,7 @@ case_ dup-prefers-healthy "[$(m m1 "$GH007" $C),$(m m2 '' $C),$(m m3 "$AUTH" $C)
 case_ none "[]" "$ok_i" "" 0 \
   "push-mirrors: $C: created, synced;" \
   "POST /repos/sf/$C/push_mirrors;POST /repos/sf/$C/push_mirrors-sync;"
+case_ notfound-recreate "[$(m mc "$NF" $C)]" "$ok_i" "$NF" 1 \
+  "push-mirrors: $C: deleted mc created, sync failed: push failed: remote: Repository not found.;" \
+  "DELETE /repos/sf/$C/push_mirrors/mc;POST /repos/sf/$C/push_mirrors;POST /repos/sf/$C/push_mirrors-sync;"
 echo "pass=$pass fail=$fail"; [ $fail = 0 ]

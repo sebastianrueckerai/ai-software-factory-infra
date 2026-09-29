@@ -19,7 +19,7 @@ printf 'Authorization: Basic %s\n' "$(printf '%s:%s' "$FORGEJO_USER" "$FORGEJO_P
 f() { curl -fsS -H @/tmp/auth -H 'Content-Type: application/json' "$@"; }
 log=""
 failed=0
-cred='Authentication failed|Invalid username or token|Permission to .* denied|returned error: 40[13]'
+cred='Authentication failed|Repository not found|could not read Username|Invalid username or token|Permission to .* denied|returned error: 40[13]'
 ours() { jq -c --arg want "$want" '[.[] | select((.remote_address | ascii_downcase | rtrimstr(".git")) == ($want | ascii_downcase | rtrimstr(".git")))]'; }
 first() { jq -r '.last_error // "" | split("\n")[0] // "" | .[0:200]'; }
 for repo in ai-software-factory-code ai-software-factory-infra; do

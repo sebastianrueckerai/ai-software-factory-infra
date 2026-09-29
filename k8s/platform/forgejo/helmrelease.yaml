@@ -24,7 +24,7 @@ spec:
   values:
     replicaCount: 1
     resources:
-      requests: {memory: 512Mi}
+      requests: {memory: 768Mi}
       limits: {memory: 2560Mi}
     persistence:
       enabled: true

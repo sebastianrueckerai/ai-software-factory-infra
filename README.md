@@ -451,8 +451,9 @@ archive `sf-cluster-v8` since the Stage 8 close).
    never an instance token: an instance runner takes every repository's
    jobs, which would put project jobs back on the privileged dind runner
    and break ruling 164's bound that a project's jobs land only on
-   runners registered to its own repository. Actions secrets stay readable because the `SECRET_KEY` is
-   pinned; after any key change, PUT them again.
+   runners registered to its own repository. Actions secrets stay
+   readable because the `SECRET_KEY` is pinned; after any key change,
+   PUT them again.
 7. OpenBao: throwaway init, ship the snapshot, `bao operator raft
    snapshot restore -force`, restart, unseal with the original key. The
    unseal is the one hand step left: the unseal key is the root of
@@ -494,8 +495,9 @@ archive `sf-cluster-v8` since the Stage 8 close).
    that secret exists the job idles and logs `push-mirrors: secret
    github-mirror missing, nothing to do`), and
    recreates a mirror whose `last_error` is a credential failure
-   (`Authentication failed`, `Invalid username or token`, `Permission to
-   ... denied`, `returned error: 401` or `403`). Any other error a new
+   (`Authentication failed`, `Repository not found`, `could not read
+   Username`, `Invalid username or token`, `Permission to ... denied`,
+   `returned error: 401` or `403`). Any other error a new
    token cannot fix: the run logs `<mirror> left alone, sync failing:
    <first line>` and exits 0, and the mirror retries on its next sync. A
    still-valid old token never fails, so after a restore or a token
@@ -505,8 +507,8 @@ archive `sf-cluster-v8` since the Stage 8 close).
    publish a private email address` until GitHub's email privacy block on
    the account is lifted or the pushed commits carry a noreply address;
    the job leaves such a mirror alone, and only the run that creates a
-   mirror and syncs it into a credential failure ends Failed (`Job
-   failed` alert); `signoz-objects` in `platform` writes SigNoz's
+   mirror whose sync then fails with a credential failure or an empty
+   `last_error` ends Failed (`Job failed` alert); `signoz-objects` in `platform` writes SigNoz's
    viewer account for factoryd, the webhook channel, dashboards, alert
    rules (the platform's and every project's) and retention (see
    Telemetry), which SigNoz loses with its volumes. `signoz-root` came with step 4's seed (`scripts/seed-secrets.sh`
