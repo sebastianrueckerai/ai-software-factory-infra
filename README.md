@@ -92,10 +92,11 @@ names it in every audit row. A task pins the version its workflow
 started under: its session cap, agent time and stronger rung, and in
 every session, gate-supervisor call and model review the agent time,
 `supervisor_calls`, `supervisor_timeout` and the `no_write` detector
-come from that version. Everything else is read from the version in
-force when used: the risk rules, the factoryd model aliases, what the
-gateway enforces (classes, tool caps, prices, the day cap), the budget
-at intake, the approvers, the bounds and the envelope defaults. An
+come from that version, and so do the activity bounds of those three.
+Everything else is read from the version in force when used: the risk
+rules, the factoryd model aliases, what the gateway enforces (classes,
+tool caps, prices, the day cap), the budget at intake, the approvers,
+the other activities' bounds and the envelope defaults. An
 invalid commit (unknown key, second YAML
 document, a value outside its enumeration, a missing required key, a
 missing schema header, an unknown file, a `coder` class that leaves out
