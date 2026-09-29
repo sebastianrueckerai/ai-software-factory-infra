@@ -4,3 +4,6 @@ repository: sf/ai-software-factory-infra
 merge_rule: human
 objects: seed
 agents: none
+# factory-config reads the writers (the trust gate, the heal pass's close
+# of a human-lane task); it cannot read the hooks, the seed keeps them
+tokens: {read: forgejo-config}

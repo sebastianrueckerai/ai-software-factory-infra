@@ -60,8 +60,9 @@ editing surface, the console shows it read-only.
   changed paths (ordered globs to a class, most severe class wins;
   `forbidden` fails the task, `requires_approval` waits for a human
   before `factory-merge` merges; `migration: true` flags schema
-  migrations for the human's review); `envelope_default`, the standard
-  resource envelope a project's first commissioning request copies; and
+  migrations for the human's review); `envelope_default`, the resource
+  envelope of a project whose file sets none; `project_default`, the
+  quota and standing block of one that sets none; and
   `approvers` (ruling 128), the Forgejo users who may authorize spend in
   the console; a merge approver must also be on main's approvals
   whitelist. A Replicate model runs only once it is listed under
@@ -70,11 +71,23 @@ editing surface, the console shows it read-only.
   screening, reproduction, policy, migration, review, approval, merge),
   each with `on_findings: agent | human | fail`, `enabled` and an
   optional `when: outsider` (ruling 177).
-- `projects/<name>.yaml`: one file per project row (rulings 146, 179):
-  repository, merge rule, `objects: factory | seed` (who makes the
-  repository objects: factoryd's registration, or this repository and
-  the seed), `agents: coder | none`, notify, namespaces, environments,
-  quota, secrets.
+- `projects/<name>.yaml`: one file per project, the only place its
+  settings live (rulings 146, 179, 183): repository, merge rule,
+  `objects: factory | seed` (who makes the repository objects:
+  factoryd's registration, or this repository and the seed; factoryd only
+  keeps the labels and the bot's fork of a seed project and reports its
+  webhook and namespace labels), `agents: coder | none` (`none`: every
+  issue and alert goes to the human lane, `POST /tasks` answers 422),
+  notify, namespaces, environments, quota, secrets, `envelope` (the task
+  block) and `standing`. A seed project names the seeded secrets
+  factoryd reaches it with in `tokens` (`read`, and for agents coder
+  `actions` and `merge`; values `forgejo-ci-registrar`, `forgejo-merge`,
+  `forgejo-config`, never `forgejo-projects`); a factory project's are
+  registration's. The code repository's file lists the namespace
+  `factory`, factoryd's own: that makes it the factory's own project
+  (its rolls, its CI runs, the console's login). A new factory project:
+  add its file, then `factoryd register-project --name <name>`. The
+  console shows every project and envelope read-only with a link here.
 - `schema/`: the JSON Schemas `factoryd schema --out factory/schema`
   generates from factoryd's Go types. Each YAML file's first line
   references its schema (`# yaml-language-server:
@@ -500,7 +513,10 @@ archive `sf-cluster-v8` since the Stage 8 close).
    makes the user, the collaborator, the token and the secret once Forgejo
    answers, lets `factory-agent` read this repository to file the
    `config_rejected` issues, and PUTs this repository's Actions secrets
-   `REGISTRY_USER` and `REGISTRY_PASSWORD` for the config check), `gateway-tool-keys`,
+   `REGISTRY_USER` and `REGISTRY_PASSWORD` for the config check, and makes
+   this repository's webhook to factoryd (issue events, the intake secret)
+   and its boot labels, which a seed project's owner keeps: factoryd only
+   reports them), `gateway-tool-keys`,
    `hetzner-agent` and `hetzner-ci` from `.env.tools` and a fresh
    `gateway-factoryd` token. Three CronJobs (every 10 minutes, one log
    line per run, `no change` once converged) take the rest: `console-oauth`

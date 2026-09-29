@@ -307,7 +307,7 @@
           "description": "VolumeMaxGB is the largest volume per server: 0 for none, else at least 10."
         }
       },
-      "description": "EnvelopeDefault is the resource envelope a project's first commissioning request copies into its envelopes row.",
+      "description": "EnvelopeDefault is the resource envelope of a project whose file sets none.",
       "required": [
         "monthly_eur",
         "server_types",
@@ -378,14 +378,6 @@
     "project_default": {
       "type": "object",
       "properties": {
-        "merge_rule": {
-          "type": "string",
-          "description": "MergeRule: auto merges a clean agent pull request without a human, human waits for an approver.",
-          "enum": [
-            "auto",
-            "human"
-          ]
-        },
         "quota": {
           "type": "object",
           "properties": {
@@ -438,9 +430,8 @@
           "additionalProperties": false
         }
       },
-      "description": "ProjectDefault is what a registered project starts with; absent: DefaultProject.",
+      "description": "ProjectDefault is what a project file leaves out takes; absent: DefaultProject.",
       "required": [
-        "merge_rule",
         "quota",
         "standing"
       ],

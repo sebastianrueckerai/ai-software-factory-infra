@@ -100,6 +100,107 @@
         "type": "string"
       },
       "description": "Secrets are secret/key entries: each namespace gets the secret with a random value for the key when it is missing."
+    },
+    "envelope": {
+      "type": "object",
+      "properties": {
+        "monthly_eur": {
+          "type": "number",
+          "description": "MonthlyEUR caps a calendar month (UTC), reservations and accrued cost together, in net EUR."
+        },
+        "server_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ServerTypes are the Hetzner server types a task may commission."
+        },
+        "max_count": {
+          "type": "integer",
+          "description": "MaxCount is how many servers may run at once."
+        },
+        "max_lease_hours": {
+          "type": "integer",
+          "description": "MaxLeaseHours is the longest lease."
+        },
+        "volume_max_gb": {
+          "type": "integer",
+          "description": "VolumeMaxGB is the largest volume per server: 0 for none, else at least 10."
+        }
+      },
+      "description": "Envelope bounds what the project's tasks commission in the agent cloud project without a human; absent: envelope_default.",
+      "required": [
+        "monthly_eur",
+        "server_types",
+        "max_count",
+        "max_lease_hours",
+        "volume_max_gb"
+      ],
+      "additionalProperties": false
+    },
+    "standing": {
+      "type": "object",
+      "properties": {
+        "monthly_eur": {
+          "type": "number",
+          "description": "MonthlyEUR is the fixed monthly line for standing resources."
+        },
+        "server_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ServerTypes are the server types a standing resource may have."
+        },
+        "max_count": {
+          "type": "integer",
+          "description": "MaxCount is how many standing servers may exist at once."
+        }
+      },
+      "description": "Standing bounds the project's standing resources; absent: project_default's.",
+      "required": [
+        "monthly_eur",
+        "server_types",
+        "max_count"
+      ],
+      "additionalProperties": false
+    },
+    "tokens": {
+      "type": "object",
+      "properties": {
+        "read": {
+          "type": "string",
+          "description": "Read reads the collaborators and assignees (the trust gate) and the webhooks where its user administers the repository.",
+          "enum": [
+            "forgejo-ci-registrar",
+            "forgejo-merge",
+            "forgejo-config"
+          ]
+        },
+        "actions": {
+          "type": "string",
+          "description": "Actions lists the Actions jobs and registers the runners; agents coder only.",
+          "enum": [
+            "forgejo-ci-registrar",
+            "forgejo-merge",
+            "forgejo-config"
+          ]
+        },
+        "merge": {
+          "type": "string",
+          "description": "Merge merges an approved pull request; agents coder only.",
+          "enum": [
+            "forgejo-ci-registrar",
+            "forgejo-merge",
+            "forgejo-config"
+          ]
+        }
+      },
+      "description": "Tokens name the seeded secrets factoryd reaches a seed project's repository with; a factory project's are registration's own.",
+      "required": [
+        "read"
+      ],
+      "additionalProperties": false
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",

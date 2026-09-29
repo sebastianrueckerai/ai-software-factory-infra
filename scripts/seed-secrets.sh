@@ -107,6 +107,28 @@ else
     echo "$A/forgejo-config: created (${#tok} chars)"
     unset tok
   fi
+  # The infra repository is a seed project (ruling 179, agents none): the
+  # seed owns its webhook to factoryd, so its issues reach the human lane,
+  # and its labels, which factory-agent (read) cannot create. factoryd only
+  # reports them. Idempotent: an existing hook to factoryd is left alone.
+  HOOK=http://factoryd.factory.svc.cluster.local:8080/webhooks/forgejo
+  if fj "$FJ/repos/$IR/hooks" | python3 -c 'import json,sys; sys.exit(0 if any(h["config"]["url"]==sys.argv[1] for h in json.load(sys.stdin)) else 1)' "$HOOK"; then
+    echo "$IR webhook to factoryd: exists"
+  else
+    V="$FORGEJO_WEBHOOK_SECRET" python3 -c 'import json,os,sys; print(json.dumps({"type":"forgejo","active":True,"branch_filter":"*",
+      "events":["issues","issue_assign","issue_label","issue_milestone","issue_comment"],
+      "config":{"url":sys.argv[1],"content_type":"json","secret":os.environ["V"]}}))' "$HOOK" |
+      fj -o /dev/null -w "$IR webhook to factoryd: %{http_code}\n" -X POST "$FJ/repos/$IR/hooks" -d @-
+  fi
+  have=$(fj "$FJ/repos/$IR/labels?limit=100" | python3 -c 'import json,sys; print(" ".join(l["name"] for l in json.load(sys.stdin)))')
+  # factoryd.BootLabels
+  for kv in agent=ededed human=c2e0c6 bug=cf222e improvement=0e8a16 state/suggested=c5def5 state/queued=ededed \
+    state/running=1f6feb state/waiting-human=d4a72c state/waiting-poster=fbca04 state/in-review=8250df state/done=2da44e \
+    state/failed=cf222e state/closed=6e7781 priority/p0=b60205 priority/p1=d93f0b priority/p2=fbca04 priority/p3=c5def5 \
+    severity/critical=b60205 severity/high=d93f0b severity/medium=fbca04 severity/low=c5def5; do
+    case " $have " in *" ${kv%%=*} "*) continue ;; esac
+    fj -o /dev/null -w "$IR label ${kv%%=*}: %{http_code}\n" -X POST "$FJ/repos/$IR/labels" -d "{\"name\":\"${kv%%=*}\",\"color\":\"#${kv#*=}\"}"
+  done
 fi
 # forgejo-pat (flux-system) is the Flux bootstrap PAT from ~/.git-credentials; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
 for n in $P $F $A; do echo "$n: $(kubectl -n "$n" get secret -o name | wc -l) secrets"; done

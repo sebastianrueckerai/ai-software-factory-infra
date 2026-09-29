@@ -1,8 +1,12 @@
 # yaml-language-server: $schema=../schema/project.schema.json
 # The factory's own code: its objects are the infra repository's and the
-# seed's (ruling 164), agents fix it, a human approves every merge.
+# seed's (ruling 164), agents fix it, a human approves every merge. Its
+# namespace factory is factoryd's own: this is the factory's own project.
 repository: sf/ai-software-factory-code
 merge_rule: human
 objects: seed
 agents: coder
 namespaces: [factory]
+# factory-ci's registrar token reads the writers and the hooks and runs
+# the Actions; factory-merge's merges
+tokens: {read: forgejo-ci-registrar, actions: forgejo-ci-registrar, merge: forgejo-merge}
