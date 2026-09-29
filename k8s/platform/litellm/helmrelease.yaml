@@ -42,124 +42,136 @@ spec:
           litellm_params:
             model: deepseek/deepseek-chat
             api_key: os.environ/DEEPSEEK_API_KEY
-        - model_name: coding-cheap
+        # Model tiers (ruling 181): every deployment measured by
+        # scripts/model-tiers on 2026-09-29 (task-77-report.md), weight by rank
+        # inside its tier: all passed 9 of 9 samples, so rank is p50 latency.
+        # The role aliases map onto tiers in router_settings.model_group_alias.
+        - model_name: tier-high
           litellm_params:
-            model: deepseek/deepseek-chat
-            api_key: os.environ/DEEPSEEK_API_KEY
-        - model_name: coding-cheap
-          litellm_params:
-            model: dashscope/qwen3.8-flash
-            api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-            api_key: os.environ/ALIBABA_CLOUD_KEY
-            # opencode sends reasoning_effort, which dashscope rejects with a 400
+            model: groq/qwen/qwen3.8-27b
+            api_key: os.environ/GROQ_KEY
             drop_params: true
-            # Qwen thinks by default and its thinking is not bounded by
-            # max_tokens (verified: max_tokens 60 gave 240 completion
-            # tokens), so factory-gateway's output clamp would not hold
-            extra_body:
-              enable_thinking: false
-        - model_name: coding-frontier
-          litellm_params:
-            model: zai/glm-5.3
-            api_base: https://api.z.ai/api/paas/v4
-            api_key: os.environ/Z_AI_KEY
-            # opencode sends reasoning_effort, which zai rejects with a 400
-            drop_params: true
-        - model_name: review-frontier
-          litellm_params:
-            model: zai/glm-5.3
-            api_base: https://api.z.ai/api/paas/v4
-            api_key: os.environ/Z_AI_KEY
-            # opencode sends reasoning_effort, which zai rejects with a 400
-            drop_params: true
-        # factoryd's supervisor (architecture 6.6): the strongest configured model
-        - model_name: supervisor
-          litellm_params:
-            model: zai/glm-5.3
-            api_base: https://api.z.ai/api/paas/v4
-            api_key: os.environ/Z_AI_KEY
-            drop_params: true
-        # Task 77 measurement candidates (scripts/model-tiers): removed again
-        # when the tiers land
-        - model_name: cand-zai-glm-5.3
-          litellm_params:
-            model: zai/glm-5.3
-            api_base: https://api.z.ai/api/paas/v4
-            api_key: os.environ/Z_AI_KEY
-            drop_params: true
-        - model_name: cand-dashscope-qwen3.8-max
+            weight: 5
+        - model_name: tier-high
           litellm_params:
             model: dashscope/qwen3.8-max
             api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
             api_key: os.environ/ALIBABA_CLOUD_KEY
             drop_params: true
+            # thinking is not bounded by max_tokens (verified on Qwen: max_tokens
+            # 60 gave 240 completion tokens), so the gateway's output clamp would not hold
             extra_body:
               enable_thinking: false
-        - model_name: cand-dashscope-kimi-k2.7-code
+            weight: 4
+        - model_name: tier-high
+          litellm_params:
+            model: deepseek/deepseek-v4-pro
+            api_key: os.environ/DEEPSEEK_API_KEY
+            drop_params: true
+            weight: 3
+        - model_name: tier-high
           litellm_params:
             model: dashscope/kimi-k2.7-code
             api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
             api_key: os.environ/ALIBABA_CLOUD_KEY
             drop_params: true
+            # thinking is not bounded by max_tokens (verified on Qwen: max_tokens
+            # 60 gave 240 completion tokens), so the gateway's output clamp would not hold
             extra_body:
               enable_thinking: false
-        - model_name: cand-deepseek-v4-pro
+            weight: 2
+        - model_name: tier-high
           litellm_params:
-            model: deepseek/deepseek-v4-pro
-            api_key: os.environ/DEEPSEEK_API_KEY
-        - model_name: cand-groq-qwen3.8-27b
+            model: zai/glm-5.3
+            api_base: https://api.z.ai/api/paas/v4
+            api_key: os.environ/Z_AI_KEY
+            # opencode sends reasoning_effort, which zai rejects with a 400
+            drop_params: true
+            weight: 1
+        - model_name: tier-mid
           litellm_params:
-            model: groq/qwen/qwen3.8-27b
+            model: groq/openai/gpt-oss-120b
             api_key: os.environ/GROQ_KEY
             drop_params: true
-        - model_name: cand-zai-glm-5
-          litellm_params:
-            model: zai/glm-5
-            api_base: https://api.z.ai/api/paas/v4
-            api_key: os.environ/Z_AI_KEY
-            drop_params: true
-        - model_name: cand-zai-glm-4.7
-          litellm_params:
-            model: zai/glm-4.7
-            api_base: https://api.z.ai/api/paas/v4
-            api_key: os.environ/Z_AI_KEY
-            drop_params: true
-        - model_name: cand-dashscope-qwen3.7-plus
+            weight: 4
+        - model_name: tier-mid
           litellm_params:
             model: dashscope/qwen3.7-plus
             api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
             api_key: os.environ/ALIBABA_CLOUD_KEY
             drop_params: true
+            # thinking is not bounded by max_tokens (verified on Qwen: max_tokens
+            # 60 gave 240 completion tokens), so the gateway's output clamp would not hold
             extra_body:
               enable_thinking: false
-        - model_name: cand-groq-gpt-oss-120b
+            weight: 3
+        - model_name: tier-mid
           litellm_params:
-            model: groq/openai/gpt-oss-120b
-            api_key: os.environ/GROQ_KEY
-            drop_params: true
-        - model_name: cand-zai-glm-5.3-flash
-          litellm_params:
-            model: zai/glm-5.3-flash
+            model: zai/glm-5
             api_base: https://api.z.ai/api/paas/v4
             api_key: os.environ/Z_AI_KEY
+            # opencode sends reasoning_effort, which zai rejects with a 400
             drop_params: true
-        - model_name: cand-dashscope-qwen3.8-flash
+            weight: 2
+        - model_name: tier-mid
+          litellm_params:
+            model: zai/glm-4.7
+            api_base: https://api.z.ai/api/paas/v4
+            api_key: os.environ/Z_AI_KEY
+            # opencode sends reasoning_effort, which zai rejects with a 400
+            drop_params: true
+            weight: 1
+        - model_name: tier-low
+          litellm_params:
+            model: groq/openai/gpt-oss-20b
+            api_key: os.environ/GROQ_KEY
+            drop_params: true
+            weight: 4
+        - model_name: tier-low
+          litellm_params:
+            model: deepseek/deepseek-flash
+            api_key: os.environ/DEEPSEEK_API_KEY
+            drop_params: true
+            weight: 3
+        - model_name: tier-low
           litellm_params:
             model: dashscope/qwen3.8-flash
             api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
             api_key: os.environ/ALIBABA_CLOUD_KEY
             drop_params: true
+            # thinking is not bounded by max_tokens (verified on Qwen: max_tokens
+            # 60 gave 240 completion tokens), so the gateway's output clamp would not hold
             extra_body:
               enable_thinking: false
-        - model_name: cand-deepseek-flash
+            weight: 2
+        - model_name: tier-low
           litellm_params:
-            model: deepseek/deepseek-flash
-            api_key: os.environ/DEEPSEEK_API_KEY
-        - model_name: cand-groq-gpt-oss-20b
-          litellm_params:
-            model: groq/openai/gpt-oss-20b
-            api_key: os.environ/GROQ_KEY
+            model: zai/glm-5.3-flash
+            api_base: https://api.z.ai/api/paas/v4
+            api_key: os.environ/Z_AI_KEY
+            # opencode sends reasoning_effort, which zai rejects with a 400
             drop_params: true
+            weight: 1
+      router_settings:
+        # weighted random pick: every provider of a tier keeps getting calls,
+        # so the audit's deployment column can compare them (latency-based
+        # routing would starve all but the fastest, usage-based needs TPM
+        # limits the providers do not publish)
+        routing_strategy: simple-shuffle
+        # a failed call re-picks by weight among the tier's healthy others:
+        # the fallback in ranked order, never into another tier (ruling 189)
+        enable_weighted_failover: true
+        num_retries: 0
+        # one failure puts a deployment into a minute's cooldown
+        allowed_fails: 1
+        cooldown_time: 60
+        # /model/info lists each alias once per deployment of its tier, so
+        # the gateway's price book holds at the tier's dearest deployment
+        model_group_alias:
+          supervisor: tier-high
+          review-frontier: tier-high
+          coding-frontier: tier-mid
+          coding-cheap: tier-low
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
         # backstop behind factory-gateway's holds: refuse a call whose
