@@ -71,6 +71,11 @@
           "type": "integer",
           "description": "Nudges is how many such messages one repetition gets; the next run of the same call trips the supervisor, at least 1. Absent: DefaultNudges.",
           "minimum": 1
+        },
+        "same_call": {
+          "type": "integer",
+          "description": "SameCall is how many identical tool calls in one session, in a row or not, trip the same_call detector, at least 2 and above NudgeAfter: a repetition gets its nudges first. Absent: DefaultSameCall.",
+          "minimum": 2
         }
       },
       "description": "Limits bound every task's work: sessions, agent time, supervisor calls.",

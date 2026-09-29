@@ -52,7 +52,10 @@ editing surface, the console shows it read-only.
   that keep the model; `steps`, the model turns per agent session, 200
   when absent; `nudge_after` and `nudges`, the loop nudge: that many
   identical tool calls in a row get the running session a message to
-  change approach, that many times per repetition, 3 and 1 when absent); the capability classes (the model aliases and
+  change approach, that many times per repetition, 3 and 1 when absent;
+  `same_call`, the identical tool calls per session that trip the
+  same_call detector once the nudges are spent, above `nudge_after`, 4
+  when absent); the capability classes (the model aliases and
   tools a task class may use: a paid tool with per-task `max_requests`
   and `max_eur`, a free one, `escalate_to_human` and the commissioning
   tools, as `{}`; a tool no class of the task lists is refused, ruling

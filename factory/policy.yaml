@@ -31,6 +31,8 @@ budget:
 # identical tool calls in a row (same tool, same input) that get the running
 # session a message to change approach, nudges times per repetition; the
 # next such run trips same_call to the supervisor (absent: 3 and 1).
+# same_call: identical tool calls in one session, in a row or not, that
+# trip the same_call detector after the nudges; above nudge_after (absent: 4).
 limits:
   sessions: 3
   agent_time: 20m
@@ -40,6 +42,7 @@ limits:
   steps: 200
   nudge_after: 3
   nudges: 1
+  same_call: 4
 
 # Capability classes a task can hold (tasks.required_capabilities; intake
 # gives agent tasks "coder"). models: the aliases the agent may call through
