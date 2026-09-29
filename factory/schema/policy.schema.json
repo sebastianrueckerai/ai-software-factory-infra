@@ -123,6 +123,10 @@
           "supervisor_model": {
             "type": "string",
             "description": "SupervisorModel is the alias the session and gate supervisors call on the task's account."
+          },
+          "audit_model": {
+            "type": "string",
+            "description": "AuditModel is the alias factoryd's security audit calls on the task's account (ruling 188)."
           }
         },
         "description": "Class is a capability class a task can hold: the model aliases it may call through the gateway and its tools with per-task caps, and the aliases factoryd calls on the task's account, which the agent may not.",
@@ -359,6 +363,7 @@
           "JudgeScreening",
           "RunReport",
           "RollCommit",
+          "GateAudit",
           "default"
         ]
       }

@@ -47,6 +47,9 @@ classes:
     # agent cannot call these
     review_model: review-frontier
     supervisor_model: supervisor
+    # the security audit on the stronger rung, as the screening's (rulings
+    # 188, 191); the agent calls this alias too, on its own key
+    audit_model: coding-frontier
     tools:
       web_scrape: {max_requests: 30, max_eur: 0.20}
       web_search: {max_requests: 30, max_eur: 0.20}
@@ -160,3 +163,5 @@ bounds:
   GateReproduction: 1800
   # ruling 194: a review-frontier review of a 100-line diff took 210 s
   ModelReview: 360
+  # the audit's one call on coding-frontier, the review's sibling
+  GateAudit: 360

@@ -10,7 +10,9 @@
 # (ruling 190); none here, so the session cap decides. policy, approval
 # and merge are required, approval right before merge, merge last;
 # checks, policy, approval and merge always run; screening is first and
-# for a human only.
+# for a human only. audit (ruling 188) reads the reviewed head for a
+# fixed security checklist, between review and approval, its findings for
+# a human only; it runs for the projects whose file sets audit: true.
 stages:
   - {name: screening, on_findings: human, enabled: true, when: outsider}
   - {name: checks, on_findings: agent, enabled: true}
@@ -18,5 +20,6 @@ stages:
   - {name: migration, on_findings: human, enabled: true}
   - {name: reproduction, on_findings: agent, enabled: true}
   - {name: review, on_findings: agent, enabled: true}
+  - {name: audit, on_findings: human, enabled: true}
   - {name: approval, on_findings: human, enabled: true}
   - {name: merge, on_findings: human, enabled: true}

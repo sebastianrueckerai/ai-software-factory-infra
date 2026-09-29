@@ -16,6 +16,7 @@
               "policy",
               "migration",
               "review",
+              "audit",
               "approval",
               "merge"
             ]

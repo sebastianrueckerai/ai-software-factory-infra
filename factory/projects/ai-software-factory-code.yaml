@@ -6,6 +6,9 @@ repository: sf/ai-software-factory-code
 merge_rule: human
 objects: seed
 agents: coder
+# the security audit stage reads every pull request before the card
+# (ruling 188)
+audit: true
 namespaces: [factory]
 # factory-ci's registrar token reads the writers and the hooks and runs
 # the Actions; factory-merge's merges
