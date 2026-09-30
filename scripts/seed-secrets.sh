@@ -23,10 +23,7 @@ for r in forgejo litellm temporal; do
 done
 k -n $P create secret generic cnpg-s3-creds --from-literal=ACCESS_KEY_ID="$HETZNER_S3_ACCESS_KEY_ID" --from-literal=ACCESS_SECRET_KEY="$HETZNER_S3_SECRET_ACCESS_KEY"
 k -n $P create secret generic litellm-master-key --from-literal=masterkey="$LITELLM_MASTER_KEY"
-k -n $P create secret generic litellm-deepseek --from-literal=DEEPSEEK_API_KEY="$DEEPSEEK_KEY"
 k -n $P create secret generic litellm-qwen --from-literal=ALIBABA_CLOUD_KEY="$ALIBABA_CLOUD_KEY"
-k -n $P create secret generic litellm-glm --from-literal=Z_AI_KEY="$Z_AI_KEY"
-k -n $P create secret generic litellm-groq --from-literal=GROQ_KEY="$GROQ_KEY"
 F=forgejo
 k -n $F create secret generic forgejo-secret-key --from-literal=SECRET_KEY="$FORGEJO_SECRET_KEY"
 k -n $F create secret generic forgejo-admin-secret --from-literal=username=sebastian --from-literal=password="$FORGEJO_ADMIN_PASSWORD"

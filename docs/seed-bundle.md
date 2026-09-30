@@ -9,7 +9,7 @@ this bundle.
 - [x] Hetzner Object Storage access keys (S3)
 - [ ] Namecheap account access, registrar and DNS for
       aisoftwarefactory.world
-- [ ] Model provider keys: DeepSeek, Alibaba, z.ai, Groq
+- [ ] Model provider key: Alibaba (Model Studio, `ALIBABA_CLOUD_KEY`)
 - [ ] Tool provider keys: Replicate, Firecrawl, fal.ai
 - [x] Hetzner agent project token (`HETZNER_AGENT_KEY` in `.env.tools`,
       task 53): secret hetzner-agent (key token, namespace factory),

@@ -1,15 +1,5 @@
 [
- {"model_name": "cand-zai-glm-5.3", "model": "zai/glm-5.3", "provider": "zai", "tier": "high"},
- {"model_name": "cand-dashscope-qwen3.8-max", "model": "dashscope/qwen3.8-max", "provider": "alibaba", "tier": "high"},
- {"model_name": "cand-dashscope-kimi-k2.7-code", "model": "dashscope/kimi-k2.7-code", "provider": "alibaba", "tier": "high"},
- {"model_name": "cand-deepseek-v4-pro", "model": "deepseek/deepseek-v4-pro", "provider": "deepseek", "tier": "high"},
- {"model_name": "cand-groq-qwen3.8-27b", "model": "groq/qwen/qwen3.8-27b", "provider": "groq", "tier": "high"},
- {"model_name": "cand-zai-glm-5", "model": "zai/glm-5", "provider": "zai", "tier": "mid"},
- {"model_name": "cand-zai-glm-4.7", "model": "zai/glm-4.7", "provider": "zai", "tier": "mid"},
- {"model_name": "cand-dashscope-qwen3.7-plus", "model": "dashscope/qwen3.7-plus", "provider": "alibaba", "tier": "mid"},
- {"model_name": "cand-groq-gpt-oss-120b", "model": "groq/openai/gpt-oss-120b", "provider": "groq", "tier": "mid"},
- {"model_name": "cand-zai-glm-5.3-flash", "model": "zai/glm-5.3-flash", "provider": "zai", "tier": "low"},
- {"model_name": "cand-dashscope-qwen3.8-flash", "model": "dashscope/qwen3.8-flash", "provider": "alibaba", "tier": "low"},
- {"model_name": "cand-deepseek-flash", "model": "deepseek/deepseek-flash", "provider": "deepseek", "tier": "low"},
- {"model_name": "cand-groq-gpt-oss-20b", "model": "groq/openai/gpt-oss-20b", "provider": "groq", "tier": "low"}
+ {"model_name": "tier-high", "model": "dashscope/qwen3.8-max", "provider": "alibaba", "tier": "high"},
+ {"model_name": "tier-mid", "model": "dashscope/qwen3.7-plus", "provider": "alibaba", "tier": "mid"},
+ {"model_name": "tier-low", "model": "dashscope/qwen3.8-flash", "provider": "alibaba", "tier": "low"}
 ]

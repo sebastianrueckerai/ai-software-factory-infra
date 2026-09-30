@@ -38,20 +38,9 @@ spec:
       create: true
     proxy_config:
       model_list:
-        - model_name: deepseek-chat
-          litellm_params:
-            model: deepseek/deepseek-chat
-            api_key: os.environ/DEEPSEEK_API_KEY
-        # Model tiers (rulings 181, 192): every deployment measured by
-        # scripts/model-tiers on 2026-09-29 (task-77-report.md). tier-high is
-        # each provider's strongest general coding model, no preview or small
-        # model, equal weights; tier-mid and tier-low weight by measured rank
-        # (all passed 9 of 9 samples, so rank is p50 latency).
-        # Groq is in no tier: an agent session's later turns carry the
-        # reasoning_content of earlier answers, which Groq rejects with a 400
-        # (live 2026-09-29: 24 rejected turns in one session), so it only
-        # answered first turns.
-        # The role aliases map onto tiers in router_settings.model_group_alias.
+        # Model tiers (rulings 181, 204): one provider, Alibaba, one deployment
+        # per tier, each measured by scripts/model-tiers. The role aliases map
+        # onto tiers in router_settings.model_group_alias.
         - model_name: tier-high
           litellm_params:
             model: dashscope/qwen3.8-max
@@ -62,88 +51,30 @@ spec:
             # 60 gave 240 completion tokens), so the gateway's output clamp would not hold
             extra_body:
               enable_thinking: false
-            weight: 1
-        - model_name: tier-high
-          litellm_params:
-            model: deepseek/deepseek-v4-pro
-            api_key: os.environ/DEEPSEEK_API_KEY
-            drop_params: true
-            weight: 1
-        - model_name: tier-high
-          litellm_params:
-            model: zai/glm-5.3
-            api_base: https://api.z.ai/api/paas/v4
-            api_key: os.environ/Z_AI_KEY
-            # opencode sends reasoning_effort, which zai rejects with a 400
-            drop_params: true
-            weight: 1
         - model_name: tier-mid
           litellm_params:
             model: dashscope/qwen3.7-plus
             api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
             api_key: os.environ/ALIBABA_CLOUD_KEY
             drop_params: true
-            # thinking is not bounded by max_tokens (verified on Qwen: max_tokens
-            # 60 gave 240 completion tokens), so the gateway's output clamp would not hold
             extra_body:
               enable_thinking: false
-            weight: 3
-        - model_name: tier-mid
-          litellm_params:
-            model: zai/glm-5
-            api_base: https://api.z.ai/api/paas/v4
-            api_key: os.environ/Z_AI_KEY
-            # opencode sends reasoning_effort, which zai rejects with a 400
-            drop_params: true
-            weight: 2
-        - model_name: tier-mid
-          litellm_params:
-            model: zai/glm-4.7
-            api_base: https://api.z.ai/api/paas/v4
-            api_key: os.environ/Z_AI_KEY
-            # opencode sends reasoning_effort, which zai rejects with a 400
-            drop_params: true
-            weight: 1
-        - model_name: tier-low
-          litellm_params:
-            model: deepseek/deepseek-flash
-            api_key: os.environ/DEEPSEEK_API_KEY
-            drop_params: true
-            weight: 3
         - model_name: tier-low
           litellm_params:
             model: dashscope/qwen3.8-flash
             api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
             api_key: os.environ/ALIBABA_CLOUD_KEY
             drop_params: true
-            # thinking is not bounded by max_tokens (verified on Qwen: max_tokens
-            # 60 gave 240 completion tokens), so the gateway's output clamp would not hold
             extra_body:
               enable_thinking: false
-            weight: 2
-        - model_name: tier-low
-          litellm_params:
-            model: zai/glm-5.3-flash
-            api_base: https://api.z.ai/api/paas/v4
-            api_key: os.environ/Z_AI_KEY
-            # opencode sends reasoning_effort, which zai rejects with a 400
-            drop_params: true
-            weight: 1
       router_settings:
-        # weighted random pick: every provider of a tier keeps getting calls,
-        # so the audit's deployment column can compare them (latency-based
-        # routing would starve all but the fastest, usage-based needs TPM
-        # limits the providers do not publish)
-        routing_strategy: simple-shuffle
-        # a failed call re-picks by weight among the tier's healthy others:
-        # the fallback in ranked order, never into another tier (ruling 189)
-        enable_weighted_failover: true
-        num_retries: 0
-        # one failure puts a deployment into a minute's cooldown
-        allowed_fails: 1
-        cooldown_time: 60
-        # /model/info lists each alias once per deployment of its tier, so
-        # the gateway's price book holds at the tier's dearest deployment
+        # a call failing with 408, 409, 429 or 5xx is retried twice on the
+        # same deployment after 0.5 s, then 1 s (or the provider's
+        # Retry-After up to 60 s); other 4xx fail at once
+        num_retries: 2
+        # a tier has no second deployment to fail over to, so a cooldown
+        # would only lock the whole tier after a failure
+        disable_cooldowns: true
         model_group_alias:
           supervisor: tier-high
           review-frontier: tier-high
@@ -158,11 +89,14 @@ spec:
       litellm_settings:
         # factory-gateway books a stream's cost from its final usage chunk
         include_cost_in_streaming_usage: true
+        # proxy-wide stop behind the gateway's accounting (queue item 64 b):
+        # every call is refused once the month's spend passes it (USD, about
+        # the 50 EUR cap); 1mo resets on the 1st, 00:00 UTC; the spend sits
+        # in user row litellm-proxy-budget
+        max_budget: 55
+        budget_duration: 1mo
     environmentSecrets:
-      - litellm-deepseek
       - litellm-qwen
-      - litellm-glm
-      - litellm-groq
     migrationJob:
       enabled: true
       hooks:
