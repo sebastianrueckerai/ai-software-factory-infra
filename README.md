@@ -504,8 +504,9 @@ switch after it).
    requires the `schematic` label, so only the gVisor snapshot from
    `talos/build-snapshot.sh` can boot. Wait for the nodes, `talosctl
    bootstrap`, fetch the kubeconfig (strip stale `sf*` entries first).
-   [Nodes installed from the schematic image register with the
-   control-plane taint: remove it from all three.]
+   The generated configs carry no control-plane taint (`talos/README.md`
+   strips it); a node that still registers with it needs it removed by
+   hand.
 2. Cilium, imperatively (see above). The connectivity suite is optional;
    its one known failure is the node-to-node DNS check.
 3. local-path, cert-manager, then, before any Certificate can be issued,
@@ -513,7 +514,10 @@ switch after it).
    backups bucket into `forgejo` (`kubectl create -f`; `kubectl apply` would copy the private keys into the last-applied annotation): Let's Encrypt allows five
    certificates per exact name set in seven days, and the rebuilds of one week
    hit that limit once (2026-09-28, an interim certificate under another name
-   set bridged it). Then the CNPG operator and plugin, `cluster.yaml`. [cert-manager's CRDs must exist before the plugin
+   set bridged it). A restored secret whose names differ from its
+   Certificate's `dnsNames` does not stop an order: cert-manager issues
+   at once and the issue counts against the limit (2026-09-30: the interim
+   console+git secret, a fresh git-only certificate). Then the CNPG operator and plugin, `cluster.yaml`. [cert-manager's CRDs must exist before the plugin
    manifest applies: it carries a Certificate and an Issuer for its own
    webhook, and applying the plugin first drops them silently, leaves
    the plugin pod ContainerCreating and the Cluster reporting an unknown
