@@ -19,7 +19,9 @@ sync path `clusters/sf`:
   the code repo's `k8s/` tree (namespace `factory`, prune on, after
   `platform`).
 - `k8s/platform/` — the platform tree: chart sources, Gateway API edge,
-  cert-manager and Forgejo HelmReleases, CNPG, local-path, and the
+  cert-manager and Forgejo HelmReleases, CNPG, local-path (and its class
+  `factory-cache`: the per-project Go and npm caches of agent sessions and
+  CI runs, a directory per claim name that Retain keeps), and the
   CoreDNS Corefile. The Corefile's rewrite sends in-cluster git DNS to
   the gateway Service; prune is on, so deleting coredns.yaml from the
   tree deletes the rewrite and re-breaks the Flux sync. From here on,
