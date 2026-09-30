@@ -33,6 +33,10 @@
       "type": "string",
       "description": "Process names the file processes/\u003cname\u003e.yaml the project's cards pass; required with agents coder, not allowed with agents none."
     },
+    "template": {
+      "type": "string",
+      "description": "Template names the directory templates/\u003cname\u003e/ registration seeds the empty repository's main with; a factory project's only."
+    },
     "audit": {
       "type": "boolean",
       "description": "Audit runs the process's audit stage on the project's pull requests (ruling 188); absent: it does not."

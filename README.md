@@ -96,6 +96,8 @@ editing surface, the console shows it read-only.
   and only reports its webhook and namespace labels), `agents: coder | none` (`none`: every
   issue and alert goes to the human lane, `POST /tasks` answers 422),
   `process` (for agents coder, the name of a file under `processes/`),
+  `template` (a factory project's, the name of a directory under
+  `templates/`: registration seeds the empty repository's `main` with it),
   notify, namespaces, environments, quota, secrets, `envelope` (the task
   block) and `standing`. A seed project names the seeded secrets
   factoryd reaches it with in `tokens` (`read`, and for agents coder
@@ -106,6 +108,16 @@ editing surface, the console shows it read-only.
   (its rolls, its CI runs, the console's login). A new factory project:
   add its file, then `factoryd register-project --name <name>`. The
   console shows every project and envelope read-only with a link here.
+- `templates/<name>/`: the files registration commits as a new factory
+  project's first commit on `main` (stage11-design.md section 6), rendered
+  with Go's `text/template` between `[[` and `]]` (so `${{ }}` of Actions
+  passes through; a file never writes `[[` or `]]` otherwise) with the
+  project's `.Name`, `.Repository`, `.Image` and `.Namespaces` (namespace
+  by environment path). Every template carries `.forgejo/workflows/pr.yml`,
+  `.forgejo/workflows/ci.yml`, `.forgejo/roll.sh` and
+  `deploy/base/kustomization.yaml`; the check renders each file with sample
+  data. `ts-go` is a TypeScript single-page frontend and a Go API in one
+  image; its `AGENTS.md` names the layout its CI relies on.
 - `schema/`: the JSON Schemas `factoryd schema --out factory/schema`
   generates from factoryd's Go types. Each YAML file's first line
   references its schema (`# yaml-language-server:
