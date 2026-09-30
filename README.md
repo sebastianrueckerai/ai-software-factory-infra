@@ -484,9 +484,9 @@ Before a destroy that must keep Postgres state: a completed CNPG
 a Forgejo dump, `flux suspend kustomization --all`, and the two-line edit
 in `k8s/platform/cnpg/cluster.yaml` (recovery origin = the newest
 generation with a completed base backup, live archive = the next unused
-sibling). The tree carries the pair for the next rebuild (origin `sf-cluster-v9`,
-archive `sf-cluster-v10` since the Stage 10 close; v9's close base backup is
-20260930T034433 with its WAL archive to 0000000900000003000000E0, the
+sibling). The tree carries the pair for the next rebuild (origin `sf-cluster-v10`,
+archive `sf-cluster-v11` since the Stage 11 close; v10's close base backup is
+20260930T184202 with its WAL archive to 0000000A0000000400000061, the
 switch after it).
 
 1. A destroy releases the primary IPs, so first
