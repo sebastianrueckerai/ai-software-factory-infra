@@ -22,13 +22,18 @@
         "day_eur": {
           "type": "number",
           "description": "DayEUR caps all tasks together per UTC day; 0 stops all spend."
+        },
+        "month_eur": {
+          "type": "number",
+          "description": "MonthEUR caps all tasks together per UTC calendar month; 0 stops all spend."
         }
       },
       "description": "Budget caps spend in EUR per task and per UTC day.",
       "required": [
         "task_default_eur",
         "task_max_eur",
-        "day_eur"
+        "day_eur",
+        "month_eur"
       ],
       "additionalProperties": false
     },
