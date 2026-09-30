@@ -497,7 +497,10 @@ switch after it).
    plugin. Re-apply the plugin manifest once cert-manager is up. Cost
    about six minutes in the drill.] The recovery runs from the origin
    generation. [Origin and archive must differ, or the plugin refuses
-   with an empty-archive error.] Apply the four Database CRs.
+   with an empty-archive error.] Apply the four Database CRs. The
+   recovered sequences run up to 32 values ahead, so new ids skip past
+   the last row (2026-09-30: policy version 240 then 271, approval 192
+   then 225); no row is lost.
 4. The bootstrap slice by hand: namespaces, every seeded secret from the
    list above (`forgejo-secret-key` first; `scripts/seed-secrets.sh`
    creates the missing ones from `.env.tools` and `.env.seed` without
@@ -680,7 +683,9 @@ switch after it).
    (ruling 97).
 9. Gate: every restored repository's HEAD matches the last pushed commit
    on both Forgejo and GitHub, the Stage 2 exit tests pass, CI on `main`
-   is green, and one task through the authenticated intake runs to a
+   is green (a dump that already holds the code repository's `main`
+   starts no run: push an empty commit on `main` for it; its new images
+   open the gate's roll), and one task through the authenticated intake runs to a
    fork PR whose checks run on the untrusted runner: the workflow
    completes with `job-env-audit` green (the job token's push refused).
    [The CI, build and sandbox egress allowlists must admit
