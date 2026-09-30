@@ -559,7 +559,9 @@ switch after it).
    prints the value it was given in its "access token does not exist"
    error: never hand it a password.]
 7. OpenBao: throwaway init, ship the snapshot, `bao operator raft
-   snapshot restore -force`, restart, unseal with the original key. The
+   snapshot restore -force`, restart, unseal with the original key.
+   Pass the throwaway root token over stdin (`kubectl exec -i ... -- sh
+   -c 'BAO_TOKEN="$(cat)" bao ...'`); without `-i` the token is empty. The
    unseal is the one hand step left: the unseal key is the root of
    trust, and auto-unseal needs a key service we do not run. The
    snapshot carries the SSH CA (its signing key too), the gateway's
@@ -648,7 +650,11 @@ switch after it).
    `last_error` ends Failed (`Job failed` alert); `signoz-objects` in `platform` writes SigNoz's
    viewer account for factoryd, the webhook channel, dashboards, alert
    rules (the platform's and every project's) and retention (see
-   Telemetry), which SigNoz loses with its volumes. `signoz-root` came with step 4's seed (`scripts/seed-secrets.sh`
+   Telemetry), which SigNoz loses with its volumes. Let the CronJob run
+   `signoz-objects` rather than a job made by hand: two runs at once
+   (a hand job near a :x0 schedule) collide on the retention set, one
+   fails with a 400, and the platform's `Job failed` rule files an infra
+   issue (2026-09-30, infra #8). `signoz-root` came with step 4's seed (`scripts/seed-secrets.sh`
    from `SIGNOZ_ADMIN_PASSWORD`); create it now if SigNoz's HelmRelease
    reports it missing. Check that ConfigMap `cluster-facts`
    (namespace `factory`, key `node_public_ips`) carries the new node
