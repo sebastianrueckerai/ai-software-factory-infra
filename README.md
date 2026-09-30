@@ -490,12 +490,15 @@ archive `sf-cluster-v11` since the Stage 11 close; v10's close base backup is
 switch after it).
 
 1. A destroy releases the primary IPs, so first
-   `tofu apply -target=hcloud_primary_ip.node`, point the `git` DDNS
-   record at the new node-0 address (Namecheap DDNS password in the seed
-   env), and regenerate the Talos configs per `talos/README.md` with the
+   `tofu apply -target=hcloud_primary_ip.node`, point the `git`, `console`
+   and `signoz` DDNS records at the new node-0 address (`tofu output
+   api_endpoint_ip`; Namecheap DDNS password in the seed env), and
+   regenerate the Talos configs per `talos/README.md` with the
    new API endpoint. Then the full `tofu apply`, and write `tofu output
    node_public_ips` (comma-separated) into
-   `k8s/platform/cluster-facts/configmap.yaml` and commit it (ruling 112:
+   `k8s/platform/cluster-facts/configmap.yaml` and commit it when the set
+   of addresses changed; the order does not matter, and the same three
+   addresses often come back under other node names (ruling 112:
    the build VMs' firewall admits only these sources; a stale list makes
    every PR image build time out). The image selector
    requires the `schematic` label, so only the gVisor snapshot from
