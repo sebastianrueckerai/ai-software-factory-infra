@@ -639,6 +639,15 @@ switch after it).
    (its line says `created`; before the engine exists it says `skipped`).
    OpenBao holds nothing else, so the seed and the bootstrap are the whole
    restore.
+   After an infra change to config.sh's engines, policies or roles (and
+   the bootstrap's pinned values with it), whether on a restored or a
+   running OpenBao: run `scripts/openbao-config-bootstrap.sh` once with the
+   root token, then `scripts/seed-secrets.sh`, before a factoryd that reads
+   `factory/forgejo-admin` rolls. Until the bootstrap runs, every
+   `openbao-config` run fails with a 403 on the new paths; until the seed
+   runs, every unregistered project's reconcile fails its registration.
+   The first such change is the role `factoryd` (2026-09-30): both scripts
+   run before Stage 12's Roll 1.
 8. Re-create what restores do not carry: the `factory` namespace
    secrets, `forgejo-pat` in `flux-system`, a fresh `factoryd-intake`
    token, `factoryd-webhook` from `FORGEJO_WEBHOOK_SECRET`, and a freshly
