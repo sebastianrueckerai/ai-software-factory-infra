@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../schema/project.schema.json
+# Stage 11's live proof of the template seed (Task 99): a scratch project
+# whose only purpose is one green CI run on the seed commit; removed after.
+repository: scratch-seed/scratch-seed
+merge_rule: human
+objects: factory
+agents: coder
+process: spec
+template: ts-go
+namespaces: [scratch-seed-staging]
+environments:
+  - {namespace: scratch-seed-staging, path: deploy/staging}
