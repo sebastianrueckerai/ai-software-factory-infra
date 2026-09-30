@@ -165,6 +165,23 @@
         "queue"
       ],
       "additionalProperties": false
+    },
+    "time": {
+      "type": "object",
+      "properties": {
+        "agent_time": {
+          "type": "string",
+          "description": "AgentTime overrides limits.agent_time when set (non-zero).",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "check_in": {
+          "type": "string",
+          "description": "CheckIn overrides limits.check_in when set; a set 0 means no check-in, distinct from leaving it unset.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        }
+      },
+      "description": "Time overrides limits.agent_time and limits.check_in (and the class's, if set) for tasks of this process; a project's Time wins over it.",
+      "additionalProperties": false
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",

@@ -46,7 +46,12 @@
         },
         "agent_time": {
           "type": "string",
-          "description": "AgentTime is the agent's working time across all sessions of a task, such as 20m; waiting on checks or on a reviewer does not count.",
+          "description": "AgentTime is the agent's working time across all sessions of a task, such as 20m; waiting on checks or on a reviewer does not count. A class, process or project may set its own (Time), the most specific wins.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "check_in": {
+          "type": "string",
+          "description": "CheckIn is how long a session runs before it must check in with the supervisor, at least 10m, or 0 for no check-in. Absent: 0. A class, process or project may set its own (Time), the most specific wins.",
           "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
         },
         "supervisor_calls": {
@@ -161,6 +166,23 @@
           "audit_model": {
             "type": "string",
             "description": "AuditModel is the alias factoryd's security audit calls on the task's account (ruling 188)."
+          },
+          "time": {
+            "type": "object",
+            "properties": {
+              "agent_time": {
+                "type": "string",
+                "description": "AgentTime overrides limits.agent_time when set (non-zero).",
+                "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+              },
+              "check_in": {
+                "type": "string",
+                "description": "CheckIn overrides limits.check_in when set; a set 0 means no check-in, distinct from leaving it unset.",
+                "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+              }
+            },
+            "description": "Time overrides limits.agent_time and limits.check_in for tasks of this class; a process or project's Time wins over it.",
+            "additionalProperties": false
           }
         },
         "description": "Class is a capability class a task can hold: the model aliases it may call through the gateway and its tools with per-task caps, and the aliases factoryd calls on the task's account, which the agent may not.",

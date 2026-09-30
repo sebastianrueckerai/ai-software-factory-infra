@@ -25,12 +25,16 @@ budget:
 # sessions before the task goes to a human with every finding (the round
 # cap; a human's answer buys one more). agent_time: the agent's working
 # time across its sessions (waiting on checks or a reviewer does not
-# count). supervisor_calls: supervisor model calls per session; the next
+# count). check_in: how long a session runs before it must check in with
+# the supervisor; 0 for no check-in. A class below, or a process or
+# project's own file, may set its own agent_time and check_in, most
+# specific wins field by field; the spend caps above stay the bound
+# regardless. supervisor_calls: supervisor model calls per session; the next
 # trip escalates without one. supervisor_timeout: one supervisor or review
 # call, at most 15m. stronger_after: returns from the same stage that keep
 # the model; the next takes the stronger rung. steps: model turns per agent
 # session (opencode's agent steps); at the cap opencode asks the model to
-# summarise and stop. 200 outlasts the agent time at 5 to 15 s a turn and
+# summarise and stop. 1000 outlasts the agent time at 5 to 15 s a turn and
 # cuts only a fast endless loop; absent, factoryd takes 200. nudge_after:
 # identical tool calls in a row (same tool, same input) that get the running
 # session a message to change approach, nudges times per repetition; the
@@ -39,11 +43,12 @@ budget:
 # trip the same_call detector after the nudges; above nudge_after (absent: 4).
 limits:
   sessions: 3
-  agent_time: 20m
-  supervisor_calls: 3
+  agent_time: 2h
+  check_in: 45m
+  supervisor_calls: 6
   supervisor_timeout: 6m
   stronger_after: 1
-  steps: 200
+  steps: 1000
   nudge_after: 3
   nudges: 1
   same_call: 4
@@ -101,6 +106,8 @@ classes:
     session: plan
     models: [coding-cheap, coding-frontier]
     supervisor_model: supervisor
+    # a plan is a single short answer with no check-in
+    time: {agent_time: 30m, check_in: 0s}
     tools:
       web_scrape: {max_requests: 30, max_eur: 0.20}
       web_search: {max_requests: 30, max_eur: 0.20}
