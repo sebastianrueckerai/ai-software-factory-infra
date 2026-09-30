@@ -505,7 +505,17 @@ switch after it).
    new secret to a running cluster; to replace a secret, delete it and
    run it again), Forgejo. Restore the
    repositories from the dump's `repos/` into `/data/git/gitea-repositories`
-   (a fresh volume lacks the directory: create it first).
+   (a fresh volume lacks the directory: create it first). The container
+   runs as uid 1000 and has `tar`: unzip `repos/*` and `data/ssh/*`
+   locally, then `tar -C <dir>/repos --owner=1000 --group=1000 -cf - . |
+   kubectl -n forgejo exec -i <pod> -c forgejo -- tar -xf - -C
+   /data/git/gitea-repositories`. Copy the dump's `data/ssh/gitea.rsa` and
+   `gitea.rsa.pub` over the new ones in `/data/ssh` (mode 600) and delete
+   the pod, so Forgejo serves the old SSH host key and the projects'
+   pinned `FACTORY_SSH_HOST_KEY` stays valid. Then `forgejo doctor check
+   --run hooks --fix` and `--run enable-push-options --fix`. Never run
+   `fix-push-mirrors-without-git-remote`: the restored repositories carry
+   their mirror remotes, and the mirror rows keep working.
    Without a dump (2026-09-29: the close lost the nodes first), every
    repository row stands with no bare repository behind it, and a push
    fails with "Could not read from remote repository". Forgejo has no
