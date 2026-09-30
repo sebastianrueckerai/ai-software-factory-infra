@@ -49,7 +49,8 @@ set_digest() { sed -i -E "s/^( *digest: )sha256:[0-9a-f]{64}$/\1$2/" "$d/deploy/
 for attempt in 1 2 3; do
   git -C "$d" fetch -q "$url" main
   if [ "$env" = staging ] && [ "$(git -C "$d" rev-list --count "$GITHUB_SHA..FETCH_HEAD" 2>/dev/null)" != 0 ]; then
-    echo "main moved past ${GITHUB_SHA::7}; its own run rolls staging"; exit 0
+    echo "main moved past ${GITHUB_SHA::7}; its own run rolls staging"
+    echo "superseded=true" >> "${GITHUB_OUTPUT:-/dev/null}"; exit 0
   fi
   if git -C "$d" fetch -q "$url" deploy 2>/dev/null; then
     git -C "$d" checkout -q -f -B deploy FETCH_HEAD

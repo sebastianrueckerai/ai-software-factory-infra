@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: [[.Name]]
+  labels:
+    app.kubernetes.io/name: [[.Name]]
+spec:
+  # One replica with Recreate: a rolling update would stall on the second
+  # pod's attach of the ReadWriteOnce data volume.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: [[.Name]]
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: [[.Name]]
+    spec:
+      # registration's pull secret in every environment's namespace
+      imagePullSecrets:
+        - name: forgejo-registry
+      # the namespace enforces Pod Security "restricted": without these
+      # fields no pod is admitted
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: [[.Name]]
+          # the environment's kustomization pins the digest CI built
+          image: [[.Image]]
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          env:
+            - name: DATA_DIR
+              value: /data
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: data
+        - name: tmp
+          emptyDir: {}

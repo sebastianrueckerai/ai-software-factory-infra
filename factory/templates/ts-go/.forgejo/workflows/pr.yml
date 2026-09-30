@@ -4,55 +4,46 @@
 # build VM). No secrets.* anywhere in this file. Registration seeded it from
 # the template ts-go; agents cannot change .forgejo/.
 #
-# Three jobs: checks, job-env-audit, and changes with image. Each reads
-# which files exist at the pull request's base and head: a file absent at
-# both skips its part with one line and passes (an empty repository is
-# green), a file present at base and absent at head is red.
+# Three jobs: checks, job-env-audit, and changes with image. The checks run
+# `bash check`, the repository's own; check and Dockerfile absent at both the
+# merge base and head skip with one line, present at the merge base and
+# absent at head is red.
 name: pr
 on:
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
   checks:
-    # One ordered job: the web app is built before the Go tests, which
-    # embed web/dist.
+    # The repository's own check, then the names of added migrations. A
+    # deletion is judged against the merge base, so a branch that started
+    # before main gained a file does not delete it.
     runs-on: pr-untrusted
     env:
       BASE: ${{ github.event.pull_request.base.sha }}
     steps:
       - uses: actions/checkout@v4
-      - name: fetch the base
-        run: git fetch -q --depth=1 origin "$BASE"
-      - name: web
+        with:
+          fetch-depth: 0
+      - name: the merge base
         run: |
           set -euo pipefail
-          if [ ! -f web/package.json ]; then
-            if git cat-file -e "$BASE:web/package.json" 2>/dev/null; then echo "web/package.json was deleted"; exit 1; fi
-            echo "no web/package.json: nothing to build"; exit 0
-          fi
-          cd web
-          npm ci --ignore-scripts
-          npm run lint
-          npm test
-          npm run build
-      - name: go
+          git fetch -q origin "$BASE"
+          echo "MERGE_BASE=$(git merge-base "$BASE" HEAD)" >> "$GITHUB_ENV"
+      - name: bash check
         run: |
           set -euo pipefail
-          if [ ! -f go.mod ]; then
-            if git cat-file -e "$BASE:go.mod" 2>/dev/null; then echo "go.mod was deleted"; exit 1; fi
-            echo "no go.mod: no Go to check"; exit 0
+          if [ ! -f check ]; then
+            if git cat-file -e "$MERGE_BASE:check" 2>/dev/null; then echo "check was deleted"; exit 1; fi
+            echo "no check: nothing to run"; exit 0
           fi
-          go vet ./...
-          test -z "$(gofmt -l $(git ls-files '*.go') </dev/null)"
-          gosec ./...
-          go test -race ./...
+          bash check
       - name: migration names
         # a new .sql file under a migrations/ directory is named by UTC
         # timestamp; files added before this rule keep their names
         run: |
           set -euo pipefail
           bad=0
-          for f in $(git diff --name-only --diff-filter=A "$BASE" HEAD); do
+          for f in $(git diff --name-only --diff-filter=A "$MERGE_BASE" HEAD); do
             case "/$f" in */migrations/*.sql) ;; *) continue ;; esac
             if ! basename "$f" | grep -qxE '[0-9]{14}_[a-z0-9_]+\.sql'; then
               echo "$f: a new migration is named <UTC yyyymmddhhmmss>_<slug>.sql, never by the next number"; bad=1
@@ -104,17 +95,19 @@ jobs:
       build: ${{ steps.select.outputs.build }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: is there an image to build
         id: select
         run: |
           set -euo pipefail
           base=${{ github.event.pull_request.base.sha }}
-          git fetch -q --depth=1 origin "$base"
+          git fetch -q origin "$base"
           if [ -f Dockerfile ]; then
             echo "build image: true"
             echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          if git cat-file -e "$base:Dockerfile" 2>/dev/null; then echo "Dockerfile was deleted"; exit 1; fi
+          if git cat-file -e "$(git merge-base "$base" HEAD):Dockerfile" 2>/dev/null; then echo "Dockerfile was deleted"; exit 1; fi
           echo "no Dockerfile: no image"
           echo "build=false" >> "$GITHUB_OUTPUT"
   image:

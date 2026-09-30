@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# The repository's checks: CI runs `bash check` on every pull request and on
+# main, and an agent runs it before it ends. The agents own this file: extend
+# it with what the app needs checked.
+set -euo pipefail
+cd "$(dirname "$0")"
+
+# web first: the Go tests serve the embedded web/dist
+(
+  cd web
+  npm ci --ignore-scripts
+  npm run lint
+  npm test
+  npm run build
+)
+
+go vet ./...
+unformatted=$(gofmt -l $(git ls-files --cached --others --exclude-standard '*.go') </dev/null)
+if [ -n "$unformatted" ]; then echo "gofmt -w these files:"; echo "$unformatted"; exit 1; fi
+go run github.com/securego/gosec/v2/cmd/gosec@v2.29.0 -quiet ./...
+go test -race ./...

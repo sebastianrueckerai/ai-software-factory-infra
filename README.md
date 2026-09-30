@@ -124,7 +124,9 @@ editing surface, the console shows it read-only.
   `.forgejo/workflows/ci.yml`, `.forgejo/roll.sh` and
   `deploy/base/kustomization.yaml`; the check renders each file with sample
   data. `ts-go` is a TypeScript single-page frontend and a Go API in one
-  image; its `AGENTS.md` names the layout its CI relies on.
+  image: a minimal app that passes `bash check` (the repository's one
+  check, which CI and the agents run), builds its image and deploys to
+  staging as seeded; its `AGENTS.md` names the layout its CI relies on.
 - `schema/`: the JSON Schemas `factoryd schema --out factory/schema`
   generates from factoryd's Go types. Each YAML file's first line
   references its schema (`# yaml-language-server:

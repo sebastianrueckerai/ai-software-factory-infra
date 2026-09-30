@@ -1,11 +1,11 @@
-# main: the checks of pr.yml; with a Dockerfile, build and push the image by
-# digest and roll staging; with deploy/prod/kustomization.yaml, wait 15
-# minutes, ask the factory whether an alert fires in staging, and on none
-# roll prod. Every roll is a commit by factory-ci on the deploy branch
-# (.forgejo/roll.sh, pushed with the deploy key); Flux tracks deploy. On a
-# repository without a Dockerfile every job after the checks skips, so the
-# seed commit's run is green. Registration seeded this file from the
-# template ts-go; agents cannot change .forgejo/.
+# main: bash check as in pr.yml; with a Dockerfile, build and push the
+# image by digest, roll staging and wait until staging runs it; with
+# deploy/prod/kustomization.yaml, wait 15 minutes, ask the factory whether an
+# alert fires in staging, and on none roll prod. Every roll is a commit by
+# factory-ci on the deploy branch (.forgejo/roll.sh, pushed with the deploy
+# key); Flux tracks deploy. On a repository without a Dockerfile every job
+# after the checks skips. Registration seeded this file from the template
+# ts-go; agents cannot change .forgejo/.
 name: ci
 on:
   push:
@@ -28,23 +28,8 @@ jobs:
       prod: ${{ steps.deploy.outputs.prod }}
     steps:
       - uses: actions/checkout@v4
-      - name: web
-        run: |
-          set -euo pipefail
-          if [ ! -f web/package.json ]; then echo "no web/package.json: nothing to build"; exit 0; fi
-          cd web
-          npm ci --ignore-scripts
-          npm run lint
-          npm test
-          npm run build
-      - name: go
-        run: |
-          set -euo pipefail
-          if [ ! -f go.mod ]; then echo "no go.mod: no Go to check"; exit 0; fi
-          go vet ./...
-          test -z "$(gofmt -l $(git ls-files '*.go') </dev/null)"
-          gosec ./...
-          go test -race ./...
+      - name: bash check
+        run: bash check
       - name: what main deploys
         id: deploy
         run: |
@@ -106,10 +91,37 @@ jobs:
         with:
           fetch-depth: 0
       - name: roll staging
+        id: roll
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
           FACTORY_SSH_HOST_KEY: ${{ secrets.FACTORY_SSH_HOST_KEY }}
         run: bash .forgejo/roll.sh staging "${{ needs.image.outputs.digest }}"
+      - name: wait until [[index .Namespaces "deploy/staging"]] runs the image
+        # the factory answers an entry of source factoryd while no pod of the
+        # namespace's Deployments runs the digest (rollout_not_ready)
+        if: steps.roll.outputs.superseded != 'true'
+        env:
+          FACTORY_READ_TOKEN: ${{ secrets.FACTORY_READ_TOKEN }}
+          DIGEST: ${{ needs.image.outputs.digest }}
+        run: |
+          set -uo pipefail
+          url="$FACTORY_URL/projects/[[.Name]]/alerts?namespace=[[index .Namespaces "deploy/staging"]]&digest=$DIGEST"
+          deadline=$(( $(date +%s) + 600 ))
+          while :; do
+            rm -f alerts.json
+            code=$(curl -sS -m 30 -o alerts.json -w '%{http_code}' -H "Authorization: Bearer $FACTORY_READ_TOKEN" "$url")
+            if [ "$code" = 200 ]; then
+              if waiting=$(node -e 'for (const a of JSON.parse(require("fs").readFileSync("alerts.json", "utf8")) || []) if (a.source === "factoryd") console.log(a.summary)' 2>&1); then
+                if [ -z "$waiting" ]; then echo "staging runs $DIGEST"; exit 0; fi
+              else
+                waiting="the factory's answer is not JSON: $waiting"
+              fi
+            else
+              waiting="the factory answered ${code:-nothing} at $url: $(head -c 500 alerts.json 2>/dev/null)"
+            fi
+            if [ "$(date +%s)" -ge "$deadline" ]; then echo "staging does not run $DIGEST after 10 minutes:"; echo "$waiting"; exit 1; fi
+            sleep 10
+          done
   promote:
     needs: [checks, image, staging]
     if: needs.checks.outputs.prod == 'true'
