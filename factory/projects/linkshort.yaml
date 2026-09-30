@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../schema/project.schema.json
+# Filed from the console by sebastian on 2026-09-30.
+repository: linkshort/linkshort
+merge_rule: human
+objects: factory
+agents: coder
+process: spec
+template: ts-go
+namespaces: [linkshort-staging]
+environments:
+  - {namespace: linkshort-staging, path: deploy/staging}
