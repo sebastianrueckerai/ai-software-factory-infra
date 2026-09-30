@@ -99,6 +99,15 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
+          "session": {
+            "type": "string",
+            "description": "Session is the program a task of the class runs: code the coding lifecycle, plan the plan loop, report a write-up. The tree's check requires it; Document.Validate does not, so a gateway reading a version written before it stays valid.",
+            "enum": [
+              "code",
+              "plan",
+              "report"
+            ]
+          },
           "models": {
             "type": "array",
             "items": {
@@ -156,6 +165,7 @@
         },
         "description": "Class is a capability class a task can hold: the model aliases it may call through the gateway and its tools with per-task caps, and the aliases factoryd calls on the task's account, which the agent may not.",
         "required": [
+          "session",
           "models"
         ],
         "additionalProperties": false
@@ -390,6 +400,7 @@
           "RollCommit",
           "RerunChecks",
           "GateAudit",
+          "TaskConfig",
           "default"
         ]
       }

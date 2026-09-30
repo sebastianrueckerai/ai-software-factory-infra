@@ -6,6 +6,7 @@ repository: sf/ai-software-factory-code
 merge_rule: human
 objects: seed
 agents: coder
+process: maintenance
 # the security audit stage reads every pull request before the card
 # (ruling 188)
 audit: true

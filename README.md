@@ -77,10 +77,17 @@ editing surface, the console shows it read-only.
   agent-written text factoryd posts on Forgejo may point at besides the
   Forgejo host and the project's own hosts, any other link defanged. A Replicate model runs only once it is listed under
   `prices.replicate.models`.
-- `workflow.yaml`: the stages a task's work passes, in order (checks,
-  screening, reproduction, policy, migration, review, approval, merge),
-  each with `on_findings: agent | human | fail`, `enabled` and an
-  optional `when: outsider` (ruling 177).
+- `processes/<name>.yaml`: the processes a project's cards pass
+  (rulings 206, 208), four blocks each: `lanes` (backlog, ready and an
+  optional plan, each starting lane naming a class of `policy.yaml` and
+  who may move a card into it), `dependencies` (only with a plan lane),
+  `stages` (the stages a task's work passes, in order, each with
+  `on_findings: agent | human | fail`, `enabled` and an optional `when:
+  outsider`, ruling 177) and `merge: {queue: none | project}`.
+  `maintenance` is the factory's flow for existing code, `spec` builds
+  from a spec. A class's `session` (`code`, `report`, `plan`) chooses the
+  program its tasks run. `factoryd config explain <process> <card kind>`
+  prints the path of a card kind through a process.
 - `projects/<name>.yaml`: one file per project, the only place its
   settings live (rulings 146, 179, 183): repository, merge rule,
   `objects: factory | seed` (who makes the repository objects:
@@ -88,6 +95,7 @@ editing surface, the console shows it read-only.
   project factoryd keeps the labels and, for agents coder, the bot's fork,
   and only reports its webhook and namespace labels), `agents: coder | none` (`none`: every
   issue and alert goes to the human lane, `POST /tasks` answers 422),
+  `process` (for agents coder, the name of a file under `processes/`),
   notify, namespaces, environments, quota, secrets, `envelope` (the task
   block) and `standing`. A seed project names the seeded secrets
   factoryd reaches it with in `tokens` (`read`, and for agents coder
@@ -102,7 +110,7 @@ editing surface, the console shows it read-only.
   generates from factoryd's Go types. Each YAML file's first line
   references its schema (`# yaml-language-server:
   $schema=schema/policy.schema.json`, `../schema/project.schema.json`
-  under `projects/`), so an editor with the YAML language server
+  under `projects/`, `../schema/process.schema.json` under `processes/`), so an editor with the YAML language server
   completes keys, lists every enumerated value and marks mistakes.
 
 To change it: edit, run `factoryd config check factory` (the image's
