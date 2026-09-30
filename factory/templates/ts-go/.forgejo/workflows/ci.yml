@@ -19,6 +19,14 @@ env:
   GIT_SSH_HOST: forgejo-ssh.forgejo.svc.cluster.local
   GIT_SSH_PORT: "22"
   GIT_SSH_REPO: [[.Repository]]
+  # The runner pod points these at /cache, the project's CI cache that PR
+  # runs of untrusted code write too; main builds, tests and deploys cold so
+  # nothing a PR planted there (a build or test result, a binary on PATH)
+  # reaches it. pr.yml keeps the warm cache.
+  GOCACHE: /tmp/go-build
+  GOPATH: /tmp/go
+  npm_config_cache: /tmp/npm
+  PATH: /usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 jobs:
   checks:
     if: github.event.head_commit.author.name != 'factory-ci' || github.event.head_commit.author.email != 'factory-ci@aisoftwarefactory.world'

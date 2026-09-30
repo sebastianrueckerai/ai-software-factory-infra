@@ -2,7 +2,10 @@
 # sessions and CI runs: a claim cache-agent-<project> or cache-ci-<project>
 # in each short-lived namespace lands in the same node directory, which
 # Retain keeps when the namespace goes. Only factoryd may claim the class
-# (code k8s/factoryd.yaml, policy factory-cache-claims).
+# (code k8s/factoryd.yaml, policy factory-cache-claims). Its node path is
+# /var/lib/factory-cache (kustomization.yaml, storageClassConfigs), on
+# EPHEMERAL: the user volume is mounted noexec, and gVisor turns an exec from
+# a noexec mount into SIGSEGV, which a warm `go run` does from GOCACHE.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:

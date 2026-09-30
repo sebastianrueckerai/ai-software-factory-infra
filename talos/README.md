@@ -55,8 +55,10 @@ Cilium runs kube-proxy-free and its Gateway API controller works. Each
 node caps EPHEMERAL at 100 GB (VolumeConfig document; uncapped it fills
 the whole disk and volumes never shrink) and carves a 200 GB user volume
 at install time (UserVolumeConfig document, auto-mounted at
-/var/mnt/local-path-provisioner); the local-path provisioner serves
-PersistentVolumeClaims from it.
+/var/mnt/local-path-provisioner, noexec); the local-path provisioner serves
+PersistentVolumeClaims of class `local-path` from it. Class `factory-cache`
+lives under /var/lib/factory-cache on EPHEMERAL, which is not noexec, since
+its caches hold executables.
 
 Run from this directory, with tofu initialised in the repo root.
 
