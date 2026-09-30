@@ -1,6 +1,8 @@
-# The per-project caches (Go, npm) of agent sessions and CI runs: a claim
-# cache-<project> or cache-ci-<project> in each short-lived namespace lands
-# in the same node directory, which Retain keeps when the namespace goes.
+# The per-project caches (Go build cache, go install, npm) of agent
+# sessions and CI runs: a claim cache-agent-<project> or cache-ci-<project>
+# in each short-lived namespace lands in the same node directory, which
+# Retain keeps when the namespace goes. Only factoryd may claim the class
+# (code k8s/factoryd.yaml, policy factory-cache-claims).
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
