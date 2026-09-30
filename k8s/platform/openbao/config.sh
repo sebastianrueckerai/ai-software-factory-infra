@@ -1,7 +1,8 @@
 #!/bin/sh
-# The SSH CA and the gateway's Kubernetes auth (see "OpenBao SSH CA" in the
-# README). Idempotent. BAO_TOKEN set: run with it (the bootstrap's root
-# token); unset: log in as role openbao-config with the pod's token.
+# The SSH CA, the gateway's Kubernetes auth and factoryd's read of the
+# Forgejo admin's login (see "OpenBao SSH CA" in the README). Idempotent.
+# BAO_TOKEN set: run with it (the bootstrap's root token); unset: log in as
+# role openbao-config with the pod's token.
 set -eu
 trap '[ $? = 0 ] || echo "openbao-config: failed"' EXIT
 if [ -z "${BAO_TOKEN:-}" ]; then
@@ -45,6 +46,17 @@ if [ "$(bao read -field=policy sys/policies/acl/factory-gateway-ssh 2>/dev/null 
   printf '%s\n' "$policy" | bao write sys/policies/acl/factory-gateway-ssh policy=- >/dev/null
   changed="$changed sys/policies/acl/factory-gateway-ssh"
 fi
+if ! bao secrets list -format=json | grep -q '"factory/"'; then
+  bao secrets enable -path=factory -version=2 kv >/dev/null
+  changed="$changed sys/mounts/factory"
+fi
+policy='path "factory/data/forgejo-admin" {
+  capabilities = ["read"]
+}'
+if [ "$(bao read -field=policy sys/policies/acl/factoryd-forgejo-admin 2>/dev/null || true)" != "$policy" ]; then
+  printf '%s\n' "$policy" | bao write sys/policies/acl/factoryd-forgejo-admin policy=- >/dev/null
+  changed="$changed sys/policies/acl/factoryd-forgejo-admin"
+fi
 if ! bao auth list -format=json | grep -q '"kubernetes/"'; then
   bao auth enable kubernetes >/dev/null
   changed="$changed sys/auth/kubernetes"
@@ -52,4 +64,6 @@ fi
 put auth/kubernetes/config kubernetes_host="https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT"
 put auth/kubernetes/role/factory-gateway bound_service_account_names=factory-gateway \
   bound_service_account_namespaces=factory audience=openbao token_policies=factory-gateway-ssh token_ttl=1h token_max_ttl=1h
+put auth/kubernetes/role/factoryd bound_service_account_names=factoryd \
+  bound_service_account_namespaces=factory audience=openbao token_policies=factoryd-forgejo-admin token_ttl=1h token_max_ttl=1h
 if [ -n "$changed" ]; then echo "openbao-config: wrote$changed"; else echo "openbao-config: no change"; fi

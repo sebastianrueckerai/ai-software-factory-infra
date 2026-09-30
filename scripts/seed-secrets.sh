@@ -27,6 +27,28 @@ k -n $P create secret generic litellm-qwen --from-literal=ALIBABA_CLOUD_KEY="$AL
 F=forgejo
 k -n $F create secret generic forgejo-secret-key --from-literal=SECRET_KEY="$FORGEJO_SECRET_KEY"
 k -n $F create secret generic forgejo-admin-secret --from-literal=username=sebastian --from-literal=password="$FORGEJO_ADMIN_PASSWORD"
+# factory/forgejo-admin in OpenBao: the same login, which factoryd's
+# registration reads (role factoryd, ruling 212); the raft snapshot carries it
+# across a rebuild. Root token and password go over stdin; an existing
+# secret is left as it is. Needs OpenBao unsealed with the factory mount
+# (Rebuild step 7): before that it is skipped.
+bao_admin() {
+  printf '%s\n%s\n' "$OPENBAO_ROOT_TOKEN" "$FORGEJO_ADMIN_PASSWORD" | kubectl -n $P exec -i openbao-0 -- sh -c '
+    IFS= read -r BAO_TOKEN; IFS= read -r pw; export BAO_TOKEN
+    if ! bao secrets list -format=json 2>/dev/null | grep -q "\"factory/\""; then
+      echo "openbao factory/forgejo-admin: skipped, OpenBao is sealed, refuses OPENBAO_ROOT_TOKEN or has no mount factory yet; run this script again after step 7"
+    elif bao kv get -mount=factory forgejo-admin >/dev/null 2>&1; then
+      echo "openbao factory/forgejo-admin: exists"
+    else
+      printf "%s" "$pw" | bao kv put -mount=factory forgejo-admin username=sebastian password=- >/dev/null
+      echo "openbao factory/forgejo-admin: created"
+    fi'
+}
+if [ -z "${OPENBAO_ROOT_TOKEN:-}" ]; then
+  echo "openbao factory/forgejo-admin: skipped, OPENBAO_ROOT_TOKEN is not in .env.seed"
+else
+  bao_admin || echo "openbao factory/forgejo-admin: skipped, openbao-0 does not answer; run this script again after step 7"
+fi
 k -n $F create secret generic forgejo-db-creds --from-literal=password="$SF_PG_FORGEJO_PASSWORD"
 if [ -n "${GITHUB_MIRROR_PAT:-}" ]; then
   k -n $F create secret generic github-mirror --from-literal=token="$GITHUB_MIRROR_PAT"

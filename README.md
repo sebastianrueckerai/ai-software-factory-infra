@@ -109,8 +109,12 @@ editing surface, the console shows it read-only.
   registration's. The code repository's file lists the namespace
   `factory`, factoryd's own: that makes it the factory's own project
   (its rolls, its CI runs, the console's login). A new factory project:
-  add its file, then `factoryd register-project --name <name>`. The
-  console shows every project and envelope read-only with a link here.
+  add its file (the console's new-project button files it as a pull
+  request); once it is on `main`, factoryd's reconcile registers it with
+  the Forgejo site admin's login from OpenBao (`factory/forgejo-admin`,
+  ruling 212); `factoryd register-project --name <name> --rotate` mints
+  its tokens again. The console shows every project and envelope
+  read-only with a link here.
 - `templates/<name>/`: the files registration commits as a new factory
   project's first commit on `main` (stage11-design.md section 6), rendered
   with Go's `text/template` between `[[` and `]]` (so `${{ }}` of Actions
@@ -239,11 +243,16 @@ run fills it. To empty it by hand, delete the PVC and the pod.
 ## OpenBao SSH CA
 
 Commissioned servers (task 53) trust one SSH CA in OpenBao, and the
-factory gateway signs sandbox keys with it.
+factory gateway signs sandbox keys with it; factoryd reads the Forgejo site
+admin's login there to register projects (ruling 212).
 [k8s/platform/openbao/config.sh](k8s/platform/openbao/config.sh) sets it
 up idempotently: the `ssh-client-signer` engine and its CA if missing,
-role `factory-agent`, policy `factory-gateway-ssh`, `auth/kubernetes/config`
-and role `factory-gateway`. CronJob `openbao-config` in `platform` runs it
+role `factory-agent`, policy `factory-gateway-ssh`, the kv-v2 engine
+`factory` if missing, policy `factoryd-forgejo-admin` (read of
+`factory/data/forgejo-admin` only), `auth/kubernetes/config`, role
+`factory-gateway` and role `factoryd` (ServiceAccount `factoryd` in
+`factory`, audience `openbao`, policy `factoryd-forgejo-admin`, tokens of
+1h). CronJob `openbao-config` in `platform` runs it
 every 10 minutes and logs one line, `openbao-config: wrote <paths>` or
 `openbao-config: no change`; a run while OpenBao is sealed fails and the
 next one succeeds. It logs in as Kubernetes auth role `openbao-config`
@@ -251,13 +260,15 @@ next one succeeds. It logs in as Kubernetes auth role `openbao-config`
 policy reaches only the paths the script writes: reads of `sys/auth`,
 `sys/mounts` and `ssh-client-signer/config/ca`, read and write on
 `ssh-client-signer/roles/factory-agent`, and read and write on
-`sys/policies/acl/factory-gateway-ssh`, `auth/kubernetes/config` and
-`auth/kubernetes/role/factory-gateway` with every parameter pinned by
+`sys/policies/acl/factory-gateway-ssh`, `sys/policies/acl/factoryd-forgejo-admin`,
+`auth/kubernetes/config`, `auth/kubernetes/role/factory-gateway` and
+`auth/kubernetes/role/factoryd` with every parameter pinned by
 `allowed_parameters` to the value config.sh writes. Anything else answers
 403: another policy text, another ServiceAccount, audience or policy on
 the gateway role, another `kubernetes_host`, a new CA, its own role and
-policy. Unpinned, the identity could rewrite `factory-gateway-ssh` to
-`path "*"` and bind role `factory-gateway` to itself. The root token
+policy. Unpinned, the identity could rewrite either policy to
+`path "*"` and bind either role to itself (checked on 2.6.3, 2026-09-30:
+both answer 403). The root token
 never enters the cluster:
 [scripts/openbao-config-bootstrap.sh](scripts/openbao-config-bootstrap.sh)
 runs config.sh in `openbao-0` with the root token and then writes role
@@ -268,9 +279,17 @@ printed:
     BAO_TOKEN="$OPENBAO_ROOT_TOKEN" scripts/openbao-config-bootstrap.sh
 
 Run it once on a new OpenBao (Rebuild step 7 has the fresh init); after
-that the raft snapshot carries the role. The CronJob's policy only reads `sys/mounts`, `sys/auth` and
-`ssh-client-signer/config/ca`, so enabling the engine or the auth method,
-and generating the CA, is the bootstrap's job. config.sh generates a CA
+that the raft snapshot carries the role; run it again when its pinned
+values change (the role `factoryd` of 2026-09-30 is one). The CronJob's policy only reads `sys/mounts`, `sys/auth` and
+`ssh-client-signer/config/ca`, so enabling an engine or the auth method,
+and generating the CA, is the bootstrap's job.
+
+The kv-v2 secret `factory/forgejo-admin` (`username`, `password`) is the
+Forgejo site admin's login, written by `scripts/seed-secrets.sh` from
+`FORGEJO_ADMIN_PASSWORD` with the root token over stdin, never printed,
+and left alone when it exists (delete it to replace it). factoryd reads it
+at each registration into memory and never logs it; nothing else reads
+it. config.sh generates a CA
 only on OpenBao's exact "no default issuer currently configured" answer
 and fails the run on any other read error: a second write to `config/ca`
 makes a new CA the default and locks out every running agent server.
@@ -597,8 +616,9 @@ switch after it).
    -c 'BAO_TOKEN="$(cat)" bao ...'`); without `-i` the token is empty. The
    unseal is the one hand step left: the unseal key is the root of
    trust, and auto-unseal needs a key service we do not run. The
-   snapshot carries the SSH CA (its signing key too), the gateway's
-   Kubernetes auth and role `openbao-config`. Within 10 minutes of the
+   snapshot carries the SSH CA (its signing key too), the gateway's and
+   factoryd's Kubernetes auth, the Forgejo admin's login
+   `factory/forgejo-admin` and role `openbao-config`. Within 10 minutes of the
    unseal CronJob `openbao-config` logs `no change` or the paths it
    rewrote (`kubectl -n platform logs job/<newest openbao-config job>`).
    If its login fails instead, run `scripts/openbao-config-bootstrap.sh`
@@ -613,9 +633,12 @@ switch after it).
    under other names for as long as a snapshot taken under it is kept
    (it cannot be unsealed without them); shred the file; unseal with the
    new key; run `scripts/openbao-config-bootstrap.sh` with the new root
-   token. It writes the engine, a new CA, both roles and both policies;
-   the next `openbao-config` run logs `no change`. OpenBao holds nothing
-   else, so the seed and the bootstrap are the whole restore.
+   token. It writes the engines, a new CA, the roles and the policies;
+   the next `openbao-config` run logs `no change`. Then run
+   `scripts/seed-secrets.sh` again: it writes `factory/forgejo-admin`
+   (its line says `created`; before the engine exists it says `skipped`).
+   OpenBao holds nothing else, so the seed and the bootstrap are the whole
+   restore.
 8. Re-create what restores do not carry: the `factory` namespace
    secrets, `forgejo-pat` in `flux-system`, a fresh `factoryd-intake`
    token, `factoryd-webhook` from `FORGEJO_WEBHOOK_SECRET`, and a freshly

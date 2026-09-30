@@ -11,12 +11,17 @@ script=$(cat "$(dirname "$0")/../k8s/platform/openbao/config.sh")
 script+=$(cat <<'SH'
 
 # Pinned to config.sh's exact values: with free parameters this identity
-# could rewrite factory-gateway-ssh to "path *" and bind role factory-gateway
-# to itself. A change to those values (a new audience, say) changes both files.
+# could rewrite factory-gateway-ssh or factoryd-forgejo-admin to "path *"
+# and bind role factory-gateway or factoryd to itself. A change to those
+# values (a new audience, say) changes both files.
 bao policy write openbao-config - >/dev/null <<HCL
 path "sys/auth" { capabilities = ["read"] }
 path "sys/mounts" { capabilities = ["read"] }
 path "ssh-client-signer/config/ca" { capabilities = ["read"] }
+path "sys/policies/acl/factoryd-forgejo-admin" {
+  capabilities = ["read", "create", "update"]
+  allowed_parameters = { "policy" = ["path \"factory/data/forgejo-admin\" {\n  capabilities = [\"read\"]\n}\n"] }
+}
 path "ssh-client-signer/roles/factory-agent" { capabilities = ["read", "create", "update"] }
 path "sys/policies/acl/factory-gateway-ssh" {
   capabilities = ["read", "create", "update"]
@@ -33,6 +38,17 @@ path "auth/kubernetes/role/factory-gateway" {
     "bound_service_account_namespaces" = ["factory"]
     "audience" = ["openbao"]
     "token_policies" = ["factory-gateway-ssh"]
+    "token_ttl" = ["1h"]
+    "token_max_ttl" = ["1h"]
+  }
+}
+path "auth/kubernetes/role/factoryd" {
+  capabilities = ["read", "create", "update"]
+  allowed_parameters = {
+    "bound_service_account_names" = ["factoryd"]
+    "bound_service_account_namespaces" = ["factory"]
+    "audience" = ["openbao"]
+    "token_policies" = ["factoryd-forgejo-admin"]
     "token_ttl" = ["1h"]
     "token_max_ttl" = ["1h"]
   }
