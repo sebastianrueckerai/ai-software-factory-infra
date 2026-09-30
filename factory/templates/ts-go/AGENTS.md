@@ -11,7 +11,8 @@ happens without green checks.
 
 Run `bash check`, the repository's checks, which CI runs too. When it
 passes, commit and end. `check` is yours: extend it when the app needs
-more checked, never remove what it runs.
+more checked, never remove what it runs (the pull request checks go red
+when it no longer names `gosec` and `go test -race`).
 
 ## Layout
 
@@ -54,8 +55,8 @@ more checked, never remove what it runs.
 
 ## What the checks run
 
-Pull requests (`.forgejo/workflows/pr.yml`): `bash check`, then the names
-of added migrations, and with a `Dockerfile` the image build. Deleting
+Pull requests (`.forgejo/workflows/pr.yml`): `bash check`, that `check`
+still runs `gosec` and `go test -race`, then the names of added migrations, and with a `Dockerfile` the image build. Deleting
 `check` or the `Dockerfile` once they exist on main turns the checks red.
 On `main` (`.forgejo/workflows/ci.yml`) `bash check` runs again, the image
 is pushed by digest, staging rolls and the run waits until staging's pod

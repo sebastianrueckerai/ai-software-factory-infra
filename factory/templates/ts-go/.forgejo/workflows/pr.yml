@@ -37,6 +37,17 @@ jobs:
             echo "no check: nothing to run"; exit 0
           fi
           bash check
+      - name: check still runs gosec and the race tests
+        # the agents extend check, never weaken it
+        run: |
+          set -euo pipefail
+          if [ ! -f check ]; then exit 0; fi
+          bad=0
+          for word in gosec 'go test -race'; do
+            if ! grep -qF -- "$word" check; then echo "check no longer runs $word: restore it"; bad=1; fi
+          done
+          if [ "$bad" = 0 ]; then echo "check runs gosec and go test -race"; fi
+          exit "$bad"
       - name: migration names
         # a new .sql file under a migrations/ directory is named by UTC
         # timestamp; files added before this rule keep their names

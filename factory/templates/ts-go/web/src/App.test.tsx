@@ -10,3 +10,10 @@ test('home shows the server up', async () => {
   expect(await screen.findByText('Server: up')).toBeTruthy()
   expect(fetch).toHaveBeenCalledOnce()
 })
+
+test('home shows the server down', async () => {
+  mockFetch(() => ({ status: 503 }))
+  renderAt('/')
+  expect(await screen.findByText('Server: down')).toBeTruthy()
+  expect(screen.getAllByRole('heading')).toHaveLength(1)
+})

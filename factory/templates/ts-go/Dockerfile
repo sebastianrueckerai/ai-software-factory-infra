@@ -14,7 +14,7 @@ COPY --from=web /src/web/dist ./web/dist
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
 
 FROM debian:bookworm-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251
-RUN useradd --system --uid 65532 --user-group app && mkdir -p /data && chown app:app /data
+RUN groupadd --system --gid 65532 app && useradd --system --uid 65532 --gid app app && mkdir -p /data && chown app:app /data
 ENV DATA_DIR=/data
 COPY --from=build /out/server /usr/local/bin/server
 USER 65532:65532
