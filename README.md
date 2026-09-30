@@ -635,10 +635,12 @@ switch after it).
    `returned error: 401` or `403`). Any other error a new
    token cannot fix: the run logs `<mirror> left alone, sync failing:
    <first line>` and exits 0, and the mirror retries on its next sync. A
-   still-valid old token never fails, so after a restore or a token
-   change delete both mirrors once (Settings -> Mirror Settings); the
-   next run posts them with the new token, and the Forgejo dump after
-   that point carries it. A sync fails with `GH007: Your push would
+   still-valid old token never fails, so after a change of
+   `GITHUB_MIRROR_PAT` delete both mirrors once (Settings -> Mirror
+   Settings); the next run posts them with the new token, and the Forgejo
+   dump after that point carries it. A restore from a dump with the token
+   unchanged needs nothing: the job logs `no change` and both mirrors
+   sync with an empty `last_error`. A sync fails with `GH007: Your push would
    publish a private email address` until GitHub's email privacy block on
    the account is lifted or the pushed commits carry a noreply address;
    the job leaves such a mirror alone, and only the run that creates a
