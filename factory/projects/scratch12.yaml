@@ -9,3 +9,6 @@ template: ts-go
 namespaces: [scratch12-staging]
 environments:
   - {namespace: scratch12-staging, path: deploy/staging}
+
+budget:
+  month_eur: 0.001
