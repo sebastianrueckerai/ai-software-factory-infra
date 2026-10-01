@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../schema/project.schema.json
 # The timed stronger-tier run of round 2 (ruling 236): the linkshort spec on
 # coding-frontier, its spend stopped by this project cap.
 repository: linkshort4/linkshort4
