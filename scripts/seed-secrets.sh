@@ -10,11 +10,13 @@ set -a; source "$TOOLS_ENV"; source "$SEED_ENV"; set +a
 # once, never printed.
 for key in FORGEJO_FACTORY_ADMIN_PASSWORD FORGEJO_CONTROLLER_PASSWORD; do
   if [ -z "${!key:-}" ]; then
-    printf -v "$key" '%s' "$(openssl rand -hex 16)"
+    v=$(openssl rand -hex 16)
+    printf -v "$key" '%s' "$v"
     printf '\n%s=%s\n' "$key" "${!key}" >>"$SEED_ENV"
     echo "$SEED_ENV: $key generated"
   fi
 done
+unset v
 kubectl apply -f ~/repos/ai-software-factory-infra/k8s/platform/namespaces.yaml >/dev/null
 k() { # -n <namespace> create secret <type> <name> ...
   if kubectl -n "$2" get secret "$6" >/dev/null 2>&1; then
@@ -144,48 +146,40 @@ else
   fi
   fj -o /dev/null -w 'factory-config read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-config" -d '{"permission":"read"}'
   fj -o /dev/null -w 'factory-agent read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-agent" -d '{"permission":"read"}'
-  # factory-admin's registry tokens, one scope each: <name> <scope>, older
-  # tokens of that name revoked; prints the value, so only inside $( )
-  mint() {
-    for id in $(fj "$FJ/users/factory-admin/tokens" | jq -r --arg n "$1" '.[] | select(.name == $n) | .id'); do
-      fj -o /dev/null -w "factory-admin revoke token $1 $id: %{http_code}\n" -X DELETE "$FJ/users/factory-admin/tokens/$id" >&2
-    done
-    jq -n --arg n "$1" --arg s "$2" '{name: $n, scopes: [$s]}' | fj -X POST "$FJ/users/factory-admin/tokens" -d @- | jq -r '.sha1 // empty'
+  # <repository> <name> <value>: PUT an Actions secret; fails on any answer
+  # but 201 or 204
+  put_secret() {
+    local code
+    code=$(V=$3 jq -n '{data: $ENV.V}' | fj -o /dev/null -w '%{http_code}' -X PUT "$FJ/repos/$1/actions/secrets/$2" -d @-)
+    echo "$1 Actions secret $2: $code"
+    [ "$code" = 201 ] || [ "$code" = 204 ]
   }
-  tokens=$(fj "$FJ/users/factory-admin/tokens" | jq -r '.[].name')
-  # Image pulls (pull secret forgejo-registry, which factoryd copies into
-  # every CI and agent namespace): token factory-registry-pull, read:package.
-  # Minted anew when the secret is missing, names another user or its token
-  # is gone.
-  reg=$(kubectl -n $A get secret forgejo-registry -o 'jsonpath={.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | jq -r '.auths[].username' 2>/dev/null || true)
-  if [ "$reg" = factory-admin ] && grep -qx factory-registry-pull <<<"$tokens"; then
-    echo "$A/forgejo-registry: exists"
-  else
-    tok=$(mint factory-registry-pull read:package || true)
-    [ -n "$tok" ] || { echo "$A/forgejo-registry: mint failed, no secret written"; exit 1; }
-    kubectl -n $A create secret docker-registry forgejo-registry --docker-server=git.aisoftwarefactory.world --docker-username=factory-admin --docker-password="$tok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
-    echo "$A/forgejo-registry: written for factory-admin, read:package (${#tok} chars)"
-  fi
-  # Main CI's pushes (Actions secrets REGISTRY_USER and REGISTRY_PASSWORD of
-  # both repositories): token factory-registry, write:package. No copy is
-  # kept, so it is minted and PUT only when it or one of the four secrets is
-  # missing; after a SECRET_KEY change delete one of them and run again.
-  missing=$(for r in sf/ai-software-factory-code $IR; do
-    fj "$FJ/repos/$r/actions/secrets?limit=50" | jq -r --arg r "$r" '[.[].name] as $have | ("REGISTRY_USER", "REGISTRY_PASSWORD") | select(. as $k | $have | any(. == $k) | not) | "\($r) \(.)"'
-  done)
-  if grep -qx factory-registry <<<"$tokens" && [ -z "$missing" ]; then
-    echo "registry Actions secrets of both repositories: exist"
-  else
-    tok=$(mint factory-registry write:package || true)
-    [ -n "$tok" ] || { echo "registry Actions secrets: mint failed, nothing written"; exit 1; }
-    for r in sf/ai-software-factory-code $IR; do
-      for kv in "REGISTRY_USER=factory-admin" "REGISTRY_PASSWORD=$tok"; do
-        V="${kv#*=}" jq -n '{data: $ENV.V}' |
-          fj -o /dev/null -w "$r Actions secret ${kv%%=*}: %{http_code}\n" -X PUT "$FJ/repos/$r/actions/secrets/${kv%%=*}" -d @-
-      done
+  revoke() { # factory-admin's tokens named $1
+    for id in $(fj "$FJ/users/factory-admin/tokens" | jq -r --arg n "$1" '.[] | select(.name == $n) | .id'); do
+      fj -o /dev/null -w "factory-admin revoke token $1 $id: %{http_code}\n" -X DELETE "$FJ/users/factory-admin/tokens/$id"
     done
+  }
+  # The code repository's main CI pushes its images with factory-admin's
+  # token factory-registry (write:package) in the Actions secrets
+  # REGISTRY_USER and REGISTRY_PASSWORD. No copy is kept, so it is minted
+  # and PUT only when it or one of the two secrets is missing (after a
+  # SECRET_KEY change: delete one, run again); a failed PUT revokes it, so
+  # the next run mints again.
+  CR=sf/ai-software-factory-code
+  have=$(fj "$FJ/repos/$CR/actions/secrets?limit=50" | jq -r '.[].name')
+  if fj "$FJ/users/factory-admin/tokens" | jq -e 'any(.[]; .name == "factory-registry")' >/dev/null &&
+    grep -qx REGISTRY_USER <<<"$have" && grep -qx REGISTRY_PASSWORD <<<"$have"; then
+    echo "$CR registry Actions secrets: exist"
+  else
+    revoke factory-registry
+    tok=$(fj -X POST "$FJ/users/factory-admin/tokens" -d '{"name":"factory-registry","scopes":["write:package"]}' | jq -r '.sha1 // empty' || true)
+    [ -n "$tok" ] || { echo "$CR registry Actions secrets: mint failed, nothing written"; exit 1; }
+    if ! { put_secret $CR REGISTRY_USER factory-admin && put_secret $CR REGISTRY_PASSWORD "$tok"; }; then
+      revoke factory-registry
+      exit 1
+    fi
   fi
-  unset reg tok tokens missing
+  unset have tok
   if kubectl -n $A get secret forgejo-config >/dev/null 2>&1; then
     echo "$A/forgejo-config: exists"
   else
@@ -289,6 +283,22 @@ for r in json.load(sys.stdin): print("team factory-registry-read: repository %s 
     echo "$A/forgejo-registry-read: created (${#tok} chars)"
     unset tok
   fi
+  # Image pulls in factory (pull secret forgejo-registry, which factoryd
+  # copies into every CI and agent namespace) and the config check's registry
+  # login (this repository's REGISTRY_USER and REGISTRY_PASSWORD) only read
+  # sf's images: they take the same read:package token, and follow it when it
+  # is minted again.
+  rtok=$(kubectl -n $A get secret forgejo-registry-read -o 'jsonpath={.data.token}' | base64 -d)
+  pull=$(kubectl -n $A get secret forgejo-registry -o 'jsonpath={.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | jq -c '[.auths[] | .username, .password]' 2>/dev/null || true)
+  if [ "$pull" = "$(jq -nc --arg t "$rtok" '["factory-registry-read", $t]')" ]; then
+    echo "$A/forgejo-registry: exists"
+  else
+    kubectl -n $A create secret docker-registry forgejo-registry --docker-server=git.aisoftwarefactory.world --docker-username=factory-registry-read --docker-password="$rtok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+    echo "$A/forgejo-registry: written for factory-registry-read"
+  fi
+  put_secret $IR REGISTRY_USER factory-registry-read || exit 1
+  put_secret $IR REGISTRY_PASSWORD "$rtok" || exit 1
+  unset rtok pull
 fi
 # forgejo-pat (flux-system) is a copy of Flux's bootstrap token, factory-admin's; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
 for n in $P $F $A; do echo "$n: $(kubectl -n "$n" get secret -o name | wc -l) secrets"; done

@@ -32,7 +32,7 @@ sync path `clusters/sf`:
 - Seeded secrets (`sf-cluster-superuser`, `app-secret`, `pg-*`,
   `cnpg-s3-creds`, `forgejo-admin-secret` (keys `username` `factory-admin`, `password` `FORGEJO_FACTORY_ADMIN_PASSWORD`: the chart's site admin, see Accounts), `forgejo-db-creds`,
   `hetzner-s3-creds`, `runner-init`, `litellm-master-key`,
-  `litellm-qwen` (key ALIBABA_CLOUD_KEY, the only model provider), `signoz-root` (namespace `platform`, keys `email`, `password`: SigNoz's root login, value `SIGNOZ_ADMIN_PASSWORD` in the seed env, created by `scripts/seed-secrets.sh`; the SigNoz HelmRelease fails until it exists), `signoz-webhook` (namespaces `factory` and `platform`, key `password`: the basic auth of SigNoz's webhook channel to factoryd, which factoryd needs to boot; `scripts/seed-secrets.sh` mints it with `openssl rand -hex 30` plus a suffix that meets SigNoz's password rule (upper, lower, digit, symbol), or copies the one that exists into the namespace that lacks it), `signoz-factoryd` (namespaces `factory` and `platform`, keys `email`, `password`: factoryd's SigNoz viewer, which the `signoz-objects` job creates from the `platform` copy; seeded the same way), `signoz-s3` (namespace `platform`, key `s3.xml`: the S3 key pair `HETZNER_S3_ACCESS_KEY_ID`/`HETZNER_S3_SECRET_ACCESS_KEY` from `.env.tools` wrapped in the XML ClickHouse reads through `include_from`, created by `scripts/seed-secrets.sh`; the ClickHouse pod does not start until it exists, see Telemetry), `forgejo-secret-key` (namespace `forgejo`, the pinned Forgejo `SECRET_KEY`; a new key makes every stored Actions secret unreadable), `github-mirror` (namespace `forgejo`, key `token`: the fine-grained GitHub token of the push mirrors, the two repositories only, contents read and write, ruling 144; value `GITHUB_MIRROR_PAT` in `.env.tools`)) are imperative and stay out of the tree. In `factory`: `factory-db-creds` (keys `username`/`password`, the CNPG `gateway` role), a copy of `litellm-master-key` (key `masterkey`), and the `forgejo-registry` pull secret (username `factory-admin`, its token `factory-registry-pull` with the single scope `read:package`, which `scripts/seed-secrets.sh` mints in its Forgejo pass, again when the secret is missing, names another user or the token is gone; factoryd copies it into every CI and agent namespace, and it can push nothing. Main CI pushes with a second token, `factory-registry`, `write:package`, which the script mints only into both repositories' Actions secrets `REGISTRY_USER` and `REGISTRY_PASSWORD` and keeps nowhere else), `forgejo-registry-read` (key `token`: the `read:package` token of user `factory-registry-read` the roller reads main CI's images with; minted by `scripts/seed-secrets.sh`, see Rebuild step 8), `factoryd-intake` (key `token`, the bearer token for factoryd's task intake; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), `factoryd-webhook` (key `secret`, task 42: the HMAC-SHA256 secret shared with Forgejo's webhook config for `POST /webhooks/forgejo`; value `FORGEJO_WEBHOOK_SECRET` in the seed env, because the webhook itself lives in Forgejo's database and comes back with the restore; a fresh value must be set on the webhook too), and `forgejo-ci-registrar` (key `token`, tasks 41 and 46, rulings 101 and 101a: a `write:repository` token of the dedicated Forgejo user `factory-ci` scoped to the code repository; Forgejo's repository runner API demands the repository owner, so `factory-ci` is a member of org `sf`'s Owners team, and `main`'s push and merge whitelist, which applies to admins, excludes it, so the token can neither push nor merge `main`; factoryd's CI spawner uses it to stand up the ephemeral `pr-untrusted` runner pods and its intake uses it to read the code repository's collaborators and assignee list; no stored value: the user comes back with the database restore, mint a fresh token on re-seed, never mount it into a runner pod itself), `forgejo-ci-org-read` (key `token`, ruling 108: a second `factory-ci` token with the single scope `read:organization` and no repository, because Forgejo refuses that scope on a repository-limited token; factoryd's trust gate reads org `sf`'s teams, their repositories and their members with it; no stored value: mint a fresh token on re-seed), `gateway-tool-keys` (task 52: keys `FIRECRAWL_KEY`, `REPLICATE_KEY`, `FAL_AI_KEY`, the MCP tools' provider keys, mounted by the gateway only; created from `.env.tools` without printing it: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic gateway-tool-keys --from-literal=FIRECRAWL_KEY="$FIRECRAWL_KEY" --from-literal=REPLICATE_KEY="$REPLICATE_KEY" --from-literal=FAL_AI_KEY="$FAL_AI_KEY"`), `gateway-factoryd` (task 52: key `token`, the bearer the gateway presents on factoryd's `POST /internal/escalations`; both deployments mount it; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), and `hetzner-agent` (task 53: key `token`, the API token of the Hetzner project `agent` that holds only agent-commissioned servers, firewalls and volumes; mounted by the gateway only, never by factoryd; value `HETZNER_AGENT_KEY` in `.env.tools`: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic hetzner-agent --from-literal=token="$HETZNER_AGENT_KEY"`), and `hetzner-ci` (task 49, ruling 110: key `token`, the API token of the Hetzner project `ci` that holds only the throwaway PR build VMs and their firewalls; mounted by factoryd only, whose collector deletes anything in that project it does not know; value `HETZNER_CI_KEY` in `.env.tools`: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic hetzner-ci --from-literal=token="$HETZNER_CI_KEY"`), and `console-oauth` (keys `client_id`, `client_secret`, `session_key`, the console's Forgejo OAuth2 app `factory-console`; not seeded: CronJob `console-oauth` in `forgejo` makes it, see Rebuild step 8) — pods cannot read secrets across namespaces, so the master key exists in `platform` and `factory` and rotation must replace both. `forgejo-pat` in `flux-system` (a copy of the bootstrap sync credentials) authenticates the `factory-code` GitRepository. The `gateway` role itself was created imperatively on `sf-cluster` (`CREATE ROLE gateway LOGIN PASSWORD ...`, value `SF_PG_GATEWAY_PASSWORD` in the seed env); CNPG's Database CR cannot create its owner role. The S3
+  `litellm-qwen` (key ALIBABA_CLOUD_KEY, the only model provider), `signoz-root` (namespace `platform`, keys `email`, `password`: SigNoz's root login, value `SIGNOZ_ADMIN_PASSWORD` in the seed env, created by `scripts/seed-secrets.sh`; the SigNoz HelmRelease fails until it exists), `signoz-webhook` (namespaces `factory` and `platform`, key `password`: the basic auth of SigNoz's webhook channel to factoryd, which factoryd needs to boot; `scripts/seed-secrets.sh` mints it with `openssl rand -hex 30` plus a suffix that meets SigNoz's password rule (upper, lower, digit, symbol), or copies the one that exists into the namespace that lacks it), `signoz-factoryd` (namespaces `factory` and `platform`, keys `email`, `password`: factoryd's SigNoz viewer, which the `signoz-objects` job creates from the `platform` copy; seeded the same way), `signoz-s3` (namespace `platform`, key `s3.xml`: the S3 key pair `HETZNER_S3_ACCESS_KEY_ID`/`HETZNER_S3_SECRET_ACCESS_KEY` from `.env.tools` wrapped in the XML ClickHouse reads through `include_from`, created by `scripts/seed-secrets.sh`; the ClickHouse pod does not start until it exists, see Telemetry), `forgejo-secret-key` (namespace `forgejo`, the pinned Forgejo `SECRET_KEY`; a new key makes every stored Actions secret unreadable), `github-mirror` (namespace `forgejo`, key `token`: the fine-grained GitHub token of the push mirrors, the two repositories only, contents read and write, ruling 144; value `GITHUB_MIRROR_PAT` in `.env.tools`)) are imperative and stay out of the tree. In `factory`: `factory-db-creds` (keys `username`/`password`, the CNPG `gateway` role), a copy of `litellm-master-key` (key `masterkey`), and the `forgejo-registry` pull secret (username `factory-registry-read`, the `read:package` token of `forgejo-registry-read`, which reads `sf`'s packages only and can push nothing; `scripts/seed-secrets.sh` writes it in its Forgejo pass and again whenever it differs from `forgejo-registry-read`; factoryd copies it into every CI and agent namespace. The code repository's main CI pushes with factory-admin's token `factory-registry`, `write:package`, which the script mints only into that repository's Actions secrets `REGISTRY_USER` and `REGISTRY_PASSWORD` and keeps nowhere else), `forgejo-registry-read` (key `token`: the `read:package` token of user `factory-registry-read` the roller reads main CI's images with; minted by `scripts/seed-secrets.sh`, see Rebuild step 8), `factoryd-intake` (key `token`, the bearer token for factoryd's task intake; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), `factoryd-webhook` (key `secret`, task 42: the HMAC-SHA256 secret shared with Forgejo's webhook config for `POST /webhooks/forgejo`; value `FORGEJO_WEBHOOK_SECRET` in the seed env, because the webhook itself lives in Forgejo's database and comes back with the restore; a fresh value must be set on the webhook too), and `forgejo-ci-registrar` (key `token`, tasks 41 and 46, rulings 101 and 101a: a `write:repository` token of the dedicated Forgejo user `factory-ci` scoped to the code repository; Forgejo's repository runner API demands the repository owner, so `factory-ci` is a member of org `sf`'s Owners team, and `main`'s push and merge whitelist, which applies to admins, excludes it, so the token can neither push nor merge `main`; factoryd's CI spawner uses it to stand up the ephemeral `pr-untrusted` runner pods and its intake uses it to read the code repository's collaborators and assignee list; no stored value: the user comes back with the database restore, mint a fresh token on re-seed, never mount it into a runner pod itself), `forgejo-ci-org-read` (key `token`, ruling 108: a second `factory-ci` token with the single scope `read:organization` and no repository, because Forgejo refuses that scope on a repository-limited token; factoryd's trust gate reads org `sf`'s teams, their repositories and their members with it; no stored value: mint a fresh token on re-seed), `gateway-tool-keys` (task 52: keys `FIRECRAWL_KEY`, `REPLICATE_KEY`, `FAL_AI_KEY`, the MCP tools' provider keys, mounted by the gateway only; created from `.env.tools` without printing it: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic gateway-tool-keys --from-literal=FIRECRAWL_KEY="$FIRECRAWL_KEY" --from-literal=REPLICATE_KEY="$REPLICATE_KEY" --from-literal=FAL_AI_KEY="$FAL_AI_KEY"`), `gateway-factoryd` (task 52: key `token`, the bearer the gateway presents on factoryd's `POST /internal/escalations`; both deployments mount it; no stored value, a re-seed generates a fresh one with `openssl rand -hex 32`), and `hetzner-agent` (task 53: key `token`, the API token of the Hetzner project `agent` that holds only agent-commissioned servers, firewalls and volumes; mounted by the gateway only, never by factoryd; value `HETZNER_AGENT_KEY` in `.env.tools`: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic hetzner-agent --from-literal=token="$HETZNER_AGENT_KEY"`), and `hetzner-ci` (task 49, ruling 110: key `token`, the API token of the Hetzner project `ci` that holds only the throwaway PR build VMs and their firewalls; mounted by factoryd only, whose collector deletes anything in that project it does not know; value `HETZNER_CI_KEY` in `.env.tools`: `set -a; . .env.tools; set +a; kubectl -n factory create secret generic hetzner-ci --from-literal=token="$HETZNER_CI_KEY"`), and `console-oauth` (keys `client_id`, `client_secret`, `session_key`, the console's Forgejo OAuth2 app `factory-console`; not seeded: CronJob `console-oauth` in `forgejo` makes it, see Rebuild step 8) — pods cannot read secrets across namespaces, so the master key exists in `platform` and `factory` and rotation must replace both. `forgejo-pat` in `flux-system` (a copy of the bootstrap sync credentials) authenticates the `factory-code` GitRepository. The `gateway` role itself was created imperatively on `sf-cluster` (`CREATE ROLE gateway LOGIN PASSWORD ...`, value `SF_PG_GATEWAY_PASSWORD` in the seed env); CNPG's Database CR cannot create its owner role. The S3
   keys exist in four secrets — `cnpg-s3-creds` in `platform` for CNPG
   backups, `signoz-s3` in `platform` for SigNoz's cold storage,
   `hetzner-s3-creds` in `forgejo` for the nightly dump, `factory-s3-creds`
@@ -190,14 +190,17 @@ notices.
   `FORGEJO_FACTORY_ADMIN_PASSWORD`, synced at every start). The seed
   scripts, the CronJobs `console-oauth` and `push-mirrors`, and factoryd's
   registration (OpenBao `factory/forgejo-admin`) log in as it; it owns the
-  console's OAuth app `factory-console`, Flux's token and both registry
-  tokens: `factory-registry` (`write:package`, main CI's Actions secrets)
-  and `factory-registry-pull` (`read:package`, the `forgejo-registry` pull
-  secret).
+  console's OAuth app `factory-console`, Flux's token and the code
+  repository's registry token `factory-registry` (`write:package`, main
+  CI's Actions secrets). The hand-made tokens of the Rebuild (`runner-init`
+  in step 6; `forgejo-ci-registrar`, `forgejo-ci-org-read`,
+  `forgejo-projects` in step 8) are minted with its basic auth
+  (`FORGEJO_FACTORY_ADMIN_PASSWORD`) and `?sudo=`.
 - `controller`: the controller's own account, password
   `FORGEJO_CONTROLLER_PASSWORD`, no admin: a write collaborator on `sf`'s
   three repositories (`scripts/seed-secrets.sh`), on code `main`'s push and
-  approvals whitelists, and a policy approver, so factoryd's reconcile
+  approvals whitelists and infra `main`'s push and merge whitelists
+  (ruling 239), and a policy approver, so factoryd's reconcile
   makes it a writer and approver on every factory project. The
   controller's scripts, console login and git pushes use it.
 - The bots (`factory-agent`, `factory-merge`, `factory-ci`,
@@ -245,13 +248,22 @@ to `main` is refused (git: "Not allowed to push to protected branch main";
 contents API: 403). It cannot read the infra repository (404). A leaked
 token can merge only what an approver already approved.
 
-`scripts/setup-factory-merge.sh` does all of this idempotently (user,
-collaboration, a fresh token into the secret, the protection) as
-factory-admin, prints the protection it left and fails when a whitelist
-read back differs: Forgejo silently drops a user without write, so the
-controller's collaboration (`scripts/seed-secrets.sh`) comes first. On a rebuild the user, its collaboration and the
-protection come back with Forgejo's database; run the script anyway for
-the fresh token.
+`main` of `sf/ai-software-factory-infra` is human-only (rulings 101a,
+209, 239): push and merge whitelists `[sebastian, controller]`,
+`apply_to_admins` true, `required_approvals` 0, so factory-admin, the bots
+and every other writer are refused, and the console's Merge of a
+new-project pull request works for both approvers.
+
+`scripts/setup-factory-merge.sh` does all of this idempotently as
+factory-admin: it first requires `controller` to be a writer on both
+repositories (Forgejo silently drops a user without write from a
+whitelist; `scripts/seed-secrets.sh` makes it one) and changes nothing
+otherwise, then the user, the collaboration, a fresh token into the
+secret and code `main`'s protection; on infra `main` it sets only the push
+and merge whitelists. It prints both protections and fails when a
+whitelist read back differs. On a rebuild the user, its collaboration and
+the protections come back with Forgejo's database; run the script anyway
+for the fresh token.
 
 ## Build cache
 
@@ -644,7 +656,8 @@ switch after it).
    tree.]
 6. Mint `runner-init`, `flux bootstrap` (pinned v2.9.5), let the cascade
    converge. `runner-init` is always an organisation registration token
-   of `sf` (`GET /api/v1/orgs/sf/actions/runners/registration-token`),
+   of `sf` (`GET /api/v1/orgs/sf/actions/runners/registration-token`, as
+   factory-admin with `FORGEJO_FACTORY_ADMIN_PASSWORD`),
    never an instance token: an instance runner takes every repository's
    jobs, which would put project jobs back on the privileged dind runner
    and break ruling 164's bound that a project's jobs land only on
@@ -660,14 +673,22 @@ switch after it).
    `read:misc` and `write:repository`, piped through `jq -r .sha1` into a
    mode-600 file, and revoke the previous Flux token. [flux prints the
    value it was given in its "access token does not exist" error: never
-   hand it a password.] Then run `scripts/seed-secrets.sh` again (the
+   hand it a password.] `flux bootstrap` pushes to infra `main` only when
+   the manifests it generates differ from `clusters/sf/flux-system/` there
+   (a Flux upgrade); factory-admin may not push infra `main`, so then the
+   bootstrap fails at its push: generate the manifests (`flux install
+   --export > clusters/sf/flux-system/gotk-components.yaml`, pinned
+   version), commit and push them as the controller, and run the bootstrap
+   again, which then finds nothing to push. Then run
+   `scripts/seed-secrets.sh` again (the
    `factory` pods pull their images once its `forgejo-registry` exists):
    with Forgejo up its Forgejo pass logs in as factory-admin, creates
    `sebastian` (site admin) and `controller` when missing, makes
    `controller` a write collaborator on `sf`'s three repositories, and
-   mints the registry tokens (`factory-registry-pull` into
-   `forgejo-registry`, `factory-registry` into both repositories'
-   `REGISTRY_USER` and `REGISTRY_PASSWORD`).
+   writes the registry logins (`forgejo-registry` and infra's
+   `REGISTRY_USER` and `REGISTRY_PASSWORD` from `forgejo-registry-read`,
+   `factory-registry` into code's `REGISTRY_USER` and
+   `REGISTRY_PASSWORD`).
 7. OpenBao: throwaway init, ship the snapshot, `bao operator raft
    snapshot restore -force`, restart, unseal with the original key.
    Pass the throwaway root token over stdin (`kubectl exec -i ... -- sh
@@ -677,8 +698,10 @@ switch after it).
    snapshot carries the SSH CA (its signing key too), the gateway's and
    factoryd's Kubernetes auth, the Forgejo admin's login
    `factory/forgejo-admin` (a snapshot from before ruling 229 holds
-   sebastian's: the next `scripts/seed-secrets.sh` rewrites it for
-   factory-admin) and role `openbao-config`. Within 10 minutes of the
+   sebastian's) and role `openbao-config`. After the unseal, on this path
+   and the fresh one below, run `scripts/seed-secrets.sh` again: it
+   rewrites a login that names another user for factory-admin
+   (`rewritten for factory-admin`), or says `exists`. Within 10 minutes of the
    unseal CronJob `openbao-config` logs `no change` or the paths it
    rewrote (`kubectl -n platform logs job/<newest openbao-config job>`).
    If its login fails instead, run `scripts/openbao-config-bootstrap.sh`
@@ -708,7 +731,9 @@ switch after it).
    runs, every unregistered project's reconcile fails its registration.
    The first such change is the role `factoryd` (2026-09-30): both scripts
    run before Stage 12's Roll 1.
-8. Re-create what restores do not carry: the `factory` namespace
+8. Every token minted by hand in this step logs in as factory-admin
+   (`FORGEJO_FACTORY_ADMIN_PASSWORD`) with `?sudo=<user>`, never as
+   sebastian. Re-create what restores do not carry: the `factory` namespace
    secrets, `forgejo-pat` in `flux-system`, a fresh `factoryd-intake`
    token, `factoryd-webhook` from `FORGEJO_WEBHOOK_SECRET`, and a freshly
    minted `forgejo-ci-registrar` token (user `factory-ci`,
@@ -724,11 +749,12 @@ switch after it).
    file listing its own namespace `factory` (`projects/ai-software-factory-code.yaml`); `scripts/seed-secrets.sh`
    makes the user, the collaborator, the token and the secret once Forgejo
    answers, lets `factory-agent` read this repository to file the
-   `config_rejected` issues, and PUTs both repositories' Actions secrets
+   `config_rejected` issues, PUTs the code repository's Actions secrets
    `REGISTRY_USER` and `REGISTRY_PASSWORD` (factory-admin's
    `write:package` token `factory-registry`, minted and PUT when it or one
-   of the four secrets is missing) for main CI and the config check, and
-   makes
+   of the two secrets is missing; a failed PUT revokes it) for main CI and
+   this repository's (`factory-registry-read` and its `read:package`
+   token, every run) for the config check, and makes
    this repository's webhook to factoryd (issue events, the intake secret;
    factoryd reports it) and the team `factory-issues-infra` in org `sf`
    (units `repo.issues` write, `repo.code` read, set again and read back on
@@ -744,10 +770,13 @@ switch after it).
    packages to team members only; the script makes the user, the team,
    the membership, the token and the secret, key `token`; factoryd's
    roller reads main CI's images with it and cannot overwrite a tag,
-   while the `forgejo-registry` pull secret (`read:package`) serves image
-   pulls only;
+   and the `forgejo-registry` pull secret and the config check's login
+   carry the same token;
    factoryd cannot boot without it and reads it once at boot, so a
-   rotation is: delete the secret, rerun the script, restart factoryd), `gateway-tool-keys`,
+   rotation is: delete the secret, rerun the script (it rewrites
+   `forgejo-registry` and infra's `REGISTRY_PASSWORD` too), restart
+   factoryd; agent and CI namespaces made before keep their copy of the
+   old token until they go), `gateway-tool-keys`,
    `hetzner-agent` and `hetzner-ci` from `.env.tools` and a fresh
    `gateway-factoryd` token. Three CronJobs (every 10 minutes, one log
    line per run, `no change` once converged) take the rest: `console-oauth`
@@ -793,7 +822,7 @@ switch after it).
    late fix. After a `SECRET_KEY` change delete the Actions secret
    `REGISTRY_PASSWORD` of the code repository and run
    `scripts/seed-secrets.sh`: a missing one makes it mint `factory-registry`
-   anew and PUT all four. Check what the database restore should have
+   anew and PUT both (infra's two are PUT on every run). Check what the database restore should have
    brought back, and create it only if missing: the `gateway` role, the
    `factory-agent` bot as a write collaborator on the code repository,
    the `factory-ci` user in org `sf`'s Owners team (Forgejo's repository

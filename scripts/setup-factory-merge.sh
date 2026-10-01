@@ -4,17 +4,23 @@
 # (ruling 109, README "The merge bot"), idempotent: creates the user if
 # missing, makes it a write collaborator, mints a FRESH token into secret
 # factory/forgejo-merge (key token, older tokens revoked) and sets main's
-# protection, then prints the protection. Logs in as the machine admin
-# factory-admin (FORGEJO_FACTORY_ADMIN_PASSWORD from the seed env $SEED_ENV,
-# Forgejo at $FORGEJO_URL) and needs kubectl context admin@sf. The controller
-# must be a write collaborator first (seed-secrets.sh): Forgejo drops a user
-# without write from a whitelist. Prints no secret values.
+# protection, then prints the protection; sets infra main's push and merge
+# whitelists (ruling 239). Logs in as the machine admin factory-admin
+# (FORGEJO_FACTORY_ADMIN_PASSWORD from the seed env $SEED_ENV, Forgejo at
+# $FORGEJO_URL) and needs kubectl context admin@sf. Prints no secret values.
 set -euo pipefail
 set -a; source "${SEED_ENV:-$HOME/repos/ai-software-factory/.env.seed}"; set +a
 F=${FORGEJO_URL:-https://git.aisoftwarefactory.world}/api/v1
 R=sf/ai-software-factory-code
 A="factory-admin:$FORGEJO_FACTORY_ADMIN_PASSWORD"
 c() { curl -sS -u "$A" -H 'Content-Type: application/json' "$@"; }
+I=sf/ai-software-factory-infra
+# 0. Forgejo drops a user without write from a whitelist: the controller must
+# be a writer on both repositories (seed-secrets.sh) before anything changes
+for r in $R $I; do
+  perm=$(c "$F/repos/$r/collaborators/controller/permission" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("permission", ""))' || true)
+  case $perm in write | admin) ;; *) echo "controller is not a writer on $r (\"$perm\"): run seed-secrets.sh first; nothing changed"; exit 1 ;; esac
+done
 # 1. the user (site admin API); its password is random and discarded: the token is minted with sudo
 if [ "$(c -o /dev/null -w '%{http_code}' "$F/users/factory-merge")" != 200 ]; then
   pw=$(openssl rand -hex 24)
@@ -45,3 +51,12 @@ print({k: d[k] for k in ["enable_push_whitelist","push_whitelist_usernames","ena
 want = {"push_whitelist_usernames": ["controller", "sebastian"], "merge_whitelist_usernames": ["factory-merge", "sebastian"], "approvals_whitelist_username": ["controller", "sebastian"]}
 for k, v in want.items():
     if sorted(d[k] or []) != v: sys.exit("protection main: %s is %s, want %s" % (k, d[k], v))'
+# 5. infra main (ruling 239): only its push and merge whitelists; the rest
+# (no approvals, apply_to_admins) stays as it is
+c -o /dev/null -w 'protection infra main: %{http_code}\n' -X PATCH "$F/repos/$I/branch_protections/main" \
+  -d '{"push_whitelist_usernames": ["sebastian", "controller"], "merge_whitelist_usernames": ["sebastian", "controller"]}'
+c "$F/repos/$I/branch_protections/main" | python3 -c 'import json,sys
+d = json.load(sys.stdin)
+print("infra", {k: d[k] for k in ["enable_push_whitelist","push_whitelist_usernames","enable_merge_whitelist","merge_whitelist_usernames","required_approvals","apply_to_admins"]})
+for k in ["push_whitelist_usernames", "merge_whitelist_usernames"]:
+    if sorted(d[k] or []) != ["controller", "sebastian"]: sys.exit("protection infra main: %s is %s, want [controller, sebastian]" % (k, d[k]))'
