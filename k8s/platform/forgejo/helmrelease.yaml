@@ -66,8 +66,11 @@ spec:
           MINIO_LOCATION: fsn1
           MINIO_BUCKET_LOOKUP: auto
         service:
-          # accounts are made by the admin only (ruling 144), outsiders' test accounts too
+          # accounts are made by the admin only (ruling 144), outsiders' test
+          # accounts too; nothing of Forgejo is readable without a login
+          # (item 138): every caller already authenticated
           DISABLE_REGISTRATION: true
+          REQUIRE_SIGNIN_VIEW: true
         actions:
           ENABLED: true
           DEFAULT_ACTIONS_URL: https://data.forgejo.org
