@@ -10,3 +10,6 @@ namespaces: [scratch12-staging]
 environments:
   - {namespace: scratch12-staging, path: deploy/staging}
 
+
+time:
+  agent_time: 1m
