@@ -1,0 +1,14 @@
+# The timed stronger-tier run of round 2 (ruling 236): the linkshort spec on
+# coding-frontier, its spend stopped by this project cap.
+repository: linkshort4/linkshort4
+merge_rule: human
+objects: factory
+agents: coder
+process: spec
+template: ts-go
+namespaces: [linkshort4-staging]
+environments:
+  - {namespace: linkshort4-staging, path: deploy/staging}
+model: stronger
+budget:
+  month_eur: 25
