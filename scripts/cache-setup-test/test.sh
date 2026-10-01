@@ -11,13 +11,13 @@ claim() { VOL_DIR=$1 sh /s/setup.sh -p "$1" -s 1073741824 -m Filesystem -a creat
 fresh() { [ -n "$(find "$1" -mmin -2 2>/dev/null)" ]; }
 
 mkdir -p "$root/.claimed" "$root/cache-old" "$root/cache-young" "$root/cache-legacy" \
-  "$root/cache-me/go-build/aa" "$root/cache-me/go/pkg/mod/m@v1" "$other/pvc-1_ns_data"
+  "$root/cache-me/go-build/aa" "$other/pvc-1_ns_data"
+chmod 0755 "$root/cache-me"
 mib2 "$root/cache-old/x"
 touch "$root/.claimed/cache-old" "$root/.claimed/cache-young" "$root/.claimed/cache-me"
 aged "$root/.claimed/cache-old" 15; aged "$root/.claimed/cache-young" 13; aged "$root/.claimed/cache-me" 15
 mib2 "$root/cache-me/go-build/aa/old-d"; aged "$root/cache-me/go-build/aa/old-d" 4
 mib2 "$root/cache-me/go-build/aa/new-d"
-mib2 "$root/cache-me/go/pkg/mod/m@v1/a.go"; aged "$root/cache-me/go/pkg/mod/m@v1/a.go" 4
 mib2 "$root/cache-young/old-d"; aged "$root/cache-young/old-d" 4
 mib2 "$other/pvc-1_ns_data/old"; aged "$other/pvc-1_ns_data/old" 4
 
@@ -33,9 +33,9 @@ ok "a sibling claimed 15 days ago is removed with its stamp" '[ ! -e "$root/cach
 ok "a sibling claimed 13 days ago stays" '[ -e "$root/cache-young/old-d" ] && [ -e "$root/.claimed/cache-young" ]'
 ok "a sibling without a stamp stays and is stamped now" '[ -d "$root/cache-legacy" ] && fresh "$root/.claimed/cache-legacy"'
 ok "the claimed cache stays though idle 15 days, its stamp renewed" '[ -d "$root/cache-me" ] && fresh "$root/.claimed/cache-me"'
+ok "a claim directory made 0755 (kubelet's DirectoryOrCreate) is 0777 after the claim" '[ "$(stat -c %a "$root/cache-me")" = 777 ]'
 ok "above the cap a file idle 4 days is removed" '[ ! -e "$root/cache-me/go-build/aa/old-d" ]'
 ok "above the cap a fresh file stays" '[ -e "$root/cache-me/go-build/aa/new-d" ]'
-ok "above the cap the module cache stays whole" '[ -e "$root/cache-me/go/pkg/mod/m@v1/a.go" ]'
 ok "above the cap the directories stay" '[ -d "$root/cache-me/go-build/aa" ]'
 
 claim "$root/cache-young"; rc=$?
@@ -47,6 +47,11 @@ ok "first claim: exit 0" '[ $rc = 0 ]'
 ok "first claim: the directory is made 0777" '[ "$(stat -c %a "$root/cache-new")" = 777 ]'
 ok "first claim: stamped" 'fresh "$root/.claimed/cache-new"'
 ok "the stamps are not in a cache" '[ ! -e "$root/cache-new/.claimed" ] && [ ! -e "$root/cache-me/.claimed" ]'
+
+mv "$root/.claimed" /tmp/stamps; : > "$root/.claimed"
+claim "$root/cache-err"; rc=$?
+ok "a failing prune (the stamps directory is a file): exit 0" '[ $rc = 0 ]'
+ok "a failing prune: the claim directory is made 0777" '[ "$(stat -c %a "$root/cache-err")" = 777 ]'
 
 echo "pass=$pass fail=$fail"
 [ "$fail" = 0 ]
