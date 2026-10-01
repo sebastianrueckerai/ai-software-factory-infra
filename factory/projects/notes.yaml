@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../schema/project.schema.json
+# Filed from the console by controller on 2026-10-01.
+repository: notes/notes
+merge_rule: human
+objects: factory
+agents: coder
+process: spec
+template: ts-go
+namespaces: [notes-staging]
+environments:
+  - {namespace: notes-staging, path: deploy/staging}
