@@ -44,7 +44,7 @@ budget:
 # same_call: identical tool calls in one session, in a row or not, that
 # trip the same_call detector after the nudges; above nudge_after (absent: 4).
 limits:
-  sessions: 3
+  sessions: 1
   agent_time: 2h
   check_in: 45m
   supervisor_calls: 6
