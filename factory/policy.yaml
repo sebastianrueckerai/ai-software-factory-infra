@@ -210,7 +210,7 @@ envelope_default:
 # without those buttons and may still deny, request changes, reject and
 # release. Forgejo's approvals whitelist on main stays the merge authority,
 # so a merge approver must be on both.
-approvers: [sebastian]
+approvers: [sebastian, controller]
 
 # Links in agent-written text factoryd posts on Forgejo (pull request body,
 # issue and pull request comments) may point at these hosts and their
