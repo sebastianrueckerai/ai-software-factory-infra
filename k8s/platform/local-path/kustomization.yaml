@@ -47,3 +47,10 @@ patches:
       name: local-path-storage
       labels:
         pod-security.kubernetes.io/enforce: privileged
+configMapGenerator:
+- name: local-path-config
+  namespace: local-path-storage
+  behavior: merge
+  files: [setup=setup.sh]
+  options:
+    disableNameSuffixHash: true

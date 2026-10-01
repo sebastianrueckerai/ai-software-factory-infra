@@ -23,7 +23,10 @@ sync path `clusters/sf`:
   `factory-cache`: the per-project Go build and npm caches of agent
   sessions and CI runs, a directory per claim name under
   /var/lib/factory-cache on EPHEMERAL, not the noexec user volume, that
-  Retain keeps; only factoryd may claim it), and the
+  Retain keeps; only factoryd may claim it; local-path's `setup.sh`
+  prunes them at each claim: a cache unclaimed for 14 days goes, one
+  above 10 GiB loses its files unchanged for 3 days, Go's module cache
+  spared; tested by `scripts/cache-setup-test/test.sh`), and the
   CoreDNS Corefile. The Corefile's rewrite sends in-cluster git DNS to
   the gateway Service; prune is on, so deleting coredns.yaml from the
   tree deletes the rewrite and re-breaks the Flux sync. From here on,
