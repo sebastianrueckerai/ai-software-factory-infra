@@ -14,9 +14,9 @@ version: 1
 # cap: raising it is a commit here. The coder class must allow factoryd's
 # model ladder, or factoryd rejects the version.
 budget:
-  task_default_eur: 5
+  task_default_eur: 2
   task_max_eur: 5
-  day_eur: 40
+  day_eur: 20
   month_eur: 50
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
