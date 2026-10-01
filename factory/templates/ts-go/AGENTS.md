@@ -24,6 +24,11 @@ when it no longer names `gosec` and `go test -race`).
   `/healthz`, the API under `/api/`, the single-page app under `/app/`, and
   `/` redirecting to `/app/`. Tests start it with `httptest.NewServer`;
   `cmd/server` serves it on 8080 and reads `DATA_DIR`.
+- Each feature registers its routes in its own file
+  `internal/server/routes_<feature>.go`, from an init that calls
+  `register`: never add a route in `New` or in another feature's file. The
+  foundation puts what every handler needs (the store, the logged-in user)
+  into `Deps`.
 - `web/dist` is embedded with `//go:embed all:dist` in package `web`
   (`web/embed.go`). `web/dist/.gitkeep` is committed so the embed compiles
   before a build; `npm run build` puts it back after Vite empties `dist`.

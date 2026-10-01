@@ -16,19 +16,39 @@ type Config struct {
 	DataDir string
 }
 
-// New serves /healthz, the API under /api/ and the single-page app under
-// /app/; / redirects to /app/.
+// Deps is what every route gets; the foundation adds the store and the
+// logged-in user to it.
+type Deps struct {
+	Config Config
+}
+
+// route registers its handlers on mux, reading what it needs from d.
+type route func(mux *http.ServeMux, d Deps)
+
+var routes []route
+
+// register adds r to what New wires. Call it from a feature's own file's
+// init: never add a route in New or in another feature's file.
+func register(r route) {
+	routes = append(routes, r)
+}
+
+// New serves every registered route (routes_health.go's /healthz among
+// them), a 404 for the rest of /api/, the single-page app under /app/,
+// and / redirecting to /app/.
 func New(cfg Config) http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-	})
-	mux.HandleFunc("/api/", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
-	})
+	mux, d := http.NewServeMux(), Deps{Config: cfg}
+	for _, r := range routes {
+		r(mux, d)
+	}
+	mux.HandleFunc("/api/", notFound) // more specific patterns win
 	mux.Handle("/app/", http.StripPrefix("/app", app()))
 	mux.Handle("GET /{$}", http.RedirectHandler("/app/", http.StatusFound))
 	return mux
+}
+
+func notFound(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
