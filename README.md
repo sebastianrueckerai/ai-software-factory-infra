@@ -745,7 +745,17 @@ switch after it).
    factoryd itself recreates, at boot, the issue labels (`agent`,
    `human`, `state/*`, `priority/*`, `severity/*`) and the bot's private fork
    `factory-agent/ai-software-factory-code` that agent PRs come from
-   (ruling 97).
+   (ruling 97). Its first boot also reconciles every project file under
+   `projects/` on infra `main`: a project whose row in the gateway's
+   `projects` table holds its tokens finds everything in Forgejo
+   unchanged and gets its staging namespace back (RBAC, network policy,
+   quota, limit range, the `forgejo-registry` pull secret, the Flux
+   GitRepository and the Kustomization on its `deploy` branch), so its
+   staging Deployment runs again on the digest `deploy` pins; it registers
+   nothing and reads nothing from OpenBao. A row without tokens is
+   registered in that reconcile (OpenBao's `factory/forgejo-admin`, step
+   7). factoryd boots only once `console-oauth` exists, so the reconcile
+   runs after that CronJob's first run.
 9. Gate: every restored repository's HEAD matches the last pushed commit
    on both Forgejo and GitHub, the Stage 2 exit tests pass, CI on `main`
    is green (a dump that already holds the code repository's `main`
