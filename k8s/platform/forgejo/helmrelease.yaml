@@ -63,6 +63,9 @@ spec:
           MINIO_BUCKET: aisoftwarefactory-forgejo
           MINIO_LOCATION: fsn1
           MINIO_BUCKET_LOOKUP: auto
+        service:
+          # accounts are made by the admin only (ruling 144), outsiders' test accounts too
+          DISABLE_REGISTRATION: true
         actions:
           ENABLED: true
           DEFAULT_ACTIONS_URL: https://data.forgejo.org
