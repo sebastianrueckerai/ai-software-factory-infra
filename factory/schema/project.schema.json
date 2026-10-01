@@ -237,6 +237,27 @@
       },
       "description": "Time overrides limits.agent_time and limits.check_in (and the class's or process's, if set) for the project's tasks: most specific wins, a project's own file over the process, the process over the class.",
       "additionalProperties": false
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "month_eur": {
+          "type": "number",
+          "description": "MonthEUR caps the project's tasks together per UTC calendar month; 0 stops the project's spend."
+        }
+      },
+      "description": "Budget caps the spend of the project's tasks together; absent: the project has no cap of its own. Stricter wins: bounded by policy.yaml's budget.month_eur; a looser file is rejected.",
+      "required": [
+        "month_eur"
+      ],
+      "additionalProperties": false
+    },
+    "model": {
+      "type": "string",
+      "description": "Model runs a coding card's first session on Models.Stronger instead of the ladder's first rung; the only accepted value is \"stronger\". Absent: a coding card starts on the first rung. The planner and report sessions keep their own rung.",
+      "enum": [
+        "stronger"
+      ]
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",
