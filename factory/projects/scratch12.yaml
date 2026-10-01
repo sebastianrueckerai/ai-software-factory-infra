@@ -2,6 +2,7 @@
 # Filed from the console by sebastian on 2026-09-30.
 repository: scratch12/scratch12
 merge_rule: human
+time: {agent_time: 1m}
 objects: factory
 agents: coder
 process: spec
