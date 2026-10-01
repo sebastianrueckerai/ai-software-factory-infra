@@ -1,6 +1,7 @@
 #!/bin/sh
 # shellcheck shell=busybox
-# The console's Forgejo OAuth app (user sebastian) and secret
+# The console's Forgejo OAuth app (owned by the user it logs in as, the
+# machine admin factory-admin) and secret
 # factory/console-oauth. Forgejo shows a client secret once, so a missing
 # secret, a missing key or a client_id that is not the app's means: create
 # the app or regenerate its secret, mint a fresh session_key, write the

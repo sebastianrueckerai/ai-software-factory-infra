@@ -36,8 +36,10 @@ spec:
         port: 3000
     gitea:
       admin:
+        # factory-admin, the machine admin every tool logs in as (ruling 229);
+        # an email no other account holds, or the init fails
         existingSecret: forgejo-admin-secret
-        email: admin@aisoftwarefactory.world
+        email: factory-admin@aisoftwarefactory.world
         passwordMode: keepUpdated
       config:
         server:

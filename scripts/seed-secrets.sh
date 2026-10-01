@@ -3,7 +3,18 @@
 # Creates every missing imperative secret of the rebuild recipe from .env.tools/.env.seed and leaves
 # an existing one as it is (to replace one, delete it first). Prints names, no values.
 set -euo pipefail
-set -a; source ~/repos/ai-software-factory/.env.tools; source ~/repos/ai-software-factory/.env.seed; set +a
+TOOLS_ENV=${TOOLS_ENV:-$HOME/repos/ai-software-factory/.env.tools}
+SEED_ENV=${SEED_ENV:-$HOME/repos/ai-software-factory/.env.seed}
+set -a; source "$TOOLS_ENV"; source "$SEED_ENV"; set +a
+# The machine accounts' passwords (ruling 229) are generated into the seed env
+# once, never printed.
+for key in FORGEJO_FACTORY_ADMIN_PASSWORD FORGEJO_CONTROLLER_PASSWORD; do
+  if [ -z "${!key:-}" ]; then
+    printf -v "$key" '%s' "$(openssl rand -hex 16)"
+    printf '\n%s=%s\n' "$key" "${!key}" >>"$SEED_ENV"
+    echo "$SEED_ENV: $key generated"
+  fi
+done
 kubectl apply -f ~/repos/ai-software-factory-infra/k8s/platform/namespaces.yaml >/dev/null
 k() { # -n <namespace> create secret <type> <name> ...
   if kubectl -n "$2" get secret "$6" >/dev/null 2>&1; then
@@ -26,22 +37,30 @@ k -n $P create secret generic litellm-master-key --from-literal=masterkey="$LITE
 k -n $P create secret generic litellm-qwen --from-literal=ALIBABA_CLOUD_KEY="$ALIBABA_CLOUD_KEY"
 F=forgejo
 k -n $F create secret generic forgejo-secret-key --from-literal=SECRET_KEY="$FORGEJO_SECRET_KEY"
-k -n $F create secret generic forgejo-admin-secret --from-literal=username=sebastian --from-literal=password="$FORGEJO_ADMIN_PASSWORD"
+# The chart's site admin: the machine account factory-admin (ruling 229),
+# which every tool of the factory logs in as; no tool uses sebastian's account.
+k -n $F create secret generic forgejo-admin-secret --from-literal=username=factory-admin --from-literal=password="$FORGEJO_FACTORY_ADMIN_PASSWORD"
 # factory/forgejo-admin in OpenBao: the same login, which factoryd's
 # registration reads (role factoryd, ruling 212); the raft snapshot carries it
 # across a rebuild. Root token and password go over stdin; an existing
-# secret is left as it is. Needs OpenBao unsealed with the factory mount
-# (Rebuild step 7): before that it is skipped.
+# secret is left as it is unless it names another user: then its versions
+# are destroyed and it is written anew. Needs OpenBao unsealed with the
+# factory mount (Rebuild step 7): before that it is skipped.
 bao_admin() {
-  printf '%s\n%s\n' "$OPENBAO_ROOT_TOKEN" "$FORGEJO_ADMIN_PASSWORD" | kubectl -n $P exec -i openbao-0 -- sh -c '
+  # shellcheck disable=SC2016
+  printf '%s\n%s\n' "$OPENBAO_ROOT_TOKEN" "$FORGEJO_FACTORY_ADMIN_PASSWORD" | kubectl -n $P exec -i openbao-0 -- sh -c '
     IFS= read -r BAO_TOKEN; IFS= read -r pw; export BAO_TOKEN
     if ! bao secrets list -format=json 2>/dev/null | grep -q "\"factory/\""; then
       echo "openbao factory/forgejo-admin: skipped, OpenBao is sealed, refuses OPENBAO_ROOT_TOKEN or has no mount factory yet; run this script again after step 7"
-    elif bao kv get -mount=factory forgejo-admin >/dev/null 2>&1; then
-      echo "openbao factory/forgejo-admin: exists"
     else
-      printf "%s" "$pw" | bao kv put -mount=factory forgejo-admin username=sebastian password=- >/dev/null
-      echo "openbao factory/forgejo-admin: created"
+      had=$(bao kv get -mount=factory -field=username forgejo-admin 2>/dev/null || true)
+      if [ "$had" = factory-admin ]; then
+        echo "openbao factory/forgejo-admin: exists"
+      else
+        [ -z "$had" ] || bao kv metadata delete -mount=factory forgejo-admin >/dev/null
+        printf "%s" "$pw" | bao kv put -mount=factory forgejo-admin username=factory-admin password=- >/dev/null
+        if [ -n "$had" ]; then echo "openbao factory/forgejo-admin: rewritten for factory-admin (it held $had)"; else echo "openbao factory/forgejo-admin: created"; fi
+      fi
     fi'
 }
 if [ -z "${OPENBAO_ROOT_TOKEN:-}" ]; then
@@ -59,7 +78,6 @@ k -n $F create secret generic hetzner-s3-creds --from-literal=access-key="$HETZN
 A=factory
 k -n $A create secret generic factory-db-creds --from-literal=username=gateway --from-literal=password="$SF_PG_GATEWAY_PASSWORD"
 k -n $A create secret generic litellm-master-key --from-literal=masterkey="$LITELLM_MASTER_KEY"
-k -n $A create secret docker-registry forgejo-registry --docker-server=git.aisoftwarefactory.world --docker-username=sebastian --docker-password="$FORGEJO_CI_REGISTRY_PAT"
 k -n $A create secret generic forgejo-bot-creds --from-literal=password="$FORGEJO_BOT_PASSWORD"
 k -n $A create secret generic factory-s3-creds --from-literal=access-key-id="$HETZNER_S3_ACCESS_KEY_ID" --from-literal=secret-access-key="$HETZNER_S3_SECRET_ACCESS_KEY"
 k -n $A create secret generic factoryd-webhook --from-literal=secret="$FORGEJO_WEBHOOK_SECRET"
@@ -88,30 +106,70 @@ for n in $A $P; do k -n "$n" create secret generic signoz-webhook --from-literal
 pw=$(shared signoz-factoryd password $A $P)
 for n in $A $P; do k -n "$n" create secret generic signoz-factoryd --from-literal=email=factoryd@aisoftwarefactory.world --from-literal=password="$pw"; done
 unset pw
-# forgejo-config (factory): factoryd reads the configuration tree factory/ of
-# this repository with it (ruling 183). The user factory-config is a read
-# collaborator on this repository and nothing else, its token read:repository
-# limited to it. The same pass lets factory-agent (read) file the
-# config_rejected issues here and gives the config-check workflow its
-# registry login. Needs Forgejo up: before that it is skipped, run again after
-# step 6.
-FJ=https://git.aisoftwarefactory.world/api/v1
+# The Forgejo pass, as factory-admin. Needs Forgejo up with factory-admin
+# (the chart makes it at Forgejo's start from forgejo-admin-secret): before
+# that it is skipped, run again after step 6.
+FJ=${FORGEJO_URL:-https://git.aisoftwarefactory.world}/api/v1
 IR=sf/ai-software-factory-infra
-fj() { curl -sS -u "sebastian:$FORGEJO_ADMIN_PASSWORD" -H 'Content-Type: application/json' "$@"; }
-if [ "$(fj -o /dev/null -w '%{http_code}' $FJ/repos/$IR)" != 200 ]; then
-  echo "$A/forgejo-config: skipped, Forgejo does not answer for $IR yet; run this script again after step 6"
+fj() { curl -sS -u "factory-admin:$FORGEJO_FACTORY_ADMIN_PASSWORD" -H 'Content-Type: application/json' "$@"; }
+# <login> <email> <variable holding the password> <site admin true|false>:
+# created when missing, never touched when it exists
+account() {
+  if [ "$(fj -o /dev/null -w '%{http_code}' "$FJ/users/$1")" = 200 ]; then
+    echo "user $1: exists"
+    return
+  fi
+  V=${!3} jq -n --arg u "$1" --arg e "$2" '{username: $u, email: $e, password: $ENV.V, must_change_password: false}' |
+    fj -o /dev/null -w "user $1: %{http_code}\n" -X POST "$FJ/admin/users" -d @-
+  [ "$4" = false ] || fj -o /dev/null -w "user $1 site admin: %{http_code}\n" -X PATCH "$FJ/admin/users/$1" -d '{"admin":true}'
+}
+if [ "$(fj -o /dev/null -w '%{http_code}' "$FJ/repos/$IR")" != 200 ]; then
+  echo "forgejo: skipped, Forgejo does not answer for $IR as factory-admin yet; run this script again after step 6"
 else
-  if [ "$(fj -o /dev/null -w '%{http_code}' $FJ/users/factory-config)" != 200 ]; then
-    fj -o /dev/null -w 'factory-config user: %{http_code}\n' -X POST $FJ/admin/users \
+  # the human (no tool logs in as him) and the controller's own account
+  account sebastian admin@aisoftwarefactory.world FORGEJO_ADMIN_PASSWORD true
+  account controller controller@aisoftwarefactory.world FORGEJO_CONTROLLER_PASSWORD false
+  # idempotent: every run converges them
+  for r in sf/ai-software-factory-code $IR sf/ai-software-factory; do
+    fj -o /dev/null -w "controller write collaborator on $r: %{http_code}\n" -X PUT "$FJ/repos/$r/collaborators/controller" -d '{"permission":"write"}'
+  done
+  # forgejo-config (factory): factoryd reads the configuration tree factory/
+  # of this repository with it (ruling 183). The user factory-config is a read
+  # collaborator on this repository and nothing else, its token
+  # read:repository limited to it. The same pass lets factory-agent (read)
+  # file the config_rejected issues here.
+  if [ "$(fj -o /dev/null -w '%{http_code}' "$FJ/users/factory-config")" != 200 ]; then
+    fj -o /dev/null -w 'factory-config user: %{http_code}\n' -X POST "$FJ/admin/users" \
       -d "{\"username\":\"factory-config\",\"email\":\"factory-config@factory.local\",\"password\":\"$(openssl rand -hex 24)\",\"must_change_password\":false,\"visibility\":\"private\"}"
   fi
-  # idempotent: every run converges them
-  fj -o /dev/null -w 'factory-config read collaborator: %{http_code}\n' -X PUT $FJ/repos/$IR/collaborators/factory-config -d '{"permission":"read"}'
-  fj -o /dev/null -w 'factory-agent read collaborator: %{http_code}\n' -X PUT $FJ/repos/$IR/collaborators/factory-agent -d '{"permission":"read"}'
-  for kv in "REGISTRY_USER=sebastian" "REGISTRY_PASSWORD=$FORGEJO_CI_REGISTRY_PAT"; do
-    V="${kv#*=}" python3 -c 'import json,os; print(json.dumps({"data": os.environ["V"]}))' |
-      fj -o /dev/null -w "$IR Actions secret ${kv%%=*}: %{http_code}\n" -X PUT "$FJ/repos/$IR/actions/secrets/${kv%%=*}" -d @-
+  fj -o /dev/null -w 'factory-config read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-config" -d '{"permission":"read"}'
+  fj -o /dev/null -w 'factory-agent read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-agent" -d '{"permission":"read"}'
+  # The registry login of both repositories' main CI (Actions secrets
+  # REGISTRY_USER and REGISTRY_PASSWORD) and of image pulls in factory (pull
+  # secret forgejo-registry): factory-admin's write:package token, read back
+  # from the pull secret, minted anew (older ones revoked) when that is
+  # missing or names another user.
+  reg=$(kubectl -n $A get secret forgejo-registry -o 'jsonpath={.data.\.dockerconfigjson}' 2>/dev/null | base64 -d || true)
+  if [ "$(printf '%s' "$reg" | jq -r '.auths[].username' 2>/dev/null)" = factory-admin ]; then
+    tok=$(printf '%s' "$reg" | jq -r '.auths[].password')
+    echo "$A/forgejo-registry: exists"
+  else
+    for id in $(fj "$FJ/users/factory-admin/tokens" | jq -r '.[] | select(.name == "factory-registry") | .id'); do
+      fj -o /dev/null -w "factory-admin revoke token $id: %{http_code}\n" -X DELETE "$FJ/users/factory-admin/tokens/$id"
+    done
+    tok=$(fj -X POST "$FJ/users/factory-admin/tokens" -d '{"name":"factory-registry","scopes":["write:package"]}' | jq -r '.sha1 // empty' || true)
+    [ -n "$tok" ] || { echo "$A/forgejo-registry: mint failed, no secret written"; exit 1; }
+    kubectl -n $A create secret docker-registry forgejo-registry --docker-server=git.aisoftwarefactory.world --docker-username=factory-admin --docker-password="$tok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+    echo "$A/forgejo-registry: written for factory-admin (${#tok} chars)"
+  fi
+  unset reg
+  for r in sf/ai-software-factory-code $IR; do
+    for kv in "REGISTRY_USER=factory-admin" "REGISTRY_PASSWORD=$tok"; do
+      V="${kv#*=}" jq -n '{data: $ENV.V}' |
+        fj -o /dev/null -w "$r Actions secret ${kv%%=*}: %{http_code}\n" -X PUT "$FJ/repos/$r/actions/secrets/${kv%%=*}" -d @-
+    done
   done
+  unset tok
   if kubectl -n $A get secret forgejo-config >/dev/null 2>&1; then
     echo "$A/forgejo-config: exists"
   else
@@ -176,8 +234,8 @@ for r in json.load(sys.stdin):
   # members only, services/packages/perm.go); its token has the single scope
   # read:package, so it can overwrite no tag. The forgejo-registry pull
   # secret (a write:package PAT) serves image pulls only.
-  if [ "$(fj -o /dev/null -w '%{http_code}' $FJ/users/factory-registry-read)" != 200 ]; then
-    fj -o /dev/null -w 'factory-registry-read user: %{http_code}\n' -X POST $FJ/admin/users \
+  if [ "$(fj -o /dev/null -w '%{http_code}' "$FJ/users/factory-registry-read")" != 200 ]; then
+    fj -o /dev/null -w 'factory-registry-read user: %{http_code}\n' -X POST "$FJ/admin/users" \
       -d "{\"username\":\"factory-registry-read\",\"email\":\"factory-registry-read@factory.local\",\"password\":\"$(openssl rand -hex 24)\",\"must_change_password\":false,\"visibility\":\"private\"}"
   fi
   RUNITS='{"name":"factory-registry-read","description":"factory-registry-read: the roller reads main CI images (read:package)","includes_all_repositories":false,"can_create_org_repo":false,"permission":"read","units":["repo.packages"],"units_map":{"repo.packages":"read"}}'
@@ -217,5 +275,5 @@ for r in json.load(sys.stdin): print("team factory-registry-read: repository %s 
     unset tok
   fi
 fi
-# forgejo-pat (flux-system) is the Flux bootstrap PAT from ~/.git-credentials; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
+# forgejo-pat (flux-system) is a copy of Flux's bootstrap token, factory-admin's; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
 for n in $P $F $A; do echo "$n: $(kubectl -n "$n" get secret -o name | wc -l) secrets"; done
