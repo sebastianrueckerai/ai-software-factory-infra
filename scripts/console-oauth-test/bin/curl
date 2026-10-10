@@ -1,0 +1,17 @@
+#!/bin/sh
+# stub: the OAuth app in $STATE/app.json, the secret Forgejo accepts in $STATE/valid, calls logged to $STATE/calls
+m=GET; url=""; body=""
+while [ $# -gt 0 ]; do
+  case $1 in -X) m=$2; shift ;; -d) [ "$2" = @- ] && body=$(cat); [ "$m" = GET ] && m=POST; shift ;; -H) shift ;; http*) url=$1 ;; esac; shift
+done
+echo "$m ${url#http://forgejo-http.forgejo.svc.cluster.local:3000}" >> "$STATE/calls"
+case "$m $url" in
+  "GET "*/user/applications/oauth2\?*) cat "$STATE/app.json" ;;
+  "PATCH "*/user/applications/oauth2/*) echo s2 > "$STATE/valid"; jq -c '.[0] | {client_id, client_secret: "s2"}' "$STATE/app.json" ;;
+  "POST "*/user/applications/oauth2) echo s2 > "$STATE/valid"; echo '{"client_id":"c-new","client_secret":"s2"}' ;;
+  "POST "*/login/oauth/access_token)
+    [ -e "$STATE/down" ] && { echo "curl: (7) Failed to connect" >&2; exit 7; }
+    case "$body" in *"client_secret=$(cat "$STATE/valid")") d="client is not authorized" ;; *) d="invalid client secret" ;; esac
+    echo "{\"error\":\"unauthorized_client\",\"error_description\":\"$d\"}" ;;
+  *) exit 98 ;;
+esac

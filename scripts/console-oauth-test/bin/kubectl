@@ -1,0 +1,9 @@
+#!/bin/sh
+# stub: the secret in $STATE/secret.json, writes and restarts logged to $STATE/calls
+case "$*" in
+  "-n factory get secret console-oauth --ignore-not-found -o json") cat "$STATE/secret.json" 2>/dev/null || true ;;
+  "replace -f -"|"create -f -") echo "$1 $(jq -r .stringData.client_secret)" >> "$STATE/calls" ;;
+  "-n factory get deployment factoryd --ignore-not-found -o name") echo deployment.apps/factoryd ;;
+  "-n factory rollout restart deployment/factoryd") echo restart >> "$STATE/calls" ;;
+  *) exit 98 ;;
+esac

@@ -3,9 +3,10 @@
 # The console's Forgejo OAuth app (owned by the user it logs in as, the
 # machine admin factory-admin) and secret
 # factory/console-oauth. Forgejo shows a client secret once, so a missing
-# secret, a missing key or a client_id that is not the app's means: create
-# the app or regenerate its secret, mint a fresh session_key, write the
-# secret, restart factoryd (it reads the keys at boot).
+# secret, a missing key, a client_id that is not the app's or a client
+# secret Forgejo rejects means: create the app or regenerate its secret,
+# mint a fresh session_key, write the secret, restart factoryd (it reads the
+# keys at boot).
 set -euo pipefail
 trap '[ $? = 0 ] || echo "console-oauth: failed"' EXIT
 api=http://forgejo-http.forgejo.svc.cluster.local:3000/api/v1
@@ -20,8 +21,14 @@ have=$(printf '%s' "$secret" | jq -r '.data // {} | [.client_id, .client_secret,
 secret_id=$(printf '%s' "$secret" | jq -r '.data.client_id // "" | @base64d' 2>/dev/null || true)
 app_id=$(printf '%s' "$app" | jq -r '.client_id // ""')
 if [ "$have" = 3 ] && [ -n "$app_id" ] && [ "$secret_id" = "$app_id" ]; then
-  echo "console-oauth: no change"
-  exit 0
+  # Forgejo checks the client secret before the code, so a bogus code tells
+  # a stale secret (two runs at once each regenerate it) from a working one.
+  probe=$(printf '%s' "$secret" | jq -r '.data | "grant_type=authorization_code&code=none&client_id=\(.client_id | @base64d | @uri)&client_secret=\(.client_secret | @base64d | @uri)"' |
+    curl -sS -d @- "${api%/api/v1}/login/oauth/access_token" | jq -r .error_description)
+  if [ "$probe" != "invalid client secret" ]; then
+    echo "console-oauth: no change"
+    exit 0
+  fi
 fi
 body=$(jq -nc --arg n "$app_name" --arg r "$redirect" '{name: $n, redirect_uris: [$r], confidential_client: true}')
 if [ -z "$app_id" ]; then
@@ -29,7 +36,7 @@ if [ -z "$app_id" ]; then
   why="app $app_name created"
 else
   creds=$(printf '%s' "$body" | f -X PATCH "$api/user/applications/oauth2/$(printf '%s' "$app" | jq -r .id)" -d @-)
-  if [ -z "$secret" ]; then why="secret missing"; elif [ "$have" != 3 ]; then why="secret lacks keys"; else why="client_id mismatch"; fi
+  if [ -z "$secret" ]; then why="secret missing"; elif [ "$have" != 3 ]; then why="secret lacks keys"; elif [ "$secret_id" != "$app_id" ]; then why="client_id mismatch"; else why="client secret rejected"; fi
   why="$why, client secret regenerated"
 fi
 SESSION_KEY=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')
