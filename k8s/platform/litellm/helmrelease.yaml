@@ -91,9 +91,10 @@ spec:
         include_cost_in_streaming_usage: true
         # proxy-wide stop behind the gateway's accounting (queue item 64 b):
         # every call is refused once the month's spend passes it (USD, about
-        # the 50 EUR cap); 1mo resets on the 1st, 00:00 UTC; the spend sits
+        # the 80 EUR cap of the Stage 15 round, 55 for the 50 EUR cap before
+        # and after); 1mo resets on the 1st, 00:00 UTC; the spend sits
         # in user row litellm-proxy-budget
-        max_budget: 55
+        max_budget: 88
         budget_duration: 1mo
     environmentSecrets:
       - litellm-qwen

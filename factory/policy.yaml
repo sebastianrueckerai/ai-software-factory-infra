@@ -13,11 +13,14 @@ version: 1
 # alerts at 50 and 80 percent of month_eur and files a human issue at the
 # cap: raising it is a commit here. The coder class must allow factoryd's
 # model ladder, or factoryd rejects the version.
+# Stage 15 (ruling 256): the project chat round builds the factory's own
+# screen through its lane under 50 EUR, so a card may spend 5 and the
+# month 80; back to 2, 5, 20 and 50 at the round's close.
 budget:
-  task_default_eur: 2
-  task_max_eur: 5
-  day_eur: 20
-  month_eur: 50
+  task_default_eur: 5
+  task_max_eur: 10
+  day_eur: 40
+  month_eur: 80
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and
