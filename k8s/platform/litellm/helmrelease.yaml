@@ -80,6 +80,9 @@ spec:
           review-frontier: tier-high
           coding-frontier: tier-high
           coding-cheap: tier-low
+          # Stage 15 (ruling 252): the project agent and the pulse
+          operator: tier-high
+          pulse: tier-low
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
         # backstop behind factory-gateway's holds: refuse a call whose
