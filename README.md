@@ -566,10 +566,7 @@ Before a destroy that must keep Postgres state: a completed CNPG
 a Forgejo dump, `flux suspend kustomization --all`, and the two-line edit
 in `k8s/platform/cnpg/cluster.yaml` (recovery origin = the newest
 generation with a completed base backup, live archive = the next unused
-sibling). The tree carries the pair for the next rebuild (origin `sf-cluster-v11`,
-archive `sf-cluster-v12` since the Stage 12 round 1 close; v11's close base
-backup is 20261001T025343 with its WAL archive to 0000000B00000004000000A7, the
-switch after it).
+sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
 
 1. A destroy releases the primary IPs, so first
    `tofu apply -target=hcloud_primary_ip.node`, point the `git`, `console`
@@ -585,7 +582,9 @@ switch after it).
    every PR image build time out). The image selector
    requires the `schematic` label, so only the gVisor snapshot from
    `talos/build-snapshot.sh` can boot. Wait for the nodes, `talosctl
-   bootstrap`, fetch the kubeconfig (strip stale `sf*` entries first).
+   bootstrap`, fetch the kubeconfig (strip stale `sf*` entries first);
+   the generated `talosconfig` names no endpoint, so pass `-e <node-0>
+   -n <node-0>` to both.
    The generated configs carry no control-plane taint (`talos/README.md`
    strips it); a node that still registers with it needs it removed by
    hand.
@@ -674,7 +673,9 @@ switch after it).
    factory-admin with its own basic auth, `POST
    /api/v1/users/factory-admin/tokens` with a fresh name and scopes
    `read:misc` and `write:repository`, piped through `jq -r .sha1` into a
-   mode-600 file, and revoke the previous Flux token. [flux prints the
+   mode-600 file, and revoke the previous Flux token (Flux's first
+   platform sync rolls the Forgejo release, which answers 503 for about a
+   minute: retry then). [flux prints the
    value it was given in its "access token does not exist" error: never
    hand it a password.] `flux bootstrap` pushes to infra `main` only when
    the manifests it generates differ from `clusters/sf/flux-system/` there
@@ -695,7 +696,9 @@ switch after it).
 7. OpenBao: throwaway init, ship the snapshot, `bao operator raft
    snapshot restore -force`, restart, unseal with the original key.
    Pass the throwaway root token over stdin (`kubectl exec -i ... -- sh
-   -c 'BAO_TOKEN="$(cat)" bao ...'`); without `-i` the token is empty. The
+   -c 'BAO_TOKEN="$(cat)" bao ...'`); without `-i` the token is empty.
+   Unseal keys go the same way (`sh -c 'k="$(cat)"; bao operator unseal
+   "$k"'`); `bao operator unseal -` reads no key from a pipe. The
    unseal is the one hand step left: the unseal key is the root of
    trust, and auto-unseal needs a key service we do not run. The
    snapshot carries the SSH CA (its signing key too), the gateway's and
@@ -783,7 +786,8 @@ switch after it).
    `hetzner-agent` and `hetzner-ci` from `.env.tools` and a fresh
    `gateway-factoryd` token. Three CronJobs (every 10 minutes, one log
    line per run, `no change` once converged) take the rest: `console-oauth`
-   in `forgejo` finds `console-oauth` missing, regenerates the client
+   in `forgejo` finds `console-oauth` missing (or its client secret
+   rejected by Forgejo's token endpoint), regenerates the client
    secret of factory-admin's OAuth app `factory-console` with `PATCH
    /api/v1/user/applications/oauth2/{id}` (or creates the app), mints a
    `session_key`, writes the secret and restarts factoryd, which cannot
@@ -815,7 +819,12 @@ switch after it).
    `signoz-objects` rather than a job made by hand: two runs at once
    (a hand job near a :x0 schedule) collide on the retention set, one
    fails with a 400, and the platform's `Job failed` rule files an infra
-   issue (2026-09-30, infra #8). `signoz-root` came with step 4's seed (`scripts/seed-secrets.sh`
+   issue (2026-09-30, infra #8). The same goes for `console-oauth`: a
+   hand job beside a scheduled run regenerates the client secret twice,
+   the second run fails on the secret the first wrote (`Job failed`,
+   infra #31 on 2026-10-10) and the stored client secret is the
+   overwritten one; the next run finds Forgejo rejecting it and
+   regenerates. `signoz-root` came with step 4's seed (`scripts/seed-secrets.sh`
    from `SIGNOZ_ADMIN_PASSWORD`); create it now if SigNoz's HelmRelease
    reports it missing. Check that ConfigMap `cluster-facts`
    (namespace `factory`, key `node_public_ips`) carries the new node
