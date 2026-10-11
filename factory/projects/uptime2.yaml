@@ -9,3 +9,5 @@ template: ts-go
 namespaces: [uptime2-staging]
 environments:
   - {namespace: uptime2-staging, path: deploy/staging}
+# Stage 16 exit test: the deploy card created the Secret admin-token; the smoke test reads its key from STAGING_SECRETS.
+secrets: [admin-token/ADMIN_TOKEN]
