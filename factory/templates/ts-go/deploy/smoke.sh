@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # smoke.sh <staging url>: main's CI runs it against staging after each roll. The card that owns deploy/ fills
 # authenticated_write with the spec's write and reads its token from the environment, where the project's Secrets
-# arrive: : "${ADMIN_TOKEN:?missing Secret ADMIN_TOKEN}" makes a missing Secret a red check.
+# arrive. A missing Secret is a red check whose reason prints to stdout, since the runner's log hides
+# stderr: if [ -z "${ADMIN_TOKEN:-}" ]; then echo "missing Secret ADMIN_TOKEN"; exit 1; fi
 set -euo pipefail
 
 authenticated_write() {
   echo "no authenticated write defined yet: the card that owns deploy/ fills authenticated_write with the spec's write"
+  # every failure reason goes to stdout: echo the reason, then exit 1
 }
 
 url=${1:?usage: smoke.sh <staging url>}
