@@ -14,11 +14,3 @@ namespaces: [factory]
 # factory-ci's registrar token reads the writers and the hooks and runs
 # the Actions; factory-merge's merges
 tokens: {read: forgejo-ci-registrar, actions: forgejo-ci-registrar, merge: forgejo-merge}
-# Stage 15 (ruling 256): the round's phases are big cards, three hours a
-# session, and the project's month is the round's 50 EUR stop.
-time: {agent_time: 3h}
-budget: {month_eur: 50}
-# The round's UI phases start on the stronger rung: the cheap rung spent
-# its three sessions on each of the first three cards and left the fix to
-# the stronger one anyway (stage15-report.md, 00:55Z).
-model: stronger
