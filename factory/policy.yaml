@@ -22,9 +22,9 @@ version: 1
 # the month 110; back to 2, 20 and 50 at the round's close, while the card
 # maximum stays 15.
 budget:
-  task_default_eur: 5
+  task_default_eur: 2
   task_max_eur: 15
-  day_eur: 85
+  day_eur: 20
   month_eur: 110
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of

@@ -97,7 +97,7 @@ spec:
         # the 110 EUR cap of the Stage 16 round, which starts at 52.76 spent;
         # 55 for the 50 EUR cap before and after); 1mo resets on the 1st,
         # 00:00 UTC; the spend sits in user row litellm-proxy-budget
-        max_budget: 118
+        max_budget: 55
         budget_duration: 1mo
     environmentSecrets:
       - litellm-qwen
