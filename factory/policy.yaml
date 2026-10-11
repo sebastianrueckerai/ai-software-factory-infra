@@ -17,13 +17,15 @@ version: 1
 # cap: raising it is a commit here. The coder class must allow factoryd's
 # model ladder, or factoryd rejects the version.
 # Stage 16 (rulings 266, 268): the chat-as-the-window round builds through
-# Stage 16 raised the caps for its round and the close put them back: a
-# card 2 by default and 15 at most (ruling 268), the day 20, the month 50.
+# A card 2 by default and 15 at most (ruling 268). The day and the month are
+# raised for the fix round after Stage 16 (Sebastian, 2026-10-11 21:1xZ):
+# October held about 85 EUR at the close, so the 20 and 50 of the quiet
+# state would refuse every call until November.
 budget:
   task_default_eur: 2
   task_max_eur: 15
-  day_eur: 20
-  month_eur: 50
+  day_eur: 85
+  month_eur: 120
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and
