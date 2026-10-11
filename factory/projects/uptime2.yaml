@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../schema/project.schema.json
+# Filed from the console by controller on 2026-10-11.
+repository: uptime2/uptime2
+merge_rule: human
+objects: factory
+agents: coder
+process: spec
+template: ts-go
+namespaces: [uptime2-staging]
+environments:
+  - {namespace: uptime2-staging, path: deploy/staging}
