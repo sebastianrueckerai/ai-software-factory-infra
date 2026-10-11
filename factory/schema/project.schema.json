@@ -258,6 +258,54 @@
       "enum": [
         "stronger"
       ]
+    },
+    "chat": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Model is the LiteLLM alias the project agent calls (purpose operator).",
+          "enum": [
+            "operator"
+          ]
+        },
+        "monthly_eur": {
+          "type": "number",
+          "description": "MonthlyEUR is the budget of the project's chat task each UTC month; absent or 0: the policy's.",
+          "minimum": 0
+        },
+        "confirm": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "board",
+              "card",
+              "history",
+              "card_history",
+              "costs",
+              "diff",
+              "new_card",
+              "move_card",
+              "answer",
+              "comment",
+              "steer",
+              "retry",
+              "start_plan",
+              "accept_plan",
+              "request_changes",
+              "reject_plan",
+              "approve_merge",
+              "deny_merge",
+              "set_summary",
+              "set_accent"
+            ]
+          },
+          "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. An empty list runs every tool at once."
+        }
+      },
+      "description": "Chat is the project agent's block for this project; its keys replace the policy's.",
+      "additionalProperties": false
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",
