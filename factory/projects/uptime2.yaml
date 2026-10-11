@@ -11,3 +11,5 @@ environments:
   - {namespace: uptime2-staging, path: deploy/staging}
 # Stage 16 exit test: the deploy card created the Secret admin-token; the smoke test reads its key from STAGING_SECRETS.
 secrets: [admin-token/ADMIN_TOKEN]
+# Stage 16 exit test, run 2: the invited member approves one merge.
+approvers: [controller, exit16-member]
