@@ -15,7 +15,8 @@ namespaces: [factory]
 # the Actions; factory-merge's merges
 tokens: {read: forgejo-ci-registrar, actions: forgejo-ci-registrar, merge: forgejo-merge}
 # Stage 16: the round's cards run three hours a session on the stronger
-# rung, and the project's month is the round's 50 EUR stop.
+# rung, and the project's month is the round's 50 EUR stop on top of the
+# 37 EUR October already held when the round opened.
 time: {agent_time: 3h}
-budget: {month_eur: 50}
+budget: {month_eur: 90}
 model: stronger
