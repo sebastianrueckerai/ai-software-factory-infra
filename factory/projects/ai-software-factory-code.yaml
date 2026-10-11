@@ -14,6 +14,3 @@ namespaces: [factory]
 # factory-ci's registrar token reads the writers and the hooks and runs
 # the Actions; factory-merge's merges
 tokens: {read: forgejo-ci-registrar, actions: forgejo-ci-registrar, merge: forgejo-merge}
-# the factory's own code may raise a card to 15 EUR (rulings 266, 268),
-# the policy's maximum
-budget: {task_max_eur: 15}
