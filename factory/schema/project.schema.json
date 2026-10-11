@@ -320,7 +320,11 @@
               "set_summary",
               "set_accent",
               "invite",
-              "github_export"
+              "github_export",
+              "close",
+              "edit",
+              "grant_session",
+              "set_dependency"
             ]
           },
           "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. An empty list runs every tool at once."
