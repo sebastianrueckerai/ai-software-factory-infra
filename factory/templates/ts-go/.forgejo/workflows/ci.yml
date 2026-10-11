@@ -1,6 +1,7 @@
 # main: bash check as in pr.yml; with a Dockerfile, build and push the
 # image by digest, roll staging, wait until staging runs it and run
-# deploy/smoke.sh against it; with deploy/prod/kustomization.yaml, wait 15
+# deploy/smoke.sh against it on the project's smoke runner, the one runner
+# staging admits; with deploy/prod/kustomization.yaml, wait 15
 # minutes, ask the factory whether an alert fires in staging, and on none
 # roll prod. Every roll is a commit by factory-ci on the deploy branch
 # (.forgejo/roll.sh, pushed with the deploy key); Flux tracks deploy. On a
@@ -137,7 +138,9 @@ jobs:
     # a superseded run did not wait for its digest; the newer run smoke-tests
     needs: [staging]
     if: needs.staging.outputs.superseded != 'true'
-    runs-on: pr-untrusted
+    # factoryd serves this label only to a push to main: once the runner took
+    # the job, it reads the job's run and only then opens staging to it
+    runs-on: [[.Name]]-smoke
     steps:
       - uses: actions/checkout@v4
       - name: smoke test [[index .Namespaces "deploy/staging"]] (deploy/smoke.sh)
@@ -147,6 +150,11 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$STAGING_URL" ]; then echo "STAGING_URL is not set: factoryd writes it at registration"; exit 1; fi
+          deadline=$(( $(date +%s) + 120 ))
+          until curl -sS -m 5 -o /dev/null "$STAGING_URL/healthz" 2>/dev/null; do
+            if [ "$(date +%s)" -ge "$deadline" ]; then echo "staging did not open to this runner within 2 minutes"; exit 1; fi
+            sleep 5
+          done
           bash deploy/smoke.sh "$STAGING_URL"
   promote:
     needs: [checks, image, staging, smoke]

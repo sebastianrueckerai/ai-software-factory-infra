@@ -53,7 +53,8 @@ when it no longer names `gosec` and `go test -race`).
   `deploy/staging/` sets the namespace and the image digest, which only
   CI's roll commits change.
   `deploy/smoke.sh` runs in CI against staging after every merge to main:
-  `/healthz`, the app page and `authenticated_write`. The card that owns
+  `/healthz`, the app page and `authenticated_write`. Only that job reaches
+  staging; pull request runs cannot. The card that owns
   `deploy/` fills `authenticated_write` with the spec's write and reads its
   token from the environment, where the project's Secrets arrive as
   `KEY=value` lines.
