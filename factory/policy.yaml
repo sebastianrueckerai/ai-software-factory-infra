@@ -194,6 +194,10 @@ risk:
         "**/AGENTS.md", "**/CLAUDE.md", "**/opencode.json", "**/opencode.jsonc", "**/CODEOWNERS",
         ".*/**"]
   default: normal
+  # ruling 266: a pull request over this many changed lines is class large
+  # (requires_approval) unless a path rule puts it in a stricter class; a
+  # human splits it or accepts it
+  large_lines: 1000
 
 # The standard resource envelope (architecture 5.5): a project's first
 # commissioning request copies it into the project's envelopes row, which

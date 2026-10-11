@@ -46,7 +46,14 @@
       "items": {
         "type": "string"
       },
-      "description": "Notify are the Forgejo users told about the project's cards; empty: the policy's approvers."
+      "description": "Notify are the Forgejo users told about the project's cards; empty: the project's approvers."
+    },
+    "approvers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Approvers are the Forgejo users who may authorize the project's spend in the console (approve its merges and resource requests, accept and start its plans) and invite its members; empty: the policy's approvers."
     },
     "namespaces": {
       "type": "array",
@@ -291,6 +298,9 @@
               "card_history",
               "costs",
               "diff",
+              "plan",
+              "pr",
+              "file",
               "new_card",
               "move_card",
               "answer",
@@ -304,7 +314,9 @@
               "approve_merge",
               "deny_merge",
               "set_summary",
-              "set_accent"
+              "set_accent",
+              "invite",
+              "github_export"
             ]
           },
           "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. An empty list runs every tool at once."
