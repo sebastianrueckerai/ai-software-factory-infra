@@ -547,6 +547,7 @@
               "session_steps",
               "session_step",
               "session_search",
+              "ci",
               "new_card",
               "move_card",
               "answer",
