@@ -16,15 +16,14 @@ version: 1
 # alerts at 50 and 80 percent of month_eur and files a human issue at the
 # cap: raising it is a commit here. The coder class must allow factoryd's
 # model ladder, or factoryd rejects the version.
-# Stage 16 (rulings 266, 268): the chat-as-the-window round builds through
-# A card 2 by default and 15 at most (ruling 268). After Stage 16 the month
-# is 120 EUR, since October held about 85 EUR at the close and Sebastian
-# wants the factory usable (2026-10-11 21:1xZ); the day is Stage 15's 40.
+# A card 2 by default and 15 at most (ruling 268). Stage 17's round: the
+# month is October's ledger at the open (86.25) plus 55, the day 60; the
+# close restores day 40 and month 120.
 budget:
   task_default_eur: 2
   task_max_eur: 15
-  day_eur: 40
-  month_eur: 120
+  day_eur: 60
+  month_eur: 141.25
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and
