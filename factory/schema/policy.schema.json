@@ -528,6 +528,7 @@
           "items": {
             "type": "string",
             "enum": [
+              "system",
               "board",
               "card",
               "history",
