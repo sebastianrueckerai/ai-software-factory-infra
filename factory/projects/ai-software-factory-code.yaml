@@ -18,5 +18,7 @@ tokens: {read: forgejo-ci-registrar, actions: forgejo-ci-registrar, merge: forge
 # rung, and the project's month is the round's 50 EUR stop on top of the
 # 37 EUR October already held when the round opened.
 time: {agent_time: 3h}
-budget: {month_eur: 90}
+# the factory's own code may raise a card to 15 EUR (ruling 266), the
+# policy's maximum; the month is the round's stop
+budget: {month_eur: 90, task_max_eur: 15}
 model: stronger

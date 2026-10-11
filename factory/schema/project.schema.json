@@ -244,9 +244,14 @@
         "month_eur": {
           "type": "number",
           "description": "MonthEUR caps the project's tasks together per UTC calendar month; 0 stops the project's spend."
+        },
+        "task_max_eur": {
+          "type": "number",
+          "description": "TaskMaxEUR is the project's own maximum for one card, up to the policy's task_max_eur; absent: a large card's budget.",
+          "minimum": 0
         }
       },
-      "description": "Budget caps the spend of the project's tasks together; absent: the project has no cap of its own. Stricter wins: bounded by policy.yaml's budget.month_eur; a looser file is rejected.",
+      "description": "Budget caps the spend of the project's tasks together; absent: the project has no cap of its own. Stricter wins: bounded by policy.yaml's budget.month_eur and budget.task_max_eur; a looser file is rejected.",
       "required": [
         "month_eur"
       ],
