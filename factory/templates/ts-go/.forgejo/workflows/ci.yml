@@ -1,11 +1,12 @@
 # main: bash check as in pr.yml; with a Dockerfile, build and push the
-# image by digest, roll staging and wait until staging runs it; with
-# deploy/prod/kustomization.yaml, wait 15 minutes, ask the factory whether an
-# alert fires in staging, and on none roll prod. Every roll is a commit by
-# factory-ci on the deploy branch (.forgejo/roll.sh, pushed with the deploy
-# key); Flux tracks deploy. On a repository without a Dockerfile every job
-# after the checks skips. Registration seeded this file from the template
-# ts-go; agents cannot change .forgejo/.
+# image by digest, roll staging, wait until staging runs it and run
+# deploy/smoke.sh against it; with deploy/prod/kustomization.yaml, wait 15
+# minutes, ask the factory whether an alert fires in staging, and on none
+# roll prod. Every roll is a commit by factory-ci on the deploy branch
+# (.forgejo/roll.sh, pushed with the deploy key); Flux tracks deploy. On a
+# repository without a Dockerfile every job after the checks skips.
+# Registration seeded this file from the template ts-go; agents cannot
+# change .forgejo/.
 name: ci
 on:
   push:
@@ -94,6 +95,8 @@ jobs:
     needs: image
     if: needs.image.outputs.digest != ''
     runs-on: pr-untrusted
+    outputs:
+      superseded: ${{ steps.roll.outputs.superseded }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -130,8 +133,23 @@ jobs:
             if [ "$(date +%s)" -ge "$deadline" ]; then echo "staging does not run $DIGEST after 10 minutes:"; echo "$waiting"; exit 1; fi
             sleep 10
           done
+  smoke:
+    # a superseded run did not wait for its digest; the newer run smoke-tests
+    needs: [staging]
+    if: needs.staging.outputs.superseded != 'true'
+    runs-on: pr-untrusted
+    steps:
+      - uses: actions/checkout@v4
+      - name: smoke test [[index .Namespaces "deploy/staging"]] (deploy/smoke.sh)
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+          STAGING_SECRETS: ${{ secrets.STAGING_SECRETS }}
+        run: |
+          set -euo pipefail
+          if [ -z "$STAGING_URL" ]; then echo "STAGING_URL is not set: factoryd writes it at registration"; exit 1; fi
+          bash deploy/smoke.sh "$STAGING_URL"
   promote:
-    needs: [checks, image, staging]
+    needs: [checks, image, staging, smoke]
     if: needs.checks.outputs.prod == 'true'
     runs-on: pr-untrusted
     timeout-minutes: 30
