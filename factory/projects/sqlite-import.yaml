@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../schema/project.schema.json
+# Filed from the console by controller on 2026-10-12.
+repository: sqlite-import/sqlite-import
+merge_rule: human
+objects: factory
+agents: coder
+process: spec
+namespaces: [sqlite-import-staging]
+environments:
+  - {namespace: sqlite-import-staging, path: deploy/staging}
