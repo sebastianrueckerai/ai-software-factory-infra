@@ -197,8 +197,10 @@ risk:
   default: normal
   # ruling 266: a pull request over this many changed lines is class large
   # (requires_approval) unless a path rule puts it in a stricter class; a
-  # human splits it or accepts it
-  large_lines: 1000
+  # human splits it or accepts it. 400 during Stage 17's exit test, so an
+  # uptime2 card crosses it and the split runs (ruling 301); the close
+  # restores 1000
+  large_lines: 400
 
 # The standard resource envelope (architecture 5.5): a project's first
 # commissioning request copies it into the project's envelopes row, which
