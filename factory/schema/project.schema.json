@@ -322,10 +322,12 @@
               "set_accent",
               "invite",
               "github_export",
+              "github_sync",
               "close",
               "edit",
               "grant_session",
-              "set_dependency"
+              "set_dependency",
+              "split_card"
             ]
           },
           "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. An empty list runs every tool at once."
