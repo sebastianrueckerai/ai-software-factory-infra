@@ -16,13 +16,14 @@ version: 1
 # alerts at 50 and 80 percent of month_eur and files a human issue at the
 # cap: raising it is a commit here. The coder class must allow factoryd's
 # model ladder, or factoryd rejects the version.
-# A card 2 by default and 15 at most (ruling 268). Day 40 and month 120,
-# Sebastian's caps of 2026-10-11, restored at Stage 17's close.
+# A card 2 by default and 15 at most (ruling 268). Day 60 and month 160.07
+# for Stage 18's round (the October ledger at open 105.07 plus 55); restored
+# to day 40 and month 120, Sebastian's caps of 2026-10-11, at the close.
 budget:
   task_default_eur: 2
   task_max_eur: 15
-  day_eur: 40
-  month_eur: 120
+  day_eur: 60
+  month_eur: 160.07
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and
