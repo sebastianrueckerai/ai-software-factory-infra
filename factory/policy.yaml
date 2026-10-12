@@ -16,14 +16,13 @@ version: 1
 # alerts at 50 and 80 percent of month_eur and files a human issue at the
 # cap: raising it is a commit here. The coder class must allow factoryd's
 # model ladder, or factoryd rejects the version.
-# A card 2 by default and 15 at most (ruling 268). Stage 17's round: the
-# month is October's ledger at the open (86.25) plus 55, the day 60; the
-# close restores day 40 and month 120.
+# A card 2 by default and 15 at most (ruling 268). Day 40 and month 120,
+# Sebastian's caps of 2026-10-11, restored at Stage 17's close.
 budget:
   task_default_eur: 2
   task_max_eur: 15
-  day_eur: 60
-  month_eur: 141.25
+  day_eur: 40
+  month_eur: 120
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and
@@ -197,10 +196,9 @@ risk:
   default: normal
   # ruling 266: a pull request over this many changed lines is class large
   # (requires_approval) unless a path rule puts it in a stricter class; a
-  # human splits it or accepts it. 400 during Stage 17's exit test, so an
-  # uptime2 card crosses it and the split runs (ruling 301); the close
-  # restores 1000
-  large_lines: 400
+  # human splits it or accepts it. Stage 17's exit test ran with 400
+  # (ruling 301)
+  large_lines: 1000
 
 # The standard resource envelope (architecture 5.5): a project's first
 # commissioning request copies it into the project's envelopes row, which
