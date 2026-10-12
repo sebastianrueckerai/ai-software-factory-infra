@@ -122,6 +122,9 @@ classes:
     tools:
       web_scrape: {max_requests: 30, max_eur: 0.20}
       web_search: {max_requests: 30, max_eur: 0.20}
+      # the plan's channel (roadmap 184, Stage 18 item 3.1): free, one
+      # filing holds the whole plan json
+      file_plan: {}
       escalate_to_human: {}
 
 # Tool prices no provider API reports (USD prices booked 1:1 as EUR, as
