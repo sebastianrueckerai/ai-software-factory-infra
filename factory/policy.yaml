@@ -55,7 +55,10 @@ limits:
   check_in: 45m
   supervisor_calls: 6
   supervisor_timeout: 6m
-  stronger_after: 1
+  # 3, the session cap: a stage's returning findings never climb the tier;
+  # the frontier comes only through the supervisor's retry_stronger
+  # (Stage 17 plan 4.1, ruling 299)
+  stronger_after: 3
   steps: 1500
   nudge_after: 3
   nudges: 1
