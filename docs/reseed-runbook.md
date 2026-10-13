@@ -56,12 +56,67 @@ kubectl get nodes                              # three Ready (up to ~15 min)
 
 ## 2. CNI
 
-See README step 2 (Cilium imperatively, full Ruling-47 flag set).
+Gateway API CRDs first (Ruling 46), then Cilium with the full flag set
+(Ruling 47; the gatewayAPI and envoy flags are the ones the 2026-10-13
+morning re-seed forgot and paid for twice):
+
+```sh
+kubectl apply --server-side -f k8s/platform/gateway-api/crds.yaml
+cilium install --version 1.20.0 \
+  --set ipam.mode=kubernetes \
+  --set kubeProxyReplacement=true \
+  --set k8sServiceHost=localhost \
+  --set k8sServicePort=7445 \
+  --set 'securityContext.capabilities.ciliumAgent={CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}' \
+  --set 'securityContext.capabilities.cleanCiliumState={NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}' \
+  --set cgroup.autoMount.enabled=false \
+  --set cgroup.hostRoot=/sys/fs/cgroup \
+  --set encryption.enabled=true \
+  --set encryption.type=wireguard \
+  --set gatewayAPI.enabled=true \
+  --set gatewayAPI.hostNetwork.enabled=true \
+  --set envoy.securityContext.capabilities.keepCapNetBindService=true \
+  --set 'envoy.securityContext.capabilities.envoy={NET_ADMIN,SYS_ADMIN,NET_BIND_SERVICE}'
+cilium status --wait
+```
+
+Expected: cilium 3/3, cilium-envoy 3/3, operator 1/1, no kube-proxy
+DaemonSet, GatewayClass `cilium` accepted. k8sServiceHost is the KubePrism
+loopback, never a node address; kubeProxyReplacement must stay true. The
+connectivity suite is optional (known failure: node-to-node DNS).
 
 ## 3. Storage, certs, Postgres
 
-See README step 3 (local-path, cert-manager, edge TLS from the bucket, CNPG
-operator/plugin/cluster/databases; the plugin must follow cert-manager).
+```sh
+kubectl apply -f k8s/platform/namespaces.yaml
+kubectl apply -k k8s/platform/local-path
+kubectl -n local-path-storage wait --for=condition=Available deployment/local-path-provisioner --timeout=180s
+helm install cert-manager jetstack/cert-manager -n platform --version v1.21.2 \
+  --set crds.enabled=true --set config.gatewayAPI.enabled=true
+kubectl -n platform wait --for=condition=Available deployment/cert-manager --timeout=300s
+kubectl -n platform wait --for=condition=Available deployment/cert-manager-webhook --timeout=300s
+kubectl create -f /tmp/<restore-dir>/edge-tls-*.yaml   # create, never apply (README step 3)
+set -a; . ~/repos/ai-software-factory/.env.tools; . ~/repos/ai-software-factory/.env.seed; set +a
+bash scripts/seed-secrets.sh     # pass 1: cnpg-s3-creds must exist before cluster recovery
+```
+
+Seed pass 1 ends with `platform: 15 secrets / forgejo: 8 / factory: 12`; the
+OpenBao and Forgejo passes skip (`run this script again after step 6/7`).
+
+```sh
+kubectl apply --server-side -f k8s/platform/cnpg/operator.yaml
+# [trap, 2026-10-13: plain apply fails "metadata.annotations: Too long" on the
+#  CRDs; if a plain apply already ran, re-apply server-side and ignore field
+#  conflicts on the deployment/webhooks it had created]
+kubectl -n cnpg-system wait --for=condition=Available deployment/cnpg-controller-manager --timeout=420s
+kubectl apply --server-side -f k8s/platform/cnpg/plugin-barman-cloud.yaml   # after cert-manager (README)
+kubectl apply -f k8s/platform/cnpg/objectstore.yaml
+kubectl apply -f k8s/platform/cnpg/cluster.yaml    # recovery; ~10 min to healthy
+kubectl apply -f k8s/platform/cnpg/databases.yaml
+```
+
+Watch: `kubectl -n platform get cluster sf-cluster -o jsonpath='{.status.phase}'`
+until `Cluster in healthy state`, then one primary + two replicas Running.
 
 ## 4-9
 
