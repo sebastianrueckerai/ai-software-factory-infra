@@ -71,8 +71,52 @@ else
   bao_admin || echo "openbao factory/forgejo-admin: skipped, openbao-0 does not answer; run this script again after step 7"
 fi
 k -n $F create secret generic forgejo-db-creds --from-literal=password="$SF_PG_FORGEJO_PASSWORD"
+# The token's duty is a write (push branches, open pull requests on GitHub),
+# so a rotation is verified by a write-shaped probe: a throwaway pull request,
+# opened and closed (roadmap 190). A read-only token never passes. Runs at
+# creation only: to replace the token, delete the secret and run again.
 if [ -n "${GITHUB_MIRROR_PAT:-}" ]; then
-  k -n $F create secret generic github-mirror --from-literal=token="$GITHUB_MIRROR_PAT"
+  if kubectl -n $F get secret github-mirror >/dev/null 2>&1; then
+    echo "$F/github-mirror: exists"
+  else
+    GR=sebastianrueckerai/ai-software-factory-code
+    gh() { curl -sS -H "Authorization: Bearer $GITHUB_MIRROR_PAT" -H 'Accept: application/vnd.github+json' "$@"; }
+    body=$(mktemp)
+    code=$(gh -o "$body" -w '%{http_code}' "https://api.github.com/repos/$GR")
+    [ "$code" = 200 ] || { echo "github-mirror: GITHUB_MIRROR_PAT cannot read $GR (HTTP $code): the write probe cannot run; not stored"; rm -f "$body"; exit 1; }
+    db=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("default_branch", "main"))' "$body")
+    rm -f "$body"
+    # the first branch without an open pull request (such a head answers 422)
+    hb=""
+    for b in $(gh "https://api.github.com/repos/$GR/branches?per_page=100" |
+      python3 -c 'import json,sys
+try:
+    bs = json.load(sys.stdin)
+    print("\n".join(b["name"] for b in bs if isinstance(bs, list) and b["name"] != sys.argv[1]))
+except ValueError:
+    pass' "$db"); do
+      open=$(gh "https://api.github.com/repos/$GR/pulls?state=open&head=sebastianrueckerai:$b" |
+        python3 -c 'import json,sys
+try: print(len(json.load(sys.stdin)))
+except ValueError: print(0)')
+      [ "$open" = 0 ] && { hb=$b; break; }
+    done
+    [ -n "$hb" ] || { echo "github-mirror: no branch on $GR without an open pull request to probe from; not stored"; exit 1; }
+    body=$(mktemp)
+    code=$(gh -o "$body" -w '%{http_code}' -X POST -d "{\"title\":\"throwaway token probe (seed-secrets)\",\"head\":\"$hb\",\"base\":\"$db\"}" "https://api.github.com/repos/$GR/pulls")
+    if [ "$code" != 201 ]; then
+      rm -f "$body"
+      echo "github-mirror: GITHUB_MIRROR_PAT cannot open a pull request on $GR (HTTP $code): a token with a write duty is verified by a write; not stored"
+      exit 1
+    fi
+    n=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["number"])' "$body")
+    rm -f "$body"
+    code=$(gh -o /dev/null -w '%{http_code}' -X PATCH -d '{"state":"closed"}' "https://api.github.com/repos/$GR/pulls/$n")
+    [ "$code" = 200 ] || { echo "github-mirror: throwaway pull request #$n opened but would not close (HTTP $code); not stored"; exit 1; }
+    echo "github-mirror: probe passed (throwaway pull request #$n on $GR opened and closed)"
+    k -n $F create secret generic github-mirror --from-literal=token="$GITHUB_MIRROR_PAT"
+    unset db hb b open body code n
+  fi
 else
   echo "github-mirror: skipped, GITHUB_MIRROR_PAT is not in .env.tools (CronJob push-mirrors waits for it)"
 fi
