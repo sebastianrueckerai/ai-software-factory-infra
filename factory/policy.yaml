@@ -24,8 +24,8 @@ version: 1
 budget:
   task_default_eur: 2
   task_max_eur: 15
-  day_eur: 60
-  month_eur: 174.45
+  day_eur: 40
+  month_eur: 120
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and
@@ -205,7 +205,7 @@ risk:
   # human splits it or accepts it. Stage 17's exit test ran with 400
   # (ruling 301); Stage 19's two live checks run with 400 too, restored to
   # 1000 after each window (ruling 318)
-  large_lines: 400
+  large_lines: 1000
 
 # The standard resource envelope (architecture 5.5): a project's first
 # commissioning request copies it into the project's envelopes row, which
