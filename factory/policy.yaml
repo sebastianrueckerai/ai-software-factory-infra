@@ -203,8 +203,9 @@ risk:
   # ruling 266: a pull request over this many changed lines is class large
   # (requires_approval) unless a path rule puts it in a stricter class; a
   # human splits it or accepts it. Stage 17's exit test ran with 400
-  # (ruling 301)
-  large_lines: 1000
+  # (ruling 301); Stage 19's two live checks run with 400 too, restored to
+  # 1000 after each window (ruling 318)
+  large_lines: 400
 
 # The standard resource envelope (architecture 5.5): a project's first
 # commissioning request copies it into the project's envelopes row, which
