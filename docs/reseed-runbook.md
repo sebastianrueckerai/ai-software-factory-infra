@@ -118,7 +118,40 @@ kubectl apply -f k8s/platform/cnpg/databases.yaml
 Watch: `kubectl -n platform get cluster sf-cluster -o jsonpath='{.status.phase}'`
 until `Cluster in healthy state`, then one primary + two replicas Running.
 
-## 4-9
+## 4. Forgejo and the dump restore
 
-See README steps 4 to 9 (bootstrap slice, Forgejo dump restore, fast-forward
-pushes, runner-init + flux bootstrap, OpenBao snapshot, hand tokens, gate).
+```sh
+kubectl apply -f k8s/platform/gateway-api/edge.yaml   # Gateway programs once cilium carries the gatewayAPI flags
+# extract the HelmRelease values (no yq needed):
+python3 -c "
+import yaml
+docs = list(yaml.safe_load_all(open('k8s/platform/forgejo/helmrelease.yaml')))
+hr = [d for d in docs if d['kind']=='HelmRelease'][0]
+yaml.safe_dump(hr['spec']['values'], open('/tmp/forgejo-values.yaml','w'))"
+helm install forgejo oci://code.forgejo.org/forgejo-helm/forgejo --version 17.1.7 \
+  -n forgejo -f /tmp/forgejo-values.yaml
+```
+
+`https://git.aisoftwarefactory.world/api/v1/version` answers 403 "Only signed
+in user is allowed" for anonymous callers: the instance is private, that is
+the healthy answer. Check authenticated (factory-admin, seed env) instead;
+the restored database comes back with the CNPG recovery, so only `repos/`
+and the SSH host keys need the dump:
+
+```sh
+kubectl -n forgejo exec deploy/forgejo -c forgejo -- mkdir -p /data/git/gitea-repositories
+tar -C <dump>/repos --owner=1000 --group=1000 -cf - . |
+  kubectl -n forgejo exec -i deploy/forgejo -c forgejo -- tar -xf - -C /data/git/gitea-repositories
+kubectl -n forgejo exec -i deploy/forgejo -c forgejo -- sh -c 'cat > /data/ssh/gitea.rsa' < <dump>/data/ssh/gitea.rsa
+kubectl -n forgejo exec -i deploy/forgejo -c forgejo -- sh -c 'cat > /data/ssh/gitea.rsa.pub' < <dump>/data/ssh/gitea.rsa.pub
+kubectl -n forgejo exec deploy/forgejo -c forgejo -- chmod 600 /data/ssh/gitea.rsa
+kubectl -n forgejo delete pod -l app.kubernetes.io/instance=forgejo   # serve the old SSH host key
+kubectl -n forgejo exec deploy/forgejo -c forgejo -- forgejo doctor check --run hooks --fix
+kubectl -n forgejo exec deploy/forgejo -c forgejo -- forgejo doctor check --run enable-push-options --fix
+# never --run fix-push-mirrors-without-git-remote (README step 4)
+```
+
+## 5-9
+
+See README steps 5 to 9 (fast-forward pushes, runner-init + flux bootstrap,
+OpenBao snapshot, hand tokens, gate).
