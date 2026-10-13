@@ -571,7 +571,11 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
 1. A destroy releases the primary IPs, so first
    `tofu apply -target=hcloud_primary_ip.node`, point the `git`, `console`
    and `signoz` DDNS records at the new node-0 address (`tofu output
-   api_endpoint_ip`; Namecheap DDNS password in the seed env), and
+   api_endpoint_ip`; Namecheap DDNS password in the seed env; the update
+   call is `https://dynamicdns.park-your-domain.com/update?domain=<domain>&password=<ddns>&host=<host>&ip=<ip>`,
+   answered `ErrCount 0` / `Done true` — the old
+   `dynamicdns.x10.mx/experimental/update.php` stopped resolving on
+   2026-10-13), and
    regenerate the Talos configs per `talos/README.md` with the
    new API endpoint. Then the full `tofu apply`, and write `tofu output
    node_public_ips` (comma-separated) into
