@@ -37,6 +37,10 @@ done
 k -n $P create secret generic cnpg-s3-creds --from-literal=ACCESS_KEY_ID="$HETZNER_S3_ACCESS_KEY_ID" --from-literal=ACCESS_SECRET_KEY="$HETZNER_S3_SECRET_ACCESS_KEY"
 k -n $P create secret generic litellm-master-key --from-literal=masterkey="$LITELLM_MASTER_KEY"
 k -n $P create secret generic litellm-qwen --from-literal=ALIBABA_CLOUD_KEY="$ALIBABA_CLOUD_KEY"
+# The GLM Coding Plan trial (roadmap 207): the subscription key. A dedicated
+# ZAI_CODING_KEY once the console holds one; today the plan's only key (the
+# probe's Z_AI_KEY) carries the trial.
+k -n $P create secret generic litellm-zai --from-literal=ZAI_CODING_KEY="${ZAI_CODING_KEY:-$Z_AI_KEY}"
 F=forgejo
 k -n $F create secret generic forgejo-secret-key --from-literal=SECRET_KEY="$FORGEJO_SECRET_KEY"
 # The chart's site admin: the machine account factory-admin (ruling 229),

@@ -38,9 +38,12 @@ spec:
       create: true
     proxy_config:
       model_list:
-        # Model tiers (rulings 181, 204): one provider, Alibaba, one deployment
-        # per tier, each measured by scripts/model-tiers. The role aliases map
-        # onto tiers in router_settings.model_group_alias.
+        # Model tiers (rulings 181, 204): Alibaba, one deployment per tier,
+        # each measured by scripts/model-tiers. The role aliases map onto
+        # tiers in router_settings.model_group_alias. The GLM Coding Plan
+        # trial (roadmap 207, 2026-10-13) adds the two glm deployments: the
+        # coding aliases point at them, every other alias stays on DashScope
+        # (item 197's latency: a 100-line review took 210 s on GLM).
         - model_name: tier-high
           litellm_params:
             model: dashscope/qwen3.8-max
@@ -67,6 +70,22 @@ spec:
             drop_params: true
             extra_body:
               enable_thinking: false
+        # The GLM Coding Plan trial (roadmap 207): Sebastian's subscription
+        # endpoint for both coding tiers. LiteLLM prices them at
+        # pay-as-you-go rates (modeled money, roadmap 206; the bundled map
+        # carries both models since 1.102). No enable_thinking: Qwen's extra.
+        - model_name: glm-frontier
+          litellm_params:
+            model: zai/glm-5.3
+            api_base: https://api.z.ai/api/coding/paas/v4
+            api_key: os.environ/ZAI_CODING_KEY
+            drop_params: true
+        - model_name: glm-cheap
+          litellm_params:
+            model: zai/glm-5.3-flash
+            api_base: https://api.z.ai/api/coding/paas/v4
+            api_key: os.environ/ZAI_CODING_KEY
+            drop_params: true
       router_settings:
         # a call failing with 408, 409, 429 or 5xx is retried twice on the
         # same deployment after 0.5 s, then 1 s (or the provider's
@@ -78,8 +97,11 @@ spec:
         model_group_alias:
           supervisor: tier-high
           review-frontier: tier-high
-          coding-frontier: tier-high
-          coding-cheap: tier-low
+          # the trial's routing (roadmap 207): both coding aliases on the
+          # GLM plan; reverting these two lines returns them to DashScope
+          # (the trial's kill order)
+          coding-frontier: glm-frontier
+          coding-cheap: glm-cheap
           # Stage 15 (ruling 252): the project agent and the pulse
           operator: tier-high
           pulse: tier-low
@@ -100,6 +122,7 @@ spec:
         budget_duration: 1mo
     environmentSecrets:
       - litellm-qwen
+      - litellm-zai
     migrationJob:
       enabled: true
       hooks:

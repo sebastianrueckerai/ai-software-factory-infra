@@ -21,10 +21,13 @@ version: 1
 # the October ledger at open 105.07 plus 55, restored at its close).
 # Stage 19's round (2026-10-13) raises to day 60 and month 174.45, the
 # October ledger at open 119.45 plus 55, restored at its close.
+# The GLM Coding Plan trial (roadmap 207, opened 2026-10-13) runs day 10:
+# modeled pay-as-you-go EUR, about 6,000 to 11,000 credits, 21 to 39
+# percent of a 5-hour Max pool; back to 40 at the verdict.
 budget:
   task_default_eur: 2
   task_max_eur: 15
-  day_eur: 40
+  day_eur: 10
   month_eur: 120
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
