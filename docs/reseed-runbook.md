@@ -151,7 +151,131 @@ kubectl -n forgejo exec deploy/forgejo -c forgejo -- forgejo doctor check --run 
 # never --run fix-push-mirrors-without-git-remote (README step 4)
 ```
 
-## 5-9
+## 5. Fast-forward pushes (before Flux's first sync)
 
-See README steps 5 to 9 (fast-forward pushes, runner-init + flux bootstrap,
-OpenBao snapshot, hand tokens, gate).
+Local clones are ahead of the dump; pushes made while Forgejo was down
+reached GitHub only. Per repo, verify a strict fast-forward, then push:
+
+```sh
+cd ~/repos/ai-software-factory && git fetch forgejo
+git rev-list --left-right --count forgejo/master...master   # 0 N, N > 0
+git push forgejo master && git push origin master
+cd ~/repos/ai-software-factory-code && git fetch origin
+git rev-list --left-right --count origin/main...main && git push origin main
+cd ~/repos/ai-software-factory-infra && git fetch origin
+git rev-list --left-right --count origin/main...main && git push origin main
+```
+
+The code repo is the known case: its local main sits on the GitHub push
+made during the teardown window, ahead of the dump's tree.
+
+## 6. runner-init, flux bootstrap, coredns, seed pass 2
+
+```sh
+set -a; . ~/repos/ai-software-factory/.env.tools; . ~/repos/ai-software-factory/.env.seed; set +a
+curl -s -u "factory-admin:$FORGEJO_FACTORY_ADMIN_PASSWORD" \
+  'https://git.aisoftwarefactory.world/api/v1/orgs/sf/actions/runners/registration-token' | jq -r .token > /tmp/rt
+kubectl -n forgejo create secret generic runner-init \
+  --from-literal=CONFIG_NAME=sf-runner \
+  --from-literal=CONFIG_INSTANCE=https://git.aisoftwarefactory.world \
+  --from-literal=CONFIG_TOKEN="$(cat /tmp/rt)"
+# [trap] org registration token of sf, never an instance token (README step 6)
+kubectl -n forgejo rollout restart deploy/forgejo-runner
+```
+
+Flux PAT (factory-admin, `read:misc` + `write:repository`):
+
+```sh
+# [trap] list first and revoke any old flux-bootstrap-* token: a name that
+#  already exists in the restored DB mints nothing (sha1 null, 5-byte file)
+curl -s -u "factory-admin:$FORGEJO_FACTORY_ADMIN_PASSWORD" \
+  'https://git.aisoftwarefactory.world/api/v1/users/factory-admin/tokens' | jq -r '.[] | "\(.id) \(.name)"'
+curl -s -u "factory-admin:$FORGEJO_FACTORY_ADMIN_PASSWORD" -X POST \
+  'https://git.aisoftwarefactory.world/api/v1/users/factory-admin/tokens' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"flux-bootstrap-<date>","scopes":["read:misc","write:repository"]}' \
+  | jq -r .sha1 > /tmp/flux-token
+chmod 600 /tmp/flux-token
+```
+
+```sh
+export GITEA_TOKEN="$(cat /tmp/flux-token)"
+flux bootstrap gitea --url=https://git.aisoftwarefactory.world/sf/ai-software-factory-infra \
+  --branch=main --path=clusters/sf --token-auth
+# Flux's first platform sync rolls the Forgejo release (503 for ~1 min): retry
+# [trap] if the source stays suspended on a TLS handshake timeout in-cluster:
+kubectl apply -f k8s/platform/coredns.yaml
+kubectl -n kube-system delete pod -l k8s-app=kube-dns
+#   Talos coredns carries no reload plugin: the Corefile rewrite needs the pod
+#   restart, or in-cluster DNS keeps answering the public edge IP
+kubectl -n flux-system annotate gitrepository/flux-system \
+  reconcile.fluxcd.io/requestedAt="$(date +%s)" --overwrite   # force the retry
+bash scripts/seed-secrets.sh    # pass 2
+```
+
+## 7. OpenBao snapshot
+
+Throwaway init, ship the snapshot, restore, restart, unseal with the
+original key (README step 7):
+
+```sh
+kubectl -n platform exec openbao-0 -- bao operator init -key-shares=1 -key-threshold=1 -format=json > /tmp/bao-init.json
+chmod 600 /tmp/bao-init.json
+RT=$(jq -r .root_token /tmp/bao-init.json)
+kubectl -n platform cp <restore-dir>/openbao-*.snap openbao-0:/tmp/openbao.snap
+# [trap] `kubectl exec -i -- sh -c 'cat > file'` can land a 0-byte file: use cp
+printf '%s' "$RT" | kubectl -n platform exec -i openbao-0 -- \
+  sh -c 'BAO_TOKEN="$(cat)" bao operator raft snapshot restore -force /tmp/openbao.snap'
+kubectl -n platform delete pod openbao-0 && kubectl -n platform wait --for=Ready pod/openbao-0 --timeout=300s
+set -a; . ~/repos/ai-software-factory/.env.seed; set +a
+printf '%s' "$OPENBAO_UNSEAL_KEY" | kubectl -n platform exec -i openbao-0 -- \
+  sh -c 'k="$(cat)"; bao operator unseal "$k"'
+bash scripts/seed-secrets.sh    # pass 3: platform 27 / forgejo 19 / factory 16
+```
+
+## 8. Hand tokens, merge protections, CronJobs
+
+```sh
+# kubeconfig context: scripts expect admin@sf; talosctl may have written admin@sf-1
+kubectl config rename-context admin@sf-1 admin@sf
+# forgejo-pat: factory-admin read:repository token, secret the factory
+# GitRepository reads; then force its first clone
+curl -s -u "factory-admin:$FORGEJO_FACTORY_ADMIN_PASSWORD" -X POST \
+  'https://git.aisoftwarefactory.world/api/v1/users/factory-admin/tokens' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"forgejo-pat-<date>","scopes":["read:repository"]}' | jq -r .sha1 > /tmp/fp
+kubectl -n flux-system create secret generic forgejo-pat --from-literal=token="$(cat /tmp/fp)"
+kubectl -n flux-system annotate gitrepository/factory-code \
+  reconcile.fluxcd.io/requestedAt="$(date +%s)" --overwrite
+bash scripts/setup-factory-merge.sh    # reads back the protections exactly
+```
+
+Per-project tokens: the gateway DB rows carry token values the restore
+brings back; a token revoked by hand leaves factoryd logging `access token
+does not exist` per project every reconcile. Rotate:
+
+```sh
+for p in demo-app hello-import linkshort linkshort2 linkshort3 linkshort4 \
+         notes scratch12 sqlite-import uptime uptime2; do
+  kubectl -n factory exec deploy/factoryd -- factoryd register-project --name "$p" --rotate
+done   # scratch-seed refuses by design: its projects/*.yaml says objects ""
+```
+
+`openbao-config` and `signoz-objects` CronJobs fail during the sealed or
+rolling window; the next 10-minute run converges (`Complete`, later runs
+`no change`). The failures fire signoz webhook issues on this repository:
+close them with a note once the jobs converge.
+
+## 9. Gate, and the image pin
+
+The first code-main CI run builds and pushes the factory images to the
+fresh registry and rolls the code repo's own `k8s/*.yaml` digest pins.
+The infra workflow pin is not rolled by anything: edit
+`.forgejo/workflows/config-check.yml` `FACTORYD_IMAGE` to the new
+`factory-gateway` digest (the one the factoryd pod runs,
+`kubectl -n factory get deploy factoryd -o jsonpath='{.spec.template.spec.containers[0].image}'`),
+or config-check fails at `docker create` with a manifest-unknown pull.
+Then the README step 9 gate: repo HEADs match both remotes, Stage 2 exit
+tests, CI green on main, one task through authenticated intake to a fork
+PR with checks on the untrusted runner and job-env-audit green, ledger
+`spent_eur` equal to the LiteLLM key's own spend.
