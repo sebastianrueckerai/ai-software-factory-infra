@@ -19,11 +19,13 @@ version: 1
 # A card 2 by default and 15 at most (ruling 268). Day 40 and month 120,
 # Sebastian's caps of 2026-10-11 (Stage 18's round ran on 60 and 160.07,
 # the October ledger at open 105.07 plus 55, restored at its close).
+# Stage 19's round (2026-10-13) raises to day 60 and month 174.45, the
+# October ledger at open 119.45 plus 55, restored at its close.
 budget:
   task_default_eur: 2
   task_max_eur: 15
-  day_eur: 40
-  month_eur: 120
+  day_eur: 60
+  month_eur: 174.45
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and
