@@ -79,5 +79,18 @@ X
 run
 ok "no job running: every unused image goes, one a stopped container uses stays" '[ "$(removed)" = "image rm sha256:a;image rm sha256:b;" ] && [ "$(images)" = "sha256:c " ]'
 
+# a cancelled image job's buildkitd outlives it: with no job running it
+# goes with its state, while a job runs every builder stays, and a dind
+# that cannot answer keeps them all
+new 1 $((10 * GIB))
+echo "cbk sha256:bk running 99000 buildx_buildkit_image-runner0" > "$STATE/containers"; run
+ok "no job running: the leftover buildkitd and its state go" '[ "$calls" = "rm -f buildx_buildkit_image-runner0;volume rm buildx_buildkit_image-runner0_state;$AGE-- pass 1;" ]'
+new 1 $((10 * GIB))
+printf '%s\n' "cbk sha256:bk running 99000 buildx_buildkit_image-runner0" "cjob sha256:base running 99500 FORGEJO-ACTIONS-TASK-9487_JOB-image-runner" > "$STATE/containers"; run
+ok "a job running: every builder stays" '[ "$calls" = "$AGE-- pass 1;" ]'
+new 2 $((10 * GIB)); touch "$STATE/down"; echo 'rm "$STATE/down"' > "$STATE/hook1"
+echo "cbk sha256:bk running 99000 buildx_buildkit_image-runner0" > "$STATE/containers"; run
+ok "dind down: nothing removed until it answers" '[ "$calls" = "-- pass 1;rm -f buildx_buildkit_image-runner0;volume rm buildx_buildkit_image-runner0_state;$AGE-- pass 2;" ]'
+
 echo "pass=$pass fail=$fail"
 [ "$fail" = 0 ]

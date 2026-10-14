@@ -1,6 +1,6 @@
 #!/bin/sh
 # stub dind: images "id ref" in $STATE/images, containers "id image state
-# created-seconds" in $STATE/containers; what it changes goes to
+# created-seconds [name]" in $STATE/containers; what it changes goes to
 # $STATE/calls, and image prune, which fails pulls under way, is no command
 [ -e "$STATE/down" ] && { echo "Cannot connect to the Docker daemon" >&2; exit 1; }
 now=$(cat "$STATE/now")
@@ -13,6 +13,10 @@ case "$*" in
     echo "$*" >> "$STATE/calls"
     u=${5#until=}; case $u in *h) s=$((${u%h} * 3600)) ;; *m) s=$((${u%m} * 60)) ;; *) exit 98 ;; esac
     keep "\$3 == \"running\" || \$4 > $((now - s))" containers ;;
+  "ps -q --filter name=FORGEJO-ACTIONS-TASK-") awk '$3 == "running" && $5 ~ /^FORGEJO-ACTIONS-TASK-/ { print $1 }' "$STATE/containers" ;;
+  "ps -a --filter name=buildx_buildkit_ --format {{.Names}}") awk '$5 ~ /^buildx_buildkit_/ { print $5 }' "$STATE/containers" ;;
+  "rm -f "*) echo "$*" >> "$STATE/calls"; keep "\$5 != \"$3\"" containers ;;
+  "volume rm "*) echo "$*" >> "$STATE/calls" ;;
   "image ls -q --no-trunc --filter dangling=true") awk '$2 == "<none>" { print $1 }' "$STATE/images" ;;
   "image rm "*)
     grep -q "^$3 " "$STATE/images" || { echo "No such image: $3" >&2; exit 1; }

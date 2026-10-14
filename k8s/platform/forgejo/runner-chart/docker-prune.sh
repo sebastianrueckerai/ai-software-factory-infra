@@ -8,8 +8,9 @@
 # filesystem, hard links once), and from MAX_GIB on all that no running job
 # needs goes: build cache no build holds, stopped containers older than a
 # job's create-to-start gap, dangling images, and unused images seen before
-# the oldest running container. An unreadable size counts as over. Retries
-# each check while dind is down; exits on SIGTERM.
+# the oldest running container. An unreadable size counts as over. Every
+# CHECK seconds with no job running, a buildkitd a cancelled image job left
+# goes too. Retries each check while dind is down; exits on SIGTERM.
 trap 'exit 0' TERM INT
 seen='' next=0
 # "id seconds" per line: when this sidecar first saw each image and
@@ -25,6 +26,17 @@ sight() {
 # rm leaves them be
 rmi() { while read -r id; do docker image rm "$id" >/dev/null 2>&1; done; }
 dangling() { docker image ls -q --no-trunc --filter dangling=true; }
+# A cancelled image job leaves its buildkitd running: the cancel kills the
+# job's container, so its step's EXIT trap never removes the builder. With
+# no job running no builder is any job's; a failed read keeps them all.
+leftovers() {
+  jobs=$(docker ps -q --filter name=FORGEJO-ACTIONS-TASK-) || return
+  [ -z "$jobs" ] || return
+  builders=$(docker ps -a --filter name=buildx_buildkit_ --format '{{.Names}}') || return
+  for b in $builders; do
+    docker rm -f "$b" >/dev/null && docker volume rm "${b}_state" >/dev/null
+  done
+}
 # A job builds or pulls its images after its container starts, so an image
 # seen before the oldest running container is no running job's, and no job
 # waits on it between its build and its run or push.
@@ -38,6 +50,7 @@ stale() {
 while :; do
   now=$(date +%s)
   sight
+  leftovers
   if [ "$now" -ge "$next" ] &&
     docker builder prune -af --filter "until=$KEEP" >/dev/null &&
     docker container prune -f --filter "until=$KEEP" >/dev/null &&
