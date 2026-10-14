@@ -75,6 +75,14 @@ limits:
   nudges: 1
   same_call: 4
 
+# the progress detectors' windows in seconds; absent keys take the code
+# defaults (ruling 161). no_write at 900: a session on this codebase
+# reads longer than five minutes before its first write (cards 208/209
+# burned three sessions each to the 300 s default while reading; the
+# repetition, same_failure and same_call detectors still trip fast)
+supervisor:
+  no_write: 900
+
 # Capability classes a task can hold (tasks.required_capabilities; intake
 # gives agent tasks "coder"). models: the aliases the agent may call through
 # the gateway. tools: the gateway's MCP tools the class may call, nothing
