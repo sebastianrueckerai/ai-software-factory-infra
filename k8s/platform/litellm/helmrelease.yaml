@@ -97,11 +97,11 @@ spec:
         model_group_alias:
           supervisor: tier-high
           review-frontier: tier-high
-          # the trial's routing (roadmap 207): both coding aliases on the
-          # GLM plan; reverting these two lines returns them to DashScope
-          # (the trial's kill order)
-          coding-frontier: glm-frontier
-          coding-cheap: glm-cheap
+          # the GLM trial (roadmap 207) ended 2026-10-14 when the plan's
+          # quota ran out: both coding aliases back on DashScope, the glm
+          # deployments stay for the next window
+          coding-frontier: tier-high
+          coding-cheap: tier-low
           # Stage 15 (ruling 252): the project agent and the pulse
           operator: tier-high
           pulse: tier-low
@@ -117,11 +117,9 @@ spec:
         # proxy-wide stop behind the gateway's accounting (queue item 64 b):
         # every call is refused once the month's spend passes it (USD; 1mo
         # resets on the 1st, 00:00 UTC); the spend sits in user row
-        # litellm-proxy-budget. 500 for the 72-hour GLM test window
-        # (Sebastian, 2026-10-13): the restored counter holds about 93 USD
-        # of October and the window adds at most 3 x 100 modeled; back to
-        # 55 at the close.
-        max_budget: 500
+        # litellm-proxy-budget. 500 during the GLM test window of
+        # 2026-10-13/14; back to 55 since its close.
+        max_budget: 55
         budget_duration: 1mo
     environmentSecrets:
       - litellm-qwen
