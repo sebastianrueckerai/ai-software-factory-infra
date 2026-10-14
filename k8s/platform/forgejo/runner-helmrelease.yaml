@@ -29,13 +29,23 @@ spec:
           memory: 1Gi
         limits:
           memory: 8Gi
-      # a docker-prune sidecar keeps the build cache to a day's use and
-      # images plus cache under maxGB: unpruned, dind filled its 40Gi
-      # volume and got evicted
+      # a docker-prune sidecar keeps the build cache to a day's use and the
+      # docker-data volume under maxGiB: unpruned, dind filled its 40Gi
+      # volume and got evicted; checked hourly on images and build cache
+      # alone, it let four main runs fill it in 45 minutes (2026-10-14)
       prune:
         keep: 24h
         everySeconds: 3600
-        maxGB: 25
+        checkSeconds: 60
+        # 40Gi less the most a main push run added and a margin. A run
+        # (test, image, image-sandbox, image-runner) added up to 13.3 GiB
+        # on a daemon pruned bare and 9.0 GiB warm (47 runs of 2026-10-13/14:
+        # the pod's k8s.pod.filesystem.usage in SigNoz over each run's task
+        # times in Forgejo); the first run with a buildkitd per image job
+        # (roadmap 242) added 10.0 GiB warm, by du of the volume. The runner
+        # takes one job at a time and pull requests build elsewhere, so one
+        # run is the peak.
+        maxGiB: 22
     runner:
       config:
         create: true

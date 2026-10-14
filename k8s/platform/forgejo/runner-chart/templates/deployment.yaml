@@ -120,40 +120,12 @@ spec:
           image: "{{ coalesce $.Values.global.image.registry .registry }}/{{ .repository }}:{{ .tag }}"
           imagePullPolicy: {{ coalesce $.Values.global.image.pullPolicy .pullPolicy }}
           {{- end }}
-          # Build cache goes by last use (builder prune's until), stopped
-          # containers and unused networks by age, images only when
-          # dangling: a base image pulled today may be years old. Past
-          # maxGB of images plus build cache,
-          # every unused image and all build cache go. Backs off while dind
-          # is down; exits at once on SIGTERM.
+          # docker-prune.sh says what goes when
           command:
             - "sh"
             - "-c"
             - |
-              trap 'exit 0' TERM INT
-              prune() {
-                docker builder prune -af --filter "until=$KEEP" >/dev/null &&
-                  docker container prune -f --filter "until=$KEEP" >/dev/null &&
-                  docker network prune -f --filter "until=$KEEP" >/dev/null &&
-                  docker image prune -f >/dev/null || return
-                gb=$(docker system df --format '{{ "{{.Type}} {{.Size}}" }}' | awk '
-                  $1 == "Images" || $1 " " $2 == "Build Cache" {
-                    s = $NF; n = s + 0; sub(/^[0-9.]+/, "", s)
-                    total += n * (s == "kB" ? 1e3 : s == "MB" ? 1e6 : s == "GB" ? 1e9 : s == "TB" ? 1e12 : 1)
-                  }
-                  END { printf "%d", total / 1e9 }') || return
-                [ "$gb" -lt "$MAX_GB" ] || { docker image prune -af >/dev/null && docker builder prune -af >/dev/null; }
-              }
-              backoff=5
-              while :; do
-                prune & wait $!
-                if [ $? -eq 0 ]; then
-                  pause=$EVERY; backoff=5
-                else
-                  pause=$backoff; backoff=$((backoff * 2 > EVERY ? EVERY : backoff * 2))
-                fi
-                sleep "$pause" & wait $!
-              done
+              {{- $.Files.Get "docker-prune.sh" | nindent 14 }}
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
           env:
@@ -161,8 +133,10 @@ spec:
               value: {{ .keep | quote }}
             - name: EVERY
               value: {{ .everySeconds | quote }}
-            - name: MAX_GB
-              value: {{ required "dind.prune.maxGB: without it the size check would fail open" .maxGB | quote }}
+            - name: CHECK
+              value: {{ required "dind.prune.checkSeconds: without it the size check would spin" .checkSeconds | quote }}
+            - name: MAX_GIB
+              value: {{ required "dind.prune.maxGiB: without it the size check would fail open" .maxGiB | quote }}
             - name: DOCKER_HOST
               value: tcp://127.0.0.1:2376
             - name: DOCKER_CERT_PATH
@@ -172,6 +146,14 @@ spec:
           volumeMounts:
             - name: docker-certs
               mountPath: /certs
+            # the size check walks dind's store, as the kubelet does
+            {{- $store := "" }}
+            {{- range $.Values.volumeMounts }}
+            {{- if eq .mountPath "/var/lib/docker" }}{{ $store = .name }}{{ end }}
+            {{- end }}
+            - name: {{ required "dind.prune: mount dind's /var/lib/docker from a volume (volumeMounts), the size check measures it" $store }}
+              mountPath: /var/lib/docker
+              readOnly: true
         {{- end }}
       volumes:
         - name: docker-certs

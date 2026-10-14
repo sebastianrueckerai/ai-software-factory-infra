@@ -1,0 +1,9 @@
+#!/bin/sh
+# stub: pass n ends; the clock moves on by $1, $STATE/hook<n> runs, and
+# after $STATE/passes passes the sidecar gets its SIGTERM
+n=$(($(cat "$STATE/n") + 1)); echo "$n" > "$STATE/n"
+echo "-- pass $n" >> "$STATE/calls"
+echo $(($(cat "$STATE/now") + $1)) > "$STATE/now"
+# shellcheck source=/dev/null
+[ ! -e "$STATE/hook$n" ] || . "$STATE/hook$n"
+[ "$n" -lt "$(cat "$STATE/passes")" ] || kill -TERM "$PPID"

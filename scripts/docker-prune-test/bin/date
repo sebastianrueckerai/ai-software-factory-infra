@@ -1,0 +1,4 @@
+#!/bin/sh
+# stub: the clock is $STATE/now
+[ "$*" = "+%s" ] || { echo "unexpected: date $*" >> "$STATE/calls"; exit 99; }
+cat "$STATE/now"

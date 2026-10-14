@@ -1,0 +1,6 @@
+#!/bin/sh
+# stub: $STATE/kb as du -sk prints it, $STATE/du.err to stderr, exit $STATE/du.rc
+[ "$*" = "-skx /var/lib/docker" ] || { echo "unexpected: du $*" >> "$STATE/calls"; exit 99; }
+[ ! -e "$STATE/du.err" ] || cat "$STATE/du.err" >&2
+[ ! -e "$STATE/kb" ] || printf '%s\t/var/lib/docker\n' "$(cat "$STATE/kb")"
+exit "$(cat "$STATE/du.rc" 2>/dev/null || echo 0)"
