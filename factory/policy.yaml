@@ -109,6 +109,8 @@ classes:
       fal_run: {max_requests: 5, max_eur: 0.50}
       escalate_to_human: {}
       request_info: {}
+      # the factory manual: what the factory is, the card states, the gates. Free.
+      manual: {}
       cloud_prices: {}
       commission_server: {}
       list_resources: {}
@@ -128,6 +130,7 @@ classes:
       web_search: {max_requests: 30, max_eur: 0.20}
       request_info: {}
       escalate_to_human: {}
+      manual: {}
   # the plan card's session (ruling 205): reads the repository and the
   # spec, writes nothing, answers a plan as its last message. It runs on
   # the stronger rung, as the screening does: a plan's quality bounds the
@@ -145,6 +148,7 @@ classes:
       # filing holds the whole plan json
       file_plan: {}
       escalate_to_human: {}
+      manual: {}
 
 # Tool prices no provider API reports (USD prices booked 1:1 as EUR, as
 # LiteLLM's are). fal's prices come from its pricing API per endpoint.

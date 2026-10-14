@@ -152,7 +152,8 @@
                 "list_resources",
                 "release_resource",
                 "ssh_certificate",
-                "resource_request_status"
+                "resource_request_status",
+                "manual"
               ]
             }
           },
@@ -560,6 +561,7 @@
               "move_card",
               "answer",
               "comment",
+              "tell_card",
               "steer",
               "retry",
               "start_plan",
