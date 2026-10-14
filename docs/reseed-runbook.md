@@ -269,8 +269,15 @@ close them with a note once the jobs converge.
 ## 9. Gate, and the image pin
 
 The first code-main CI run builds and pushes the factory images to the
-fresh registry and rolls the code repo's own `k8s/*.yaml` digest pins.
-The infra workflow pin is not rolled by anything: edit
+fresh registry; the roll monitor then opens a roll card whose pull request
+re-pins the code repo's own `k8s/*.yaml` digests. That pull request waits
+on a merge approval (the repo's merge rule is human): approve it as
+controller (`scripts/console-as.sh login && console-as.sh approve <id>`,
+the approval request id is in the gateway DB) or every later card of the
+repo queues behind the roll and stalls. A bootstrap image pushed from a
+local docker cache (what the pods boot on before the first CI build) makes
+the roll real, not empty: the pins move from the cache artifact to the CI
+build. The infra workflow pin is not rolled by anything: edit
 `.forgejo/workflows/config-check.yml` `FACTORYD_IMAGE` to the new
 `factory-gateway` digest (the one the factoryd pod runs,
 `kubectl -n factory get deploy factoryd -o jsonpath='{.spec.template.spec.containers[0].image}'`),
