@@ -756,8 +756,13 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
    `forgejo-config` token (user `factory-config`, a read collaborator on
    this repository only, `read:repository` limited to it: factoryd reads
    `factory/` with it and cannot boot without it, nor without a project
-   file listing its own namespace `factory` (`projects/ai-software-factory-code.yaml`); `scripts/seed-secrets.sh`
-   makes the user, the collaborator, the token and the secret once Forgejo
+   file listing its own namespace `factory` (`projects/ai-software-factory-code.yaml`), a freshly minted
+   `forgejo-docs` token (user `factory-docs`, a write collaborator on
+   `sf/ai-software-factory` only, `write:repository` limited to it: the
+   chat's `write_doc` commits the documents with it; stored only after a
+   write probe on a throwaway branch passes; factoryd boots without it);
+   `scripts/seed-secrets.sh`
+   makes the users, the collaborators, the tokens and the secrets once Forgejo
    answers, lets `factory-agent` read this repository to file the
    `config_rejected` issues, PUTs the code repository's Actions secrets
    `REGISTRY_USER` and `REGISTRY_PASSWORD` (factory-admin's

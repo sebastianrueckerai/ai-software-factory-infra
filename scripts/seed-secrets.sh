@@ -242,6 +242,45 @@ else
     echo "$A/forgejo-config: created (${#tok} chars)"
     unset tok
   fi
+  # forgejo-docs (factory): the chat's write_doc commits docs/ of the
+  # document repository with it, straight to master (roadmap 239, the
+  # 2026-10-13 plan). The user factory-docs is a write collaborator on
+  # sf/ai-software-factory and nothing else, its token write:repository
+  # limited to it. A new token passes a write probe before it is stored: a
+  # file on a fresh branch, then the branch's delete; one that fails it is
+  # revoked and no secret is written.
+  DR=sf/ai-software-factory
+  if [ "$(fj -o /dev/null -w '%{http_code}' "$FJ/users/factory-docs")" != 200 ]; then
+    fj -o /dev/null -w 'factory-docs user: %{http_code}\n' -X POST "$FJ/admin/users" \
+      -d "{\"username\":\"factory-docs\",\"email\":\"factory-docs@factory.local\",\"password\":\"$(openssl rand -hex 24)\",\"must_change_password\":false,\"visibility\":\"private\"}"
+  fi
+  fj -o /dev/null -w 'factory-docs write collaborator: %{http_code}\n' -X PUT "$FJ/repos/$DR/collaborators/factory-docs" -d '{"permission":"write"}'
+  if kubectl -n $A get secret forgejo-docs >/dev/null 2>&1; then
+    echo "$A/forgejo-docs: exists"
+  else
+    revoke_docs() {
+      for id in $(fj "$FJ/users/factory-docs/tokens?sudo=factory-docs" | jq -r '.[] | select(.name == "factory-docs") | .id'); do
+        fj -o /dev/null -w "factory-docs revoke token $id: %{http_code}\n" -X DELETE "$FJ/users/factory-docs/tokens/$id?sudo=factory-docs"
+      done
+    }
+    revoke_docs
+    tok=$(fj -X POST "$FJ/users/factory-docs/tokens?sudo=factory-docs" \
+      -d '{"name":"factory-docs","scopes":["write:repository"],"repositories":[{"owner":"sf","name":"ai-software-factory"}]}' | jq -r '.sha1 // empty' || true)
+    [ -n "$tok" ] || { echo "$A/forgejo-docs: mint failed, no secret written"; exit 1; }
+    probe=docs-probe-$(date +%s)
+    code=$(jq -n --arg b "$probe" --arg c "$(printf 'write probe of the docs token' | base64)" \
+      '{branch: "master", new_branch: $b, message: "docs token write probe", files: [{operation: "create", path: "probe.md", content: $c}]}' |
+      curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: token $tok" -H 'Content-Type: application/json' -X POST "$FJ/repos/$DR/contents" -d @-)
+    del=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: token $tok" -X DELETE "$FJ/repos/$DR/branches/$probe")
+    if [ "$code" != 201 ] || [ "$del" != 204 ]; then
+      echo "$A/forgejo-docs: the write probe failed (commit $code, branch delete $del): token revoked, no secret written"
+      revoke_docs
+      exit 1
+    fi
+    kubectl -n $A create secret generic forgejo-docs --from-literal=token="$tok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+    echo "$A/forgejo-docs: created (${#tok} chars), the write probe passed"
+    unset tok probe code del
+  fi
   # The infra repository is a seed project (ruling 179, agents none): the
   # seed owns its webhook to factoryd, so its issues reach the human lane;
   # factoryd reports it. factoryd keeps the labels itself, as the bot,
