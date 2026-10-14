@@ -111,6 +111,9 @@ classes:
       request_info: {}
       # the factory manual: what the factory is, the card states, the gates. Free.
       manual: {}
+      # the delegate tool (roadmap 222, item 6): a small follow-up card on
+      # the cheap rung that starts when the caller's card has landed
+      delegate: {}
       cloud_prices: {}
       commission_server: {}
       list_resources: {}

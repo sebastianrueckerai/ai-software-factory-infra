@@ -147,6 +147,7 @@
                 "escalate_to_human",
                 "request_info",
                 "file_plan",
+                "delegate",
                 "cloud_prices",
                 "commission_server",
                 "list_resources",
