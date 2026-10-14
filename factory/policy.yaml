@@ -28,13 +28,15 @@ version: 1
 # ledger already holds about 173 EUR booked and the window adds at most
 # 3 x 100. The coding tiers' spend is modeled only (the plan fee is the
 # real bill); reviews, supervisor and pulse stay on DashScope, so their
-# share is real money and the day cap bounds it. Back to 40, 120 and 2 at
-# the window's close.
+# share is real money and the day cap bounds it. The window closed early
+# on 2026-10-14 (the plan's quota ran out, ruling 325): day 40 and card
+# default 2 again, month 296, the October ledger at the close (241.00)
+# plus 55.
 budget:
-  task_default_eur: 5
+  task_default_eur: 2
   task_max_eur: 15
-  day_eur: 100
-  month_eur: 500
+  day_eur: 40
+  month_eur: 296
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and
