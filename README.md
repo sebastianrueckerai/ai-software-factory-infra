@@ -84,6 +84,11 @@ editing surface, the console shows it read-only.
   agent-written text factoryd posts on Forgejo may point at besides the
   Forgejo host and the project's own hosts, any other link defanged. A Replicate model runs only once it is listed under
   `prices.replicate.models`.
+- `commands.yaml` (optional): the chat's commands (roadmap 239), each a
+  `name` the member types after a slash, the `words` the palette shows
+  and the `message` the chat sends for it. A name is a lowercase letter,
+  then lowercase letters, digits and dashes, at most 24, and never
+  `compact` or `new`, the chat's own commands.
 - `processes/<name>.yaml`: the processes a project's cards pass
   (rulings 206, 208), four blocks each: `lanes` (backlog, ready and an
   optional plan, each starting lane naming a class of `policy.yaml` and
