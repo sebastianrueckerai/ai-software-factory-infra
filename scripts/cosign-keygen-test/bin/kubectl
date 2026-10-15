@@ -1,0 +1,5 @@
+#!/bin/sh
+# kubectl -n platform exec -i openbao-0 -- <command>, run in the test's OpenBao container
+[ "$1 $2 $3 $4 $5 $6" = "-n platform exec -i openbao-0 --" ] || { echo "kubectl stub: unexpected kubectl $*" >&2; exit 2; }
+shift 6
+exec docker exec -i "$BAO_CONTAINER" "$@"

@@ -406,36 +406,35 @@ Forgejo's registry, in no transparency log. The public half is
 ConfigMap `image-signing`, whose hashed name restarts factoryd on a new
 key. The private half (the encrypted PEM `cosign generate-key-pair`
 writes) and its password are OpenBao's kv-v2 secret `factory/cosign`
-(keys `private_key`, `password`), written by hand with the root token and
-read by nothing in the cluster; the raft snapshot carries it across a
-rebuild. `scripts/seed-secrets.sh` PUTs both on every run into the code
-repository's Actions secrets `COSIGN_PRIVATE_KEY` and `COSIGN_PASSWORD`,
-which only main CI's three image jobs read: agent pull requests come from
-the bot's fork, and a fork's run gets no secret. Without `factory/cosign`
-the script says `skipped` and main CI's sign steps fail. The pair is made
-once, on this machine, its private half only in `/dev/shm`:
+(keys `private_key`, `password`), written with the root token by the
+script below and read by nothing in the cluster; the raft snapshot
+carries it across a rebuild. `scripts/seed-secrets.sh` PUTs both on every
+run into the code repository's Actions secrets `COSIGN_PRIVATE_KEY` and
+`COSIGN_PASSWORD`, which only main CI's three image jobs read: agent pull
+requests come from the bot's fork, and a fork's run gets no secret.
+Without `factory/cosign` the script says `skipped` and main CI's sign
+steps fail.
+[scripts/cosign-keygen.sh](scripts/cosign-keygen.sh) makes the pair. Its
+private half and password exist only in the tmpfs of a throwaway
+container (read-only root, no network, no log) and go by pipe into `bao
+kv put` in `openbao-0`; a second such container reads them back by pipe
+and checks they make the public half, the one file it writes. It refuses
+over an existing pair unless `--rotate`, and takes cosign from the code
+checkout's `Dockerfile.runner`; `scripts/cosign-keygen-test/test.sh
+<code checkout>` runs it against a throwaway OpenBao 2.6.3 in docker:
 
     set -a; . ~/repos/ai-software-factory/.env.seed; set +a
-    d=$(mktemp -d -p /dev/shm)
-    docker build -f ~/repos/ai-software-factory-code/Dockerfile.runner --target cosign -o "$d/bin" ~/repos/ai-software-factory-code
-    export COSIGN_PASSWORD=$(openssl rand -hex 32)
-    "$d/bin/cosign" generate-key-pair --output-key-prefix "$d/cosign"
-    jq -n --rawfile k "$d/cosign.key" '{private_key: $k, password: $ENV.COSIGN_PASSWORD}' |
-      { printf '%s\n' "$OPENBAO_ROOT_TOKEN"; cat; } |
-      kubectl -n platform exec -i openbao-0 -- sh -c 'IFS= read -r BAO_TOKEN; export BAO_TOKEN
-        bao kv put -mount=factory cosign - >/dev/null && echo "openbao factory/cosign: written"'
-    cp "$d/cosign.pub" ~/repos/ai-software-factory-code/k8s/cosign.pub
-    rm -r "$d"; unset COSIGN_PASSWORD
+    BAO_TOKEN="$OPENBAO_ROOT_TOKEN" scripts/cosign-keygen.sh ~/repos/ai-software-factory-code
 
 Then run `scripts/seed-secrets.sh` (`Actions secret COSIGN_PRIVATE_KEY:
 201`, or `204` over an old one) and only then push `k8s/cosign.pub` to the
 code repository: Flux applies it, factoryd restarts on it, and the push's
 main run signs with the new key. A run signed with a key factoryd does not
 hold is refused, and an empty commit on main starts a new run. A rotation
-is the same steps over an existing `factory/cosign` (a new version); a
-fresh OpenBao (Rebuild step 7 without a snapshot) has lost the pair, so
-make a new one. Nothing verifies an image again once it is rolled, so a
-new key leaves every pinned image running.
+is the same with `--rotate` (a new version of `factory/cosign`); a fresh
+OpenBao (Rebuild step 7 without a snapshot) has lost the pair, so make a
+new one. Nothing verifies an image again once it is rolled, so a new key
+leaves every pinned image running.
 
 ## Telemetry
 
