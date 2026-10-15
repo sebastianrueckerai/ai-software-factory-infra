@@ -49,10 +49,17 @@ spec:
             - /var/log/pods/platform_chi-signoz-clickhouse-*/*/*.log
       # Host CPU, memory, load and disk I/O come from /proc, which reports
       # the host's values without the host's root filesystem mounted;
-      # kubeletstats covers node network and filesystem.
+      # kubeletstats covers node network and EPHEMERAL. The filesystem
+      # scraper reads the local-path user volume alone, through an empty
+      # directory on it (otelAgent.extraVolumes): statfs of any path on a
+      # filesystem answers for all of it, and the agent sees no claim's data.
       hostMetrics:
         rootPath: ""
-        scrapers: {network: null, filesystem: null}
+        scrapers:
+          network: null
+          filesystem:
+            include_mount_points: {mount_points: [/var/mnt/local-path-provisioner], match_type: strict}
+            metrics: {system.filesystem.utilization: {enabled: true}}
     otelAgent:
       image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: otel/opentelemetry-collector-contrib, tag: "0.139.0@sha256:87b591b18a0a330b6246f6d4f53d4867d1b238d1b85a69145e0f4eb38f92154c"}
       clusterRole:
@@ -94,6 +101,11 @@ spec:
             traces: {receivers: []}
             metrics: {receivers: []}
             logs: {receivers: []}
+      extraVolumes:
+        - name: local-path-statfs
+          hostPath: {path: /var/mnt/local-path-provisioner/.statfs, type: DirectoryOrCreate}
+      extraVolumeMounts:
+        - {name: local-path-statfs, mountPath: /var/mnt/local-path-provisioner, readOnly: true}
       additionalEnvs:
         GOMEMLIMIT: 320MiB
       resources:

@@ -498,9 +498,11 @@ store. Two collectors of the `k8s-infra` chart (0.17.1, HelmRelease in
 which the cluster's baseline profile forbids elsewhere):
 
 - `otel-agent`, a DaemonSet: host metrics (CPU, memory, load, disk I/O,
-  read from `/proc`; the host's root filesystem is not mounted), kubelet
-  stats (node, pod, container and volume, node network and filesystem
-  included) and container log lines, read from `/var/log/pods` as uid 0
+  read from `/proc`; the host's root filesystem is not mounted; the
+  local-path user volume's fill, from statfs of the empty directory
+  `/var/mnt/local-path-provisioner/.statfs` mounted read-only, so it sees
+  no claim's data), kubelet stats (node, pod, container and volume, node
+  network and filesystem included) and container log lines, read from `/var/log/pods` as uid 0
   without capabilities. It receives nothing (no OTLP receiver, no host
   port). Its ClusterRole reads pods, namespaces, nodes, volumes,
   ReplicaSets and Jobs, and the kubelet's `nodes/stats` and `nodes/pods`;
@@ -567,7 +569,7 @@ The factory's own namespaces are projects' too (ruling 180):
 rules in that repository's `k8s/alerts`) and `platform` and `forgejo` for
 `ai-software-factory-infra` (`signoz/project-rules`: a CNPG instance not
 ready for 5 minutes, Forgejo's 5xx rate from its router log, and `Job
-failed` bound to each; the two disk rules below), each with
+failed` bound to each; the three disk rules below), each with
 `factory/objects: seed`, which keeps factoryd's admission policy out of
 them. The infra project is on agents none: its alerts file human-lane
 issues here; the label `noise` on such an issue when it is closed makes
@@ -616,8 +618,9 @@ then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
   Job holds its promotion for those 15 minutes). The rule routes by
   notification policy (`usePolicy`), because SigNoz refuses a rule that
   routes to its thresholds' channels when they list none.
-- Alert rules `ClickHouse disk above 80 %` and `Node disk above 80 %`:
-  they read what no namespace holds, so no bound rule can; the label
+- Alert rules `ClickHouse disk above 80 %`, `Node disk above 80 %` and
+  `Local-path volume above 80 %`: they read what no namespace holds, so
+  no bound rule can; the label
   `namespace: platform` in their files routes them to factoryd, which
   files a human-lane issue on this repository. ClickHouse's disk
   `default` (`/var/lib/clickhouse`) lies on its node's local-path user
@@ -630,6 +633,11 @@ then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
   over 5 minutes, per node. The images lie on it too, so the kubelet's
   `imagefs.available<15%` sets DiskPressure at 85 % and evicts pods; its
   image garbage collection starts at 75 % (`talos/patches.yaml`).
+  Local-path volume reads each node's local-path user volume (every
+  local-path claim on it: ClickHouse, the CNPG instance, OpenBao,
+  ZooKeeper, SigNoz's database; a claim's size is no limit) through the
+  otel-agent's hostmetrics `system.filesystem.utilization` of mountpoint
+  `/var/mnt/local-path-provisioner`, averaged over 5 minutes, per node.
 - Retention: 7 days hot on ClickHouse's local-path volume, then moved to
   volume `s3` (disk `s3`, bucket `signoz-cold` on
   `fsn1.your-objectstorage.com`, prefix `data/`), deleted after 30 days

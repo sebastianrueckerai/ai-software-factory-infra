@@ -1,0 +1,91 @@
+{
+  "alert": "Local-path volume above 80 %",
+  "alertType": "METRIC_BASED_ALERT",
+  "annotations": {
+    "summary": "used share of the node's local-path user volume, in %",
+    "value": "{{$value}}"
+  },
+  "condition": {
+    "compositeQuery": {
+      "panelType": "graph",
+      "queries": [
+        {
+          "spec": {
+            "aggregations": [
+              {
+                "metricName": "system.filesystem.utilization",
+                "spaceAggregation": "max",
+                "temporality": "",
+                "timeAggregation": "latest"
+              }
+            ],
+            "disabled": false,
+            "filter": {
+              "expression": "mountpoint = '/var/mnt/local-path-provisioner'"
+            },
+            "groupBy": [
+              {
+                "fieldContext": "resource",
+                "fieldDataType": "string",
+                "name": "k8s.node.name",
+                "signal": ""
+              }
+            ],
+            "legend": "",
+            "name": "A",
+            "signal": "metrics",
+            "source": "",
+            "stepInterval": 60
+          },
+          "type": "builder_query"
+        },
+        {
+          "spec": {
+            "disabled": false,
+            "expression": "A * 100",
+            "legend": "",
+            "name": "F1"
+          },
+          "type": "builder_formula"
+        }
+      ],
+      "queryType": "builder"
+    },
+    "selectedQueryName": "F1",
+    "thresholds": {
+      "kind": "basic",
+      "spec": [
+        {
+          "channels": [
+            "factoryd"
+          ],
+          "matchType": "3",
+          "name": "critical",
+          "op": "1",
+          "recoveryTarget": null,
+          "target": 80,
+          "targetUnit": ""
+        }
+      ]
+    }
+  },
+  "description": "A node's local-path user volume (/var/mnt/local-path-provisioner: every local-path claim on the node, ClickHouse, the CNPG instance, OpenBao, ZooKeeper, SigNoz's database) was more than 80 % full on average over the last 5 minutes, per node (hostmetrics system.filesystem.utilization, which the otel-agent reads through an empty directory on it). A claim's size is no limit: the volume full stops the writes of every claim on the node.",
+  "disabled": false,
+  "evaluation": {
+    "kind": "rolling",
+    "spec": {
+      "evalWindow": "5m",
+      "frequency": "1m"
+    }
+  },
+  "labels": {
+    "namespace": "platform",
+    "severity": "critical"
+  },
+  "notificationSettings": {
+    "usePolicy": false
+  },
+  "ruleType": "threshold_rule",
+  "schemaVersion": "v2alpha1",
+  "version": "v5"
+}
