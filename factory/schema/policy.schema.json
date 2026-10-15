@@ -266,6 +266,13 @@
             "max_megapixels"
           ],
           "additionalProperties": false
+        },
+        "max_output_tokens": {
+          "type": "object",
+          "description": "MaxOutputTokens is each model alias's output limit, the most output tokens a call asks for and is held at (Document.Limited). The tree's check requires one for every alias a class or the chat calls.",
+          "additionalProperties": {
+            "type": "integer"
+          }
         }
       },
       "description": "Prices are the tool prices no provider API reports.",
@@ -285,7 +292,7 @@
               },
               "outcome": {
                 "type": "string",
-                "description": "Outcome: forbidden fails the task, requires_approval waits for a human, auto merges without one where the merge rule allows it.",
+                "description": "Outcome: forbidden fails an agent's task (a pull request factoryd opened waits for a human instead), requires_approval waits for a human, auto merges without one where the merge rule allows it.",
                 "enum": [
                   "forbidden",
                   "requires_approval",
@@ -571,6 +578,7 @@
               "reject_plan",
               "approve_merge",
               "deny_merge",
+              "rerun_checks",
               "set_summary",
               "set_accent",
               "invite",
@@ -580,14 +588,146 @@
               "edit",
               "grant_session",
               "set_dependency",
-              "split_card"
+              "split_card",
+              "read_doc",
+              "write_doc",
+              "set_autonomy",
+              "routines",
+              "routine_write",
+              "routine_delete",
+              "routine_run",
+              "routine_skip",
+              "notes_read",
+              "notes_write",
+              "escalate",
+              "active_threads"
             ]
           },
-          "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. An empty list runs every tool at once."
+          "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. The always-confirm set is confirmed at every autonomy level, so an empty list confirms that set only."
+        },
+        "doc_repo": {
+          "type": "string",
+          "description": "DocRepo is the owner/name of the repository write_doc commits documents to (the project's document repository, the factory's own first); empty: the project's chat writes no documents."
+        },
+        "parallel_turns": {
+          "type": "integer",
+          "description": "ParallelTurns bounds the project's chat turns that call the model at once, across its threads and members, which guards the chat task's month budget (roadmap 239). Absent: DefaultParallelTurns.",
+          "minimum": 1
+        },
+        "window": {
+          "type": "integer",
+          "description": "Window is the context window in tokens of the alias the project agent calls: a thread compacts before a turn projected past 80 percent of it (roadmap 239). The provider's own refusal of a prompt past its window is the bound that always holds. Absent: DefaultChatWindow.",
+          "minimum": 1000
         }
       },
       "description": "Chat is the project agent's block: its model, its monthly budget and the tools that need the member's OK. Absent: DefaultChat.",
       "additionalProperties": false
+    },
+    "time_zone": {
+      "type": "string",
+      "description": "TimeZone is the IANA zone of every routine's cron schedule, such as Europe/Berlin. Absent: UTC."
+    },
+    "routines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name is the routine's slug, unique in its file."
+          },
+          "title": {
+            "type": "string",
+            "description": "Title is the filed card's title."
+          },
+          "schedule": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cron": {
+                  "type": "string",
+                  "description": "Cron is five fields, minute hour day-of-month month day-of-week, in the factory's time zone."
+                },
+                "merges": {
+                  "type": "integer",
+                  "description": "Merges runs the routine every n merged cards of the project."
+                },
+                "on": {
+                  "type": "string",
+                  "description": "On runs the routine on an event: configuration-version or push-main.",
+                  "enum": [
+                    "configuration-version",
+                    "push-main"
+                  ]
+                }
+              },
+              "description": "Trigger is one entry of a routine's schedule: a cron pattern, a merge count or an event. Exactly one field is set.",
+              "additionalProperties": false
+            },
+            "description": "Schedule lists the triggers, any one of which starts a run."
+          },
+          "files": {
+            "type": "string",
+            "description": "Files is the kind of work a run files: human, agent, pull-request or report.",
+            "enum": [
+              "human",
+              "agent",
+              "pull-request",
+              "report"
+            ]
+          },
+          "brief": {
+            "type": "string",
+            "description": "Brief is the path of the card's body in the tree, routines/\u003cname\u003e.md."
+          },
+          "skill": {
+            "type": "string",
+            "description": "Skill is the skill an agent routine's card runs."
+          },
+          "pass": {
+            "type": "string",
+            "description": "Pass names the pass a pull-request routine runs: template.",
+            "enum": [
+              "template"
+            ]
+          },
+          "while_open": {
+            "type": "string",
+            "description": "WhileOpen says what a run does while the last card is open: hold (the default) skips the run, file opens another, and fold, a pull-request routine's only, has the pass add to its open pull request.",
+            "enum": [
+              "hold",
+              "fold",
+              "file"
+            ]
+          },
+          "missed": {
+            "type": "string",
+            "description": "Missed says what a run does when its time passed while the factory was down: file-once (the default) or skip.",
+            "enum": [
+              "file-once",
+              "skip"
+            ]
+          },
+          "tell": {
+            "type": "string",
+            "description": "Tell says whether a filing pokes the inbox: inbox (the default) or quiet. A human card pokes in any case, and a report must use inbox: its report is the poke.",
+            "enum": [
+              "inbox",
+              "quiet"
+            ]
+          }
+        },
+        "description": "Routine is recurring work the factory does on its own (roadmap 267): what a run files, when, and the rules of a run.",
+        "required": [
+          "name",
+          "title",
+          "schedule",
+          "files"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Routines are the factory's routines, each a pass that runs for every project it applies to: the template pass for every project with a template."
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",
