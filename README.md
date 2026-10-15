@@ -646,17 +646,21 @@ then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
   parts then stay local, and a full user volume (the 20 Gi claim is no
   limit) stops every insert (ClickHouse's log names the failed moves).
   ClickHouse's system log tables lie on the local disk outside the
-  storage policy: one day for `trace_log`, `zookeeper_log` and
-  `processors_profile_log`, three for `query_log`, `part_log`,
-  `metric_log`, `asynchronous_metric_log`, `aggregated_zookeeper_log`
-  and `background_schedule_pool_log`, the chart's 3 to 30 days for the
-  small rest (the HelmRelease: the operator's `clickhouseOperator.*.ttl`,
-  `config.d/system_log.xml` for the tables it does not write). At the
-  rates of 2026-10-15 they peak near 10 GiB. ClickHouse takes a changed
-  retention at its next start and renames the old table to
-  `system.<table>_0`, which keeps its old TTL (none for
-  `background_schedule_pool_log`): drop it by hand,
-  `DROP TABLE system.<table>_0`. ClickHouse keeps the S3
+  storage policy: one day for `trace_log` and `processors_profile_log`,
+  three for `query_log`, `part_log`, `metric_log`,
+  `asynchronous_metric_log`, `aggregated_zookeeper_log` and
+  `background_schedule_pool_log`, the chart's 3 to 30 days for the small
+  rest (the HelmRelease: the operator's `clickhouseOperator.*.ttl`,
+  `config.d/system_log.xml` for the tables it does not write).
+  `zookeeper_log`, which the operator turns on, is off, and so is the
+  memory profiler, the queries' (`memory_profiler_step` 0 in profile
+  `default`) and the server's (`total_memory_profiler_step` 0), whose
+  stacks were 95 % of `trace_log`. At the rates of
+  2026-10-15 they peak near 5 GiB. ClickHouse takes a changed retention
+  at its next start and renames the old table to `system.<table>_0`,
+  which keeps its old TTL (none for `background_schedule_pool_log`); a
+  log turned off leaves its table as it is: drop either by hand,
+  `DROP TABLE system.<table>`. ClickHouse keeps the S3
   disk's metadata on the local volume, so after a rebuild the bucket's
   objects belong to nobody: the bucket's lifecycle rule (expire after 31
   days) removes them. For logs, SigNoz reports the retention from its own

@@ -59,6 +59,14 @@ spec:
       resources:
         requests: {cpu: 250m, memory: 1Gi}
         limits: {cpu: "2", memory: 3Gi}
+      # No memory profiler, neither the queries' (the profile of users
+      # admin and default) nor the server's, which samples each query too:
+      # their stacks, one per 4 MiB allocated, were 95 % of trace_log's
+      # frames.
+      profiles:
+        default/memory_profiler_step: "0"
+      settings:
+        total_memory_profiler_step: "0"
       # Hot data on the local-path volume, cold on bucket signoz-cold: the
       # signoz-objects CronJob sets the TTLs that move parts to volume s3.
       # The key pair comes from secret signoz-s3 through include_from, so it
@@ -99,7 +107,9 @@ spec:
         # The chart's file, plus three days for the two system log tables
         # the operator does not write (clickhouseOperator below):
         # aggregated_zookeeper_log (the image's 30) and
-        # background_schedule_pool_log (none).
+        # background_schedule_pool_log (none). zookeeper_log, every
+        # ZooKeeper request (1.2 GiB a day), which the operator turns on,
+        # is off: one replica has no use for it.
         config.d/system_log.xml: |
           <clickhouse>
             <text_log>
@@ -120,6 +130,7 @@ spec:
             <background_schedule_pool_log>
               <ttl>event_date + INTERVAL 3 DAY DELETE</ttl>
             </background_schedule_pool_log>
+            <zookeeper_log remove="1"/>
           </clickhouse>
       additionalVolumes:
         - name: signoz-s3
@@ -139,13 +150,13 @@ spec:
         # ClickHouse's system log tables, whose engines the operator writes,
         # lie on the local disk outside the tiered policy and held 8 GiB
         # after 37 hours, sixteen times the telemetry. One day for the
-        # profiler's samples (trace_log, up to 3.8 GiB a day), every
-        # ZooKeeper request (zookeeper_log, 1.2) and processors_profile_log
-        # (0.5); three for query_log, part_log and the metric logs; the
-        # chart's for the small rest. At those rates they peak near 10 GiB,
-        # where the chart's 7 and 30 days settle near 94.
+        # profiler's samples (trace_log, up to 3.8 GiB a day, 95 % of it
+        # the memory profiler's, which profiles turns off) and
+        # processors_profile_log (0.5); three for query_log, part_log and
+        # the metric logs; the chart's for the small rest. With zookeeper_log
+        # off they peak near 5 GiB, where the chart's 7 and 30 days settle
+        # near 94.
         traceLog: {ttl: 1}
-        zookeeperLog: {ttl: 1}
         processorsProfileLog: {ttl: 1}
         queryLog: {ttl: 3}
         partLog: {ttl: 3}
