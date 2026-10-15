@@ -52,34 +52,6 @@ spec:
           from: Selector
           selector:
             matchLabels: {kubernetes.io/metadata.name: platform}
-    - name: https-demo-staging
-      protocol: HTTPS
-      port: 443
-      hostname: demo-staging.aisoftwarefactory.world
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - kind: Secret
-            name: demo-staging-aisoftwarefactory-world-tls
-      allowedRoutes:
-        namespaces:
-          from: Selector
-          selector:
-            matchLabels: {kubernetes.io/metadata.name: demo-staging}
-    - name: https-demo
-      protocol: HTTPS
-      port: 443
-      hostname: demo.aisoftwarefactory.world
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - kind: Secret
-            name: demo-aisoftwarefactory-world-tls
-      allowedRoutes:
-        namespaces:
-          from: Selector
-          selector:
-            matchLabels: {kubernetes.io/metadata.name: demo-prod}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -90,7 +62,7 @@ spec:
   parentRefs:
     - name: edge-gateway
       sectionName: http
-  hostnames: [git.aisoftwarefactory.world, console.aisoftwarefactory.world, signoz.aisoftwarefactory.world, demo-staging.aisoftwarefactory.world, demo.aisoftwarefactory.world]
+  hostnames: [git.aisoftwarefactory.world, console.aisoftwarefactory.world, signoz.aisoftwarefactory.world]
   rules:
     - filters:
         - type: RequestRedirect
@@ -182,27 +154,3 @@ spec:
     - backendRefs:
         - name: signoz
           port: 8080
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: demo-staging-aisoftwarefactory-world
-  namespace: forgejo
-spec:
-  secretName: demo-staging-aisoftwarefactory-world-tls
-  dnsNames: [demo-staging.aisoftwarefactory.world]
-  issuerRef:
-    name: letsencrypt-production
-    kind: ClusterIssuer
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: demo-aisoftwarefactory-world
-  namespace: forgejo
-spec:
-  secretName: demo-aisoftwarefactory-world-tls
-  dnsNames: [demo.aisoftwarefactory.world]
-  issuerRef:
-    name: letsencrypt-production
-    kind: ClusterIssuer

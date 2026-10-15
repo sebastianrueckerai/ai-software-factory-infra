@@ -282,13 +282,15 @@ bash scripts/setup-factory-merge.sh    # reads back the protections exactly
 
 Per-project tokens: the gateway DB rows carry token values the restore
 brings back; a token revoked by hand leaves factoryd logging `access token
-does not exist` per project every reconcile. Rotate:
+does not exist` per project every reconcile. Rotate every project in
+factory/projects/ but the factory's own two, which hold no tokens:
 
 ```sh
-for p in demo-app hello-import linkshort linkshort2 linkshort3 linkshort4 \
-         notes scratch12 sqlite-import uptime uptime2; do
+for f in factory/projects/*.yaml; do
+  p=$(basename "$f" .yaml)
+  case $p in ai-software-factory-code|ai-software-factory-infra) continue ;; esac
   kubectl -n factory exec deploy/factoryd -- factoryd register-project --name "$p" --rotate
-done   # scratch-seed refuses by design: its projects/*.yaml says objects ""
+done
 ```
 
 `openbao-config` and `signoz-objects` CronJobs fail during the sealed or
