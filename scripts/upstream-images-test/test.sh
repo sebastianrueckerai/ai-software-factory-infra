@@ -7,7 +7,8 @@
 # by an OCIRepository of the store at its digest or by the store's Helm
 # repository at an exact version; a project template's bases by their
 # copies; a bootstrap line's registry through the nodes' mirror of the
-# store (talos/patches.yaml). Builds k8s/platform and Flux's components
+# store (talos/patches.yaml); the runbook's hand installs by a line's
+# digest. Builds k8s/platform and Flux's components
 # with kubectl kustomize and renders every HelmRelease's chart with helm,
 # from the repository root:
 #   sh scripts/upstream-images-test/test.sh [upstream-images.txt]
@@ -186,6 +187,10 @@ for df in sorted(glob.glob("factory/templates/*/Dockerfile")):
             found.append((df, m.group(1).replace("${UPSTREAM}", upstream or "${UPSTREAM}")))
 for where, img in sorted(set(found)):
     check(pinned(img), "%s: %s, the store's copy of a line or a bootstrap line by its digest" % (where, img))
+if listfile:
+    listed = open(listfile).read()
+    for dg in sorted(set(re.findall(r"sha256:[0-9a-f]{64}", open("docs/reseed-runbook.md").read()))):
+        check(dg in listed, "docs/reseed-runbook.md: %s, a line's digest" % dg)
 mirrors = {d["name"]: d["endpoints"] for d in yaml.safe_load_all(open("talos/patches.yaml"))
            if d and d.get("kind") == "RegistryMirrorConfig"}
 for reg in sorted({name.split("/")[0] for name, _ in boot}):
