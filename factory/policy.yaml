@@ -212,8 +212,11 @@ prices:
 # any number of whole directories (none included), "*" and "?" match within
 # one name (path.Match), so "k8s/**" is everything under k8s/ and
 # "**/Dockerfile*" a Dockerfile at any depth. classes: most severe first.
-# outcome: forbidden fails the task (its pull request is closed),
-# requires_approval waits for a human's approval before factory-merge merges.
+# outcome: forbidden fails an agent's task (its pull request is closed); on
+# a pull request factoryd opened (a template update, a schema copy, a GitHub
+# sync, a revert), which is no agent's change, it waits for a human's
+# approval that names the paths. requires_approval waits for a human's
+# approval before factory-merge merges.
 # There is no outcome without a human: the privileged main CI runs merged code
 # (rulings 76, 77, 109).
 # migration: true lists the class's paths on the approval card and the pull
