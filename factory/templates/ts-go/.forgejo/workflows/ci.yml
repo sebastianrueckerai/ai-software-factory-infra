@@ -73,12 +73,16 @@ jobs:
         run: |
           set -euo pipefail
           work=$(mktemp -d -p /workspace)
-          buildctl --tlsdir "$BUILDKIT_TLS_DIR" --tlsservername "$BUILDKIT_TLS_SERVERNAME" \
+          # the store's copies, read with the job's token as in pr.yml
+          mkdir "$work/pull"
+          printf '{"auths":{"git.aisoftwarefactory.world":{"auth":"%s"}}}' "$(printf 'job:%s' "$FORGEJO_TOKEN" | base64 -w0)" \
+            > "$work/pull/config.json"
+          DOCKER_CONFIG=$work/pull buildctl --tlsdir "$BUILDKIT_TLS_DIR" --tlsservername "$BUILDKIT_TLS_SERVERNAME" \
             build --progress=plain --frontend dockerfile.v0 --local context=. --local dockerfile=. \
             --output "type=oci,dest=$work/layout,tar=false"
-          # Forgejo's token challenge names the public host, which the
-          # runner cannot reach: fetch the token in-cluster and hand crane
-          # the bearer directly.
+          # Forgejo's token challenge names the public host, not the
+          # in-cluster address the push goes to: fetch the token in-cluster
+          # and hand crane the bearer directly.
           token=$(curl -fsS -u "$REGISTRY_USER:$REGISTRY_PASSWORD" \
             "http://$REGISTRY/v2/token?service=container_registry&scope=repository:$GIT_SSH_REPO:pull,push" \
             | sed -nE 's/.*"token": *"([^"]+)".*/\1/p')

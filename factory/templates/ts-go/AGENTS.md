@@ -43,8 +43,8 @@ when it no longer names `gosec` and `go test -race`).
   and `server.New`, run by `go test ./...`.
 - The `Dockerfile` at the root builds `web` in a Node stage and the Go
   binary in a Go stage, and runs it as uid 65532 on 8080. Its base images
-  are pinned by digest already; CI pins the app image by digest when it
-  rolls.
+  are the factory store's copies (`ARG UPSTREAM`), pinned by digest; CI
+  pins the app image by digest when it rolls.
 - `deploy/base/` holds the workload: a Deployment (one replica, `strategy:
   Recreate` for the ReadWriteOnce data volume at `/data`, `/tmp` writable,
   probes on `/healthz`), the `data` claim and a Service on 8080. It already

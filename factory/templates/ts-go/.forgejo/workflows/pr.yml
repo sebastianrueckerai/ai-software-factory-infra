@@ -1,8 +1,9 @@
 # Pull requests run on the factory's untrusted runners: a fresh gVisor pod,
 # no credential beyond the per-run job token, default-deny egress (the Go
 # module proxy, the npm registry and, for the image job, the job's own
-# build VM). No secrets.* anywhere in this file. Registration seeded it from
-# the template ts-go; agents cannot change .forgejo/.
+# build VM and the store's token service). No secrets.* anywhere in this
+# file. Registration seeded it from the template ts-go; agents cannot
+# change .forgejo/.
 #
 # Three jobs: checks, job-env-audit, and changes with image. The checks run
 # `bash check`, the repository's own; check and Dockerfile absent at both the
@@ -140,7 +141,15 @@ jobs:
             sleep 3
           done
       - name: build the image
+        # The Dockerfile's bases are the factory store's copies: buildctl
+        # answers the VM's registry token requests with the job's own
+        # token, which reads them as every signed-in account does and
+        # expires with the job.
         run: |
+          set -euo pipefail
+          export DOCKER_CONFIG=$(mktemp -d)
+          printf '{"auths":{"git.aisoftwarefactory.world":{"auth":"%s"}}}' "$(printf 'job:%s' "$FORGEJO_TOKEN" | base64 -w0)" \
+            > "$DOCKER_CONFIG/config.json"
           buildctl --tlsdir "$BUILDKIT_TLS_DIR" --tlsservername "$BUILDKIT_TLS_SERVERNAME" \
             build --progress=plain --frontend dockerfile.v0 --local context=. --local dockerfile=. \
             --output type=oci,dest=/dev/null
