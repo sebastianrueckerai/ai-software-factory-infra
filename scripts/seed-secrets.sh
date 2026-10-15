@@ -139,6 +139,9 @@ k -n $A create secret generic hetzner-agent --from-literal=token="$HETZNER_AGENT
 # ClickHouse reads the cold-storage key pair as XML through include_from (config.d/storage.xml in the SigNoz HelmRelease).
 k -n $P create secret generic signoz-s3 --from-literal=s3.xml="<clickhouse><signoz_s3_access_key_id>$HETZNER_S3_ACCESS_KEY_ID</signoz_s3_access_key_id><signoz_s3_secret_access_key>$HETZNER_S3_SECRET_ACCESS_KEY</signoz_s3_secret_access_key></clickhouse>"
 k -n $P create secret generic signoz-root --from-literal=email=mail@sebastianruecker.com --from-literal=password="$SIGNOZ_ADMIN_PASSWORD"
+# ClickHouse's user admin, as which SigNoz's server, collector and schema migrator log in (the SigNoz HelmRelease's
+# valuesFrom); hex, since it stands in their DSNs.
+k -n $P create secret generic signoz-clickhouse --from-literal=password="$(openssl rand -hex 32)"
 # Secrets two namespaces read with one value: the value comes from the copy
 # that exists, else it is minted, and the missing copy is created.
 shared() { # <name> <key> <namespace>...: prints the value

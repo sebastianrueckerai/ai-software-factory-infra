@@ -8,7 +8,11 @@
 # repository at an exact version; a project template's bases by their
 # copies; a bootstrap line's registry through the nodes' mirror of the
 # store (talos/patches.yaml); the runbook's hand installs by a line's
-# digest. Builds k8s/platform and Flux's components
+# digest. And every credential comes from a Secret, never from the tree or
+# a chart's default: no container env named like one and no ClickHouse
+# user's password holds a literal in a manifest, a HelmRelease's values or
+# a chart's render, where a HelmRelease's valuesFrom renders as
+# valuesFrom-Secret. Builds k8s/platform and Flux's components
 # with kubectl kustomize and renders every HelmRelease's chart with helm,
 # from the repository root:
 #   sh scripts/upstream-images-test/test.sh [upstream-images.txt]
@@ -95,12 +99,31 @@ def pods(o, where):
     elif isinstance(o, list):
         for v in o:
             pods(v, where)
+FROM_SECRET = "valuesFrom-Secret"
+literal = []
+def credentials(o, where):
+    if isinstance(o, dict):
+        if (re.search(r"(PASSWORD|SECRET|TOKEN|_KEY)$", str(o.get("name"))) and isinstance(o.get("value"), str)
+                and o["value"] not in ("", FROM_SECRET)):
+            literal.append("%s env %s" % (where, o["name"]))
+        for k, v in o.items():
+            if re.search(r"(^|/)password$", str(k)) and isinstance(v, str) and v not in ("", FROM_SECRET):
+                literal.append("%s %s" % (where, k))
+            credentials(v, where)
+    elif isinstance(o, list):
+        for v in o:
+            credentials(v, where)
 def scan(docs):
     for d in docs:
-        if not isinstance(d, dict) or d.get("kind") == "HelmRelease":
+        if not isinstance(d, dict):
             continue
         meta = d.get("metadata") or {}
         where = "%s/%s" % (d.get("kind"), meta.get("name"))
+        if d.get("kind") == "HelmRelease":
+            credentials((d.get("spec") or {}).get("values"), where + " values")
+            continue
+        if d.get("kind") != "Secret":
+            credentials(d.get("spec"), where)
         if "test" in str((meta.get("annotations") or {}).get("helm.sh/hook", "")):
             continue
         pods(d.get("spec"), where)
@@ -167,7 +190,9 @@ for i, hr in enumerate(d for d in docs if d.get("kind") == "HelmRelease"):
     with open(vals, "w") as f:
         yaml.safe_dump(spec.get("values") or {}, f)
     ns = spec.get("targetNamespace", hr["metadata"]["namespace"])
-    r = subprocess.run(["helm", "template", spec.get("releaseName", name)] + chart + ["-n", ns, "-f", vals],
+    secret = [a for ref in spec.get("valuesFrom") or [] if ref.get("targetPath")
+              for a in ("--set-string", "%s=%s" % (ref["targetPath"], FROM_SECRET))]
+    r = subprocess.run(["helm", "template", spec.get("releaseName", name)] + chart + ["-n", ns, "-f", vals] + secret,
                        capture_output=True, text=True, env=helm_env)
     if r.returncode:
         check(False, "HelmRelease %s renders: %s" % (name, r.stderr.strip()[-300:]))
@@ -196,6 +221,8 @@ mirrors = {d["name"]: d["endpoints"] for d in yaml.safe_load_all(open("talos/pat
 for reg in sorted({name.split("/")[0] for name, _ in boot}):
     check(mirrors.get(reg) == [{"url": "https://%s/v2/upstream/%s" % (host, reg), "overridePath": True}],
           "talos/patches.yaml: the nodes pull %s through the store's mirror" % reg)
+check(not literal, "no manifest, HelmRelease value or chart render holds a literal credential" +
+      "".join("\n  " + w for w in literal))
 print("%d images, %d failed" % (len(set(found)), len(fails)))
 sys.exit(1 if fails else 0)
 PY

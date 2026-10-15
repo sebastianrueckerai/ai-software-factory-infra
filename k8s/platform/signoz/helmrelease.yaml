@@ -20,6 +20,10 @@ spec:
       sourceRef: {kind: HelmRepository, name: upstream, namespace: flux-system}
   # SigNoz creates its root user from these at boot, so self-registration is
   # closed before the public route serves; secret signoz-root is imperative.
+  # ClickHouse's user admin takes its password from secret signoz-clickhouse,
+  # which scripts/seed-secrets.sh generates: the chart's default is public.
+  # The chart hands it to its clients as a plain env value; it has an
+  # existingSecret for an external ClickHouse alone.
   valuesFrom:
     - kind: Secret
       name: signoz-root
@@ -29,6 +33,10 @@ spec:
       name: signoz-root
       valuesKey: password
       targetPath: signoz.env.signoz_user_root_password
+    - kind: Secret
+      name: signoz-clickhouse
+      valuesKey: password
+      targetPath: clickhouse.password
   values:
     # Every image from the factory's store by its digest (the code
     # repository's upstream-images.txt, roadmap 203); forgejo-registry reads it.
