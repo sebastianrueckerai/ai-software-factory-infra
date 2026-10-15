@@ -31,7 +31,9 @@ spec:
     global:
       clusterName: sf
       imagePullSecrets: [forgejo-registry]
-    otelCollectorEndpoint: http://signoz-otel-collector.platform.svc.cluster.local:4318
+    # the collector's port for these two alone (signoz/policy.yaml), whose
+    # telemetry keeps the namespaces it names
+    otelCollectorEndpoint: http://signoz-otel-collector.platform.svc.cluster.local:4319
     presets:
       logsCollection:
         blacklist:

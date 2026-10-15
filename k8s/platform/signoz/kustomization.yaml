@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - helmrelease.yaml
 - objects.yaml
+- policy.yaml
 configMapGenerator:
 - name: signoz-objects-script
   namespace: platform

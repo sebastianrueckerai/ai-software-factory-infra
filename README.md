@@ -493,7 +493,7 @@ leaves every pinned image running.
 SigNoz (`k8s/platform/signoz/`, chart 0.143.0) is the one telemetry
 store. Two collectors of the `k8s-infra` chart (0.17.1, HelmRelease in
 `k8s/platform/k8s-infra/`) feed its collector
-`signoz-otel-collector.platform` on OTLP HTTP (4318), from namespace
+`signoz-otel-collector.platform` on OTLP HTTP port 4319, theirs alone, from namespace
 `k8s-infra` (Pod Security `privileged`: the agent mounts host paths,
 which the cluster's baseline profile forbids elsewhere):
 
@@ -520,8 +520,34 @@ which the cluster's baseline profile forbids elsewhere):
   `k8s.object.kind` and `k8s.object.name`, the message as body).
 
 CiliumNetworkPolicies `otel-agent` and `otel-deployment` admit their
-egress only to DNS, the API server, SigNoz's collector and, for the
-agent, its own node's kubelet (10250); neither admits ingress.
+egress only to DNS, the API server, SigNoz's collector on 4319 and, for
+the agent, its own node's kubelet (10250); neither admits ingress.
+
+Every other sender (the projects' apps, factoryd, the gateway) sends OTLP
+to the collector's 4317 or 4318, whose pipelines may not keep the
+namespace the sender names: a project's rules and factoryd's alert
+routing read `k8s.namespace.name`, so an app naming another namespace
+would raise that project's alerts. These pipelines delete
+`k8s.namespace.name` and `k8s_namespace_name` from the resource and from
+every span, log record and data point, then `k8sattributes` sets
+`k8s.namespace.name` from the pod the connection comes from (none for an
+address no pod has); it keeps a value it finds, which is why the deletion
+runs first. It waits for the pods and namespaces before the receivers
+open (`wait_for_metadata`, 60 s), so a restarted collector takes nothing
+it cannot name; a wait that times out leaves this build in its start with
+its health check at 503 until the liveness probe restarts it. The running
+collector's config, with what SigNoz's OpAMP has added, is
+`/var/tmp/collector-config.yaml` in its container (`--copy-path`):
+`kubectl -n platform exec deploy/signoz-otel-collector -- cat
+/var/tmp/collector-config.yaml`. The pipelines of 4319 keep what the k8s-infra collectors
+send, the namespace of what they measure. CiliumNetworkPolicy
+`signoz-otel-collector` admits 4319 only from `k8s-infra`, the other
+receivers' ports from the cluster, and the node.
+`scripts/collector-namespace-test/test.sh` runs these pipelines, as the
+HelmRelease writes them, in the pinned collector image against a stub
+Kubernetes API: a pod's OTLP that names namespace `victim` arrives with
+its own pod's namespace and no record naming one, an address no pod has
+with none, and 4319 keeps what it is sent.
 
 CronJob `signoz-objects` in `platform` (every 10 minutes, one log line
 per object, `no change` once converged) writes into SigNoz what it keeps

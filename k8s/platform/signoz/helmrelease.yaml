@@ -130,6 +130,59 @@ spec:
       resources:
         requests: {cpu: 100m, memory: 256Mi}
         limits: {cpu: "1", memory: 1Gi}
+      # OTLP from the k8s-infra collectors alone (policy.yaml): their
+      # telemetry names the namespace of what it measures, so it keeps it.
+      ports:
+        otlp-k8s-infra: {enabled: true, containerPort: 4319, servicePort: 4319, nodePort: "", protocol: TCP}
+      config:
+        receivers:
+          otlp/k8s-infra:
+            protocols:
+              http: {endpoint: 0.0.0.0:4319}
+        processors:
+          # An app's own telemetry may name any namespace, and a project's
+          # rules and factoryd's alert routing read k8s.namespace.name: the
+          # names an app sends go, and k8sattributes sets the namespace of
+          # the pod the connection comes from. It keeps a value it finds,
+          # so the deletion runs first.
+          resource/namespace:
+            attributes:
+              - {key: k8s.namespace.name, action: delete}
+              - {key: k8s_namespace_name, action: delete}
+          attributes/namespace:
+            actions:
+              - {key: k8s.namespace.name, action: delete}
+              - {key: k8s_namespace_name, action: delete}
+          # The receivers open only once the pods and namespaces are read,
+          # so no telemetry passes unnamed after a restart. A wait that
+          # times out does not end this build: it stays in its start, its
+          # health check at 503, until the liveness probe restarts it after
+          # about 65 s; 60 s lets an API server back within that minute
+          # still start it.
+          k8sattributes/namespace:
+            passthrough: false
+            wait_for_metadata: true
+            wait_for_metadata_timeout: 60s
+            pod_association:
+              - sources: [{from: connection}]
+            extract:
+              metadata: [k8s.namespace.name]
+        service:
+          pipelines:
+            traces:
+              processors: [resource/namespace, attributes/namespace, k8sattributes/namespace, signozspanmetrics/delta, signozspanmapper, signozllmpricing, batch]
+            metrics:
+              processors: [resource/namespace, attributes/namespace, k8sattributes/namespace, batch]
+            logs:
+              processors: [resource/namespace, attributes/namespace, k8sattributes/namespace, batch]
+            metrics/k8s-infra:
+              receivers: [otlp/k8s-infra]
+              processors: [batch]
+              exporters: [metadataexporter, signozclickhousemetrics, signozmeter]
+            logs/k8s-infra:
+              receivers: [otlp/k8s-infra]
+              processors: [batch]
+              exporters: [clickhouselogsexporter, metadataexporter, signozmeter]
     telemetryStoreMigrator:
       resources:
         requests: {cpu: 100m, memory: 128Mi}

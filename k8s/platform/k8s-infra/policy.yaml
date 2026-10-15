@@ -1,6 +1,7 @@
 # Egress of the two collectors, nothing else: DNS, the API server (pod and
-# node metadata, the cluster receiver, events), SigNoz's collector on OTLP
-# HTTP, and for the agent its own node's kubelet. Neither takes ingress.
+# node metadata, the cluster receiver, events), SigNoz's collector on its
+# OTLP HTTP port for these two (4319), and for the agent its own node's
+# kubelet. Neither takes ingress.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata: {name: otel-agent, namespace: k8s-infra}
@@ -26,7 +27,7 @@ spec:
             app.kubernetes.io/instance: signoz
             app.kubernetes.io/component: otel-collector
       toPorts:
-        - ports: [{port: "4318", protocol: TCP}]
+        - ports: [{port: "4319", protocol: TCP}]
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -50,4 +51,4 @@ spec:
             app.kubernetes.io/instance: signoz
             app.kubernetes.io/component: otel-collector
       toPorts:
-        - ports: [{port: "4318", protocol: TCP}]
+        - ports: [{port: "4319", protocol: TCP}]

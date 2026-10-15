@@ -1,0 +1,27 @@
+# Ingress of SigNoz's collector. Port 4319 feeds the pipelines that keep
+# the namespace telemetry names, so only the k8s-infra collectors reach it;
+# every other sender's OTLP (4317, 4318) and the other receivers feed the
+# pipelines that set the namespace from the sending pod. The rest is the
+# node (probes) and the collector's own metrics.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata: {name: signoz-otel-collector, namespace: platform}
+spec:
+  endpointSelector:
+    matchLabels: {app.kubernetes.io/instance: signoz, app.kubernetes.io/component: otel-collector}
+  ingress:
+    - fromEndpoints:
+        - matchLabels: {k8s:io.kubernetes.pod.namespace: k8s-infra}
+      toPorts:
+        - ports: [{port: "4319", protocol: TCP}]
+    - fromEntities: [cluster]
+      toPorts:
+        - ports:
+            - {port: "4317", protocol: TCP}
+            - {port: "4318", protocol: TCP}
+            - {port: "14250", protocol: TCP}
+            - {port: "14268", protocol: TCP}
+            - {port: "8081", protocol: TCP}
+            - {port: "8082", protocol: TCP}
+            - {port: "8888", protocol: TCP}
+    - fromEntities: [host]
