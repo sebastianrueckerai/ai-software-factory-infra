@@ -569,7 +569,7 @@ The factory's own namespaces are projects' too (ruling 180):
 rules in that repository's `k8s/alerts`) and `platform` and `forgejo` for
 `ai-software-factory-infra` (`signoz/project-rules`: a CNPG instance not
 ready for 5 minutes, Forgejo's 5xx rate from its router log, and `Job
-failed` bound to each; the three disk rules below), each with
+failed` bound to each; the two disk rules below), each with
 `factory/objects: seed`, which keeps factoryd's admission policy out of
 them. The infra project is on agents none: its alerts file human-lane
 issues here; the label `noise` on such an issue when it is closed makes
@@ -618,25 +618,21 @@ then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
   Job holds its promotion for those 15 minutes). The rule routes by
   notification policy (`usePolicy`), because SigNoz refuses a rule that
   routes to its thresholds' channels when they list none.
-- Alert rules `ClickHouse disk above 80 %`, `Node disk above 80 %` and
-  `Local-path volume above 80 %`: they read what no namespace holds, so
-  no bound rule can; the label
-  `namespace: platform` in their files routes them to factoryd, which
-  files a human-lane issue on this repository. ClickHouse's disk
-  `default` (`/var/lib/clickhouse`) lies on its node's local-path user
-  volume, a host path the kubelet reports no stats for: the rule reads
-  ClickHouse's own `DiskUsed_default` of `DiskTotal_default` in
-  `system.asynchronous_metric_log`, averaged over 10 minutes, a SQL query
-  only a platform rule may hold. Node disk reads each node's EPHEMERAL
+- Alert rules `Node disk above 80 %` and `Local-path volume above 80 %`,
+  one per filesystem of a node: they read what no namespace holds, so no
+  bound rule can; the label `namespace: platform` in their files routes
+  them to factoryd, which files a human-lane issue on this repository.
+  Node disk reads each node's EPHEMERAL
   (`/var`: the images, the pods' writable layers and emptyDirs, the
   factory caches) through kubeletstats `k8s.node.filesystem.*`, averaged
   over 5 minutes, per node. The images lie on it too, so the kubelet's
   `imagefs.available<15%` sets DiskPressure at 85 % and evicts pods; its
   image garbage collection starts at 75 % (`talos/patches.yaml`).
   Local-path volume reads each node's local-path user volume (every
-  local-path claim on it: ClickHouse, the CNPG instance, OpenBao,
-  ZooKeeper, SigNoz's database; a claim's size is no limit) through the
-  otel-agent's hostmetrics `system.filesystem.utilization` of mountpoint
+  local-path claim on it: ClickHouse's disk `default`, the CNPG instance,
+  OpenBao, ZooKeeper, SigNoz's database; a claim's size is no limit), a
+  host path the kubelet reports no stats for, through the otel-agent's
+  hostmetrics `system.filesystem.utilization` of mountpoint
   `/var/mnt/local-path-provisioner`, averaged over 5 minutes, per node.
 - Retention: 7 days hot on ClickHouse's local-path volume, then moved to
   volume `s3` (disk `s3`, bucket `signoz-cold` on
