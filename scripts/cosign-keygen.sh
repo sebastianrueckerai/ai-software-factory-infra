@@ -6,7 +6,9 @@
 # second such container reads them back by pipe and checks they make the
 # public half, the one file written: <code checkout>/k8s/cosign.pub.
 # Refuses over an existing pair unless --rotate. cosign comes from the
-# checkout's Dockerfile.runner (stage cosign). Reads BAO_TOKEN (the root
+# checkout's Dockerfile.runner (stage cosign), jq and the shell from a
+# line of its upstream-images.txt, at the upstream: the store may not
+# serve yet, and a workstation holds no login to it. Reads BAO_TOKEN (the root
 # token) from the environment; it goes over stdin, never into an argument,
 # and nothing prints it.
 #   set -a; . ~/repos/ai-software-factory/.env.seed; set +a
@@ -37,8 +39,7 @@ esac
 img=factory-cosign-keygen
 docker build -q -f "$code/Dockerfile.runner" --target cosign -t $img:cosign "$code" >/dev/null
 docker build -q -t $img - >/dev/null <<DOCKERFILE
-FROM debian:bookworm-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251
-RUN apt-get update && apt-get install -y --no-install-recommends jq
+FROM docker.io/alpine/k8s:1.36.1@sha256:51865f04b31c2f1d18db2c0964f4186d359007beedb9e478d342a7e504c0a3f3
 COPY --from=$img:cosign /cosign /usr/local/bin/cosign
 DOCKERFILE
 run=(docker run --rm --read-only --network none --log-driver none --user "$(id -u):$(id -g)"
