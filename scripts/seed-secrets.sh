@@ -228,6 +228,26 @@ else
     fi
   fi
   unset have tok
+  # main CI signs every image it pushes with the factory's cosign key
+  # (roadmap 46). OpenBao keeps the pair's private half as factory/cosign
+  # (private_key, the encrypted PEM cosign generate-key-pair writes, and
+  # password), and the raft snapshot carries it across a rebuild; every run
+  # PUTs it into the code repository's Actions secrets COSIGN_PRIVATE_KEY
+  # and COSIGN_PASSWORD, which only main CI's image jobs read. Read with the
+  # root token over stdin, never printed. No pair yet: README "Image
+  # signing" makes one.
+  if [ -z "${OPENBAO_ROOT_TOKEN:-}" ]; then
+    echo "$CR signing Actions secrets: skipped, OPENBAO_ROOT_TOKEN is not in .env.seed"
+  elif ! cosign=$(printf '%s\n' "$OPENBAO_ROOT_TOKEN" | kubectl -n $P exec -i openbao-0 -- sh -c '
+      IFS= read -r BAO_TOKEN; export BAO_TOKEN
+      bao kv get -mount=factory -format=json cosign 2>/dev/null' |
+    jq -ce '.data.data | select(.private_key != "" and .password != "")' 2>/dev/null); then
+    echo "$CR signing Actions secrets: skipped, OpenBao holds no factory/cosign, is sealed or does not answer (README \"Image signing\")"
+  else
+    put_secret $CR COSIGN_PRIVATE_KEY "$(printf '%s' "$cosign" | jq -r .private_key)" || exit 1
+    put_secret $CR COSIGN_PASSWORD "$(printf '%s' "$cosign" | jq -r .password)" || exit 1
+  fi
+  unset cosign
   if kubectl -n $A get secret forgejo-config >/dev/null 2>&1; then
     echo "$A/forgejo-config: exists"
   else
