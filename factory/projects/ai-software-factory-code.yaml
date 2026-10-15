@@ -19,3 +19,13 @@ tokens: {read: forgejo-ci-registrar, actions: forgejo-ci-registrar, merge: forge
 # the factory's document repository: the chat's documents, and what its
 # agent sessions read at /workspace/docs
 chat: {doc_repo: sf/ai-software-factory}
+routines:
+  - name: weekly-bump
+    title: Weekly bump of the pinned outside inputs
+    schedule:
+      - cron: "0 6 * * 1"
+    files: human
+    brief: routines/weekly-bump.md
+    while_open: hold
+    missed: file-once
+    tell: inbox

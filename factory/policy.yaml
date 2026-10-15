@@ -297,3 +297,14 @@ bounds:
   # ModelReview and GateAudit take no bound here: the code derives theirs
   # from supervisor_timeout (three parts of the diff, one call each, plus
   # two minutes: 20 m at 6 m), since Stage 16.
+time_zone: Europe/Berlin
+routines:
+  - name: template-pass
+    title: Template update
+    schedule:
+      - cron: "3 * * * *"
+      - on: configuration-version
+    files: pull-request
+    pass: template
+    while_open: fold
+    tell: quiet
