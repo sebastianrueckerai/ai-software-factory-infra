@@ -24,9 +24,13 @@ code=${1:?usage: BAO_TOKEN=<root token> $0 [--rotate] <code checkout>}
 [ -f "$code/Dockerfile.runner" ] && [ -d "$code/k8s" ] || { echo "cosign-keygen: $code is no checkout of the code repository"; exit 1; }
 out=$(mktemp -d)
 trap '[ $? = 0 ] || echo "cosign-keygen: failed; $code/k8s/cosign.pub untouched"; rm -r "$out"' EXIT
-# <script>: runs it in openbao-0 with the token, this function's stdin after it
+# <script>: runs it in openbao-0 with the token, this function's stdin after
+# it. The script reads that stdin from a pipe in the pod, filled once the
+# exec stream has ended: bao reading the stream itself reads EOF for input
+# that arrives after it started (kubectl 1.33, Kubernetes 1.37, 2026-10-15).
 in_bao() {
-  { printf '%s\n' "$BAO_TOKEN"; cat; } | kubectl -n platform exec -i openbao-0 -- sh -c "IFS= read -r BAO_TOKEN; export BAO_TOKEN; $1"
+  { printf '%s\n' "$BAO_TOKEN"; cat; } | kubectl -n platform exec -i openbao-0 -- sh -c \
+    "IFS= read -r BAO_TOKEN; export BAO_TOKEN; in=\$(cat); printf '%s' \"\$in\" | { $1; }"
 }
 # shellcheck disable=SC2016
 state=$(in_bao 'if err=$(bao kv metadata get -mount=factory cosign 2>&1 >/dev/null); then echo exists
