@@ -3,12 +3,14 @@ kind: OCIRepository
 metadata: {name: litellm, namespace: flux-system}
 spec:
   interval: 10m
-  url: oci://ghcr.io/berriai/litellm-helm
+  # the chart from the factory's store by its digest (the code
+  # repository's upstream-images.txt, roadmap 203)
+  url: oci://git.aisoftwarefactory.world/upstream/ghcr.io/berriai/litellm-helm
+  ref: {digest: "sha256:4fe3ffcf630497e72a55429ef27134516bc3a2bacfe8c51ee23a9a42c071ea5f"}
+  secretRef: {name: forgejo-registry}
   layerSelector:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
-  ref:
-    semver: ">=1.102.1 <1.103.0"
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease

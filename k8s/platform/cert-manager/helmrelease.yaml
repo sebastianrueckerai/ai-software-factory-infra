@@ -1,7 +1,16 @@
 apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata: {name: jetstack, namespace: flux-system}
-spec: {interval: 10m, url: https://charts.jetstack.io}
+kind: OCIRepository
+metadata: {name: cert-manager, namespace: flux-system}
+spec:
+  interval: 10m
+  # the chart from the factory's store by its digest (the code
+  # repository's upstream-images.txt, roadmap 203)
+  url: oci://git.aisoftwarefactory.world/upstream/quay.io/jetstack/charts/cert-manager
+  ref: {digest: "sha256:634dce9c13b56677a2c05e2ab76c312d0be2664022d5dd05815da67e1fd5f610"}
+  secretRef: {name: forgejo-registry}
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -17,11 +26,7 @@ spec:
   install: {remediation: {retries: 3}}
   upgrade: {remediation: {retries: 3}}
   targetNamespace: platform
-  chart:
-    spec:
-      chart: cert-manager
-      version: v1.21.2
-      sourceRef: {kind: HelmRepository, name: jetstack, namespace: flux-system}
+  chartRef: {kind: OCIRepository, name: cert-manager, namespace: flux-system}
   values:
     # Pinned by digest at the upstream, not taken from the factory's store:
     # Forgejo's database needs cert-manager (the barman plugin's webhook

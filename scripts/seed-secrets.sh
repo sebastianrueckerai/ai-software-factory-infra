@@ -403,13 +403,23 @@ for r in json.load(sys.stdin): print("team factory-registry-read: repository %s 
   [ "$vis" = limited ] || { echo "org upstream: visibility $vis, want limited"; exit 1; }
   echo "org upstream: limited"
   # Image pulls (pull secret forgejo-registry: in factory, which factoryd
-  # copies into every CI and agent namespace, and in the namespaces whose
-  # pods run the store's copies) and the config check's registry login
-  # (this repository's REGISTRY_USER and REGISTRY_PASSWORD) only read: sf's
-  # images and upstream's copies. They take the same read:package token,
-  # and follow it when it is minted again.
+  # copies into every CI and agent namespace, in the namespaces whose pods
+  # run the store's copies, and in flux-system, where the OCI charts come
+  # from the store; forgejo-charts there is the same login as the username
+  # and password the store's Helm repository takes) and the config check's
+  # registry login (this repository's REGISTRY_USER and REGISTRY_PASSWORD)
+  # only read: sf's images and upstream's copies. They take the same
+  # read:package token, and follow it when it is minted again.
   rtok=$(kubectl -n $A get secret forgejo-registry-read -o 'jsonpath={.data.token}' | base64 -d)
-  for n in $A $P $F k8s-infra; do
+  # before flux bootstrap makes it, so Flux's first sync reads the charts
+  kubectl get namespace flux-system >/dev/null 2>&1 || kubectl create namespace flux-system >/dev/null
+  if [ "$(kubectl -n flux-system get secret forgejo-charts -o 'jsonpath={.data.password}' 2>/dev/null | base64 -d)" = "$rtok" ]; then
+    echo "flux-system/forgejo-charts: exists"
+  else
+    kubectl -n flux-system create secret generic forgejo-charts --from-literal=username=factory-registry-read --from-literal=password="$rtok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+    echo "flux-system/forgejo-charts: written for factory-registry-read"
+  fi
+  for n in $A $P $F k8s-infra flux-system; do
     pull=$(kubectl -n $n get secret forgejo-registry -o 'jsonpath={.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | jq -c '[.auths[] | .username, .password]' 2>/dev/null || true)
     if [ "$pull" = "$(jq -nc --arg t "$rtok" '["factory-registry-read", $t]')" ]; then
       echo "$n/forgejo-registry: exists"

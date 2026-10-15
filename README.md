@@ -317,12 +317,21 @@ login mounted as its docker config (value `runner.pullSecret`). Org
 `upstream` is visible to signed-in accounts only (`limited`; the
 instance requires a login for every read), so every pod that runs a copy
 names the pull secret `forgejo-registry`, which `scripts/seed-secrets.sh`
-writes into `factory`, `platform`, `forgejo` and `k8s-infra`.
+writes into `factory`, `platform`, `forgejo`, `k8s-infra` and
+`flux-system`. The charts come from the store as well, each at one
+version: an OCI chart as a copy by its digest (an OCIRepository with
+`forgejo-registry`), an HTTP chart repository's archive from the store's
+Helm repository (`k8s/platform/charts.yaml`, login `forgejo-charts`).
 A line marked `bootstrap` is pinned by its digest at its upstream:
 Forgejo, its database (CNPG, the barman plugin, cert-manager for the
 plugin's webhook certificate), local-path and Flux run before the store
-can serve. `sh scripts/upstream-images-test/test.sh [list]` renders the
-platform and every chart and checks each image against the list.
+can serve, and a rebuild installs Forgejo's and cert-manager's charts by
+hand from their upstreams by the list's digests.
+`sh scripts/upstream-images-test/test.sh [list]` renders the platform
+and every chart and checks each image and chart against the list (the
+charts from their upstreams as the list pins them); without a list it
+reads the store with `REGISTRY_USER` and `REGISTRY_PASSWORD`, checks
+every reference is in it and renders the charts from it.
 
 A bump: the code repository's list first (its main CI copies the new
 digests), then the references here; a reference whose copy is missing

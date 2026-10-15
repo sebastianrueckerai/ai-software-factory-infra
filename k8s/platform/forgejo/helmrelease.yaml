@@ -3,12 +3,15 @@ kind: OCIRepository
 metadata: {name: forgejo, namespace: flux-system}
 spec:
   interval: 10m
-  url: oci://code.forgejo.org/forgejo-helm/forgejo
+  # the chart from the factory's store by its digest (the code
+  # repository's upstream-images.txt, roadmap 203); the re-seed installs it
+  # from its upstream before the store serves (docs/reseed-runbook.md)
+  url: oci://git.aisoftwarefactory.world/upstream/code.forgejo.org/forgejo-helm/forgejo
+  ref: {digest: "sha256:f5044e73361f5991978f1bc281a570bf893fd0f468e7d76274a7853eb27428cf"}
+  secretRef: {name: forgejo-registry}
   layerSelector:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
-  ref:
-    semver: ">=17.1.7 <17.1.8"
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease

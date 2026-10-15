@@ -91,7 +91,9 @@ connectivity suite is optional (known failure: node-to-node DNS).
 kubectl apply -f k8s/platform/namespaces.yaml
 kubectl apply -k k8s/platform/local-path
 kubectl -n local-path-storage wait --for=condition=Available deployment/local-path-provisioner --timeout=180s
-helm install cert-manager jetstack/cert-manager -n platform --version v1.21.2 \
+# v1.21.2 from its upstream by the digest of the code repository's
+# upstream-images.txt: the store cannot serve before Forgejo runs
+helm install cert-manager oci://quay.io/jetstack/charts/cert-manager@sha256:634dce9c13b56677a2c05e2ab76c312d0be2664022d5dd05815da67e1fd5f610 -n platform \
   --set crds.enabled=true --set config.gatewayAPI.enabled=true
 kubectl -n platform wait --for=condition=Available deployment/cert-manager --timeout=300s
 kubectl -n platform wait --for=condition=Available deployment/cert-manager-webhook --timeout=300s
@@ -128,7 +130,9 @@ import yaml
 docs = list(yaml.safe_load_all(open('k8s/platform/forgejo/helmrelease.yaml')))
 hr = [d for d in docs if d['kind']=='HelmRelease'][0]
 yaml.safe_dump(hr['spec']['values'], open('/tmp/forgejo-values.yaml','w'))"
-helm install forgejo oci://code.forgejo.org/forgejo-helm/forgejo --version 17.1.7 \
+# 17.1.7 from its upstream by the digest of the code repository's
+# upstream-images.txt, as cert-manager above
+helm install forgejo oci://code.forgejo.org/forgejo-helm/forgejo@sha256:f5044e73361f5991978f1bc281a570bf893fd0f468e7d76274a7853eb27428cf \
   -n forgejo -f /tmp/forgejo-values.yaml
 ```
 
@@ -171,19 +175,22 @@ made during the teardown window, ahead of the dump's tree.
 
 ## 6. runner-init, flux bootstrap, coredns, seed pass 2
 
-The store of outside images (org `upstream`) comes back with the
-packages bucket and the CNPG recovery. Check it; if it is empty, fill it
-before Flux's first sync, since the platform and the trusted runner pull
-from it:
+The store of outside images and charts (org `upstream`) comes back with
+the packages bucket and the CNPG recovery. The seed's Forgejo pass writes
+its pull secrets, flux-system's among them, before Flux's first sync.
+Check the store; if it is empty, fill it before that sync, since the
+platform, its charts and the trusted runner come from it:
 
 ```sh
-set -a; . ~/repos/ai-software-factory/.env.seed; set +a
+set -a; . ~/repos/ai-software-factory/.env.tools; . ~/repos/ai-software-factory/.env.seed; set +a
+bash scripts/seed-secrets.sh    # the Forgejo pass: org upstream, forgejo-registry, forgejo-charts
 curl -s -u "factory-admin:$FORGEJO_FACTORY_ADMIN_PASSWORD" \
   'https://git.aisoftwarefactory.world/api/v1/packages/upstream?type=container&limit=1' | jq length   # 1: it came back
-# an empty store only: the seed's Forgejo pass makes org upstream, then the copy
-bash scripts/seed-secrets.sh
+# an empty store only: the copy (crane's login for the images, the
+# REGISTRY_ pair for the Helm repository)
 printf %s "$FORGEJO_FACTORY_ADMIN_PASSWORD" | crane auth login git.aisoftwarefactory.world -u factory-admin --password-stdin
-~/repos/ai-software-factory-code/scripts/upstream-copy ~/repos/ai-software-factory-code/upstream-images.txt
+REGISTRY_USER=factory-admin REGISTRY_PASSWORD="$FORGEJO_FACTORY_ADMIN_PASSWORD" \
+  ~/repos/ai-software-factory-code/scripts/upstream-copy ~/repos/ai-software-factory-code/upstream-images.txt
 ```
 
 ```sh

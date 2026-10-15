@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - namespaces.yaml
 - coredns.yaml
+- charts.yaml
 - gateway-api/crds.yaml
 - gateway-api/edge.yaml
 - cert-manager/helmrelease.yaml

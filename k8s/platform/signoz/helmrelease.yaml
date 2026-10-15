@@ -1,8 +1,3 @@
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata: {name: signoz, namespace: flux-system}
-spec: {interval: 10m, url: https://charts.signoz.io}
----
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata: {name: signoz, namespace: platform}
@@ -22,7 +17,7 @@ spec:
     spec:
       chart: signoz
       version: 0.143.0
-      sourceRef: {kind: HelmRepository, name: signoz, namespace: flux-system}
+      sourceRef: {kind: HelmRepository, name: upstream, namespace: flux-system}
   # SigNoz creates its root user from these at boot, so self-registration is
   # closed before the public route serves; secret signoz-root is imperative.
   valuesFrom:

@@ -24,7 +24,7 @@ spec:
     spec:
       chart: k8s-infra
       version: 0.17.1
-      sourceRef: {kind: HelmRepository, name: signoz, namespace: flux-system}
+      sourceRef: {kind: HelmRepository, name: upstream, namespace: flux-system}
   values:
     # Every image from the factory's store by its digest (the code
     # repository's upstream-images.txt, roadmap 203); forgejo-registry reads it.

@@ -1,0 +1,13 @@
+# The factory's store's Helm repository (org upstream): the archives of the
+# HTTP chart repositories, each uploaded once by the code repository's
+# scripts/upstream-copy from a line of its upstream-images.txt pinned by
+# sha256 (roadmap 203); a version keeps the bytes it was uploaded with.
+# forgejo-charts is the read login of forgejo-registry as a username and a
+# password, which an HTTP Helm repository takes.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: upstream, namespace: flux-system}
+spec:
+  interval: 10m
+  url: https://git.aisoftwarefactory.world/api/packages/upstream/helm
+  secretRef: {name: forgejo-charts}
