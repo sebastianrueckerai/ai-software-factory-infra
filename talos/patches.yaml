@@ -82,8 +82,10 @@ provisioning:
   diskSelector:
     match: disk.size > 100000000000u
   # uncapped, EPHEMERAL grows to fill the whole disk; volumes grow only,
-  # never shrink, so the user volume below could never provision
-  maxSize: 100GB
+  # never shrink, so the user volume below could never provision. 200 GB:
+  # the runner's dind volume, the factory caches, the images and the
+  # sandbox pods outgrew 100 GB; the user volume held under 8 GB
+  maxSize: 200GB
 ---
 apiVersion: v1alpha1
 kind: UserVolumeConfig
@@ -91,8 +93,24 @@ name: local-path-provisioner
 provisioning:
   diskSelector:
     match: disk.size > 100000000000u
-  minSize: 200GB
-  maxSize: 200GB
+  minSize: 100GB
+  maxSize: 100GB
+---
+apiVersion: v1alpha1
+kind: KubeletConfig
+config:
+  # EPHEMERAL holds the images too, so imagefs.available<15% is the
+  # DiskPressure line; unused images go 10 points before it, not at it
+  imageGCHighThresholdPercent: 75
+  imageGCLowThresholdPercent: 65
+  # ephemeral-storage keeps out of allocatable what lives on EPHEMERAL
+  # outside any pod (the factory caches, the images in use, the system)
+  # and the 5 % between the imagefs and nodefs thresholds
+  systemReserved:
+    cpu: 50m
+    memory: 512Mi
+    pid: "100"
+    ephemeral-storage: 40Gi
 ---
 machine:
   sysctls:

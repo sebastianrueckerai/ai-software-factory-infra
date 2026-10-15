@@ -52,8 +52,8 @@ registered keeps it, so remove it by hand on live nodes:
 
 Kube-proxy is disabled at generation time (KubeProxyConfig document) so
 Cilium runs kube-proxy-free and its Gateway API controller works. Each
-node caps EPHEMERAL at 100 GB (VolumeConfig document; uncapped it fills
-the whole disk and volumes never shrink) and carves a 200 GB user volume
+node caps EPHEMERAL at 200 GB (VolumeConfig document; uncapped it fills
+the whole disk and volumes never shrink) and carves a 100 GB user volume
 at install time (UserVolumeConfig document, auto-mounted at
 /var/mnt/local-path-provisioner, noexec); the local-path provisioner serves
 PersistentVolumeClaims of class `local-path` from it. Class `factory-cache`

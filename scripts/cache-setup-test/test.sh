@@ -48,6 +48,22 @@ ok "first claim: the directory is made 0777" '[ "$(stat -c %a "$root/cache-new")
 ok "first claim: stamped" 'fresh "$root/.claimed/cache-new"'
 ok "the stamps are not in a cache" '[ ! -e "$root/cache-new/.claimed" ] && [ ! -e "$root/cache-me/.claimed" ]'
 
+hours() { touch -d "@$((now - $2 * 3600))" "$1"; }
+mkdir -p "$root/cache-busy/go-build/bb" "$root/cache-busy/go/bin" "$root/cache-calm/go-build/cc"
+for f in 30h 3h 1h; do mib2 "$root/cache-busy/go-build/bb/$f-d"; hours "$root/cache-busy/go-build/bb/$f-d" "${f%h}"; done
+mib2 "$root/cache-busy/go/bin/tool"; hours "$root/cache-busy/go/bin/tool" 30
+FACTORY_CACHE_CAP_MB=3 claim "$root/cache-busy"; rc=$?
+ok "a cache all younger than 3 days above the cap: exit 0" '[ $rc = 0 ]'
+ok "above the cap a build cache file unchanged 30 hours is removed" '[ ! -e "$root/cache-busy/go-build/bb/30h-d" ]'
+ok "still above the cap a build cache file unchanged 3 hours is removed" '[ ! -e "$root/cache-busy/go-build/bb/3h-d" ]'
+ok "a build cache file used within 2 hours stays, though above the cap" '[ -e "$root/cache-busy/go-build/bb/1h-d" ]'
+ok "an installed binary younger than 3 days stays" '[ -e "$root/cache-busy/go/bin/tool" ]'
+for f in 30h 3h 1h; do mib2 "$root/cache-calm/go-build/cc/$f-d"; hours "$root/cache-calm/go-build/cc/$f-d" "${f%h}"; done
+FACTORY_CACHE_CAP_MB=6 claim "$root/cache-calm"; rc=$?
+ok "a cache 6 MiB plus its directories above a 6 MiB cap: exit 0" '[ $rc = 0 ]'
+ok "the oldest build cache file goes first" '[ ! -e "$root/cache-calm/go-build/cc/30h-d" ]'
+ok "under the cap again, the younger ones stay" '[ -e "$root/cache-calm/go-build/cc/3h-d" ] && [ -e "$root/cache-calm/go-build/cc/1h-d" ]'
+
 mv "$root/.claimed" /tmp/stamps; : > "$root/.claimed"
 claim "$root/cache-err"; rc=$?
 ok "a failing prune (the stamps directory is a file): exit 0" '[ $rc = 0 ]'

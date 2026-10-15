@@ -22,11 +22,15 @@ spec:
       limits:
         memory: 1536Mi
     dind:
-      # main CI's jobs and image builds run in dind's cgroup
+      # main CI's jobs and image builds run in dind's cgroup. The
+      # ephemeral-storage request is docker-data's sizeLimit: the scheduler
+      # counts the volume against the node's allocatable, and under
+      # DiskPressure the kubelet evicts pods past their requests first
       resources:
         requests:
           cpu: 500m
           memory: 1Gi
+          ephemeral-storage: 40Gi
         limits:
           memory: 8Gi
       # a docker-prune sidecar keeps the build cache to a day's use and the
