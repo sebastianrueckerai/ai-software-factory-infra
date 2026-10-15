@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+# Every HelmRelease retries a failed install and a failed upgrade and waits
+# as long as its chart needs: without remediation retries a failed release
+# stalls for good (RetriesExceeded), and Flux's 5-minute default wait cut
+# SigNoz's first install of 2026-10-13, whose last component was ready
+# after 4 m 53 s, which stalled it for 33 hours.
+import glob
+import os
+import re
+import sys
+
+import yaml
+
+os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+bad, seen = [], 0
+for path in sorted(glob.glob("k8s/**/*.yaml", recursive=True)):
+    if "/templates/" in path:
+        continue  # a chart's templates, which Helm renders
+    for doc in yaml.safe_load_all(open(path)):
+        if not isinstance(doc, dict) or doc.get("kind") != "HelmRelease":
+            continue
+        seen += 1
+        spec, name = doc.get("spec") or {}, "%s %s" % (path, doc["metadata"]["name"])
+        if not re.fullmatch(r"([0-9]+h)?([0-9]+m)?([0-9]+s)?", str(spec.get("timeout", ""))) or not spec.get("timeout"):
+            bad.append("%s: no timeout fitted to its chart" % name)
+        for action in ("install", "upgrade"):
+            retries = ((spec.get(action) or {}).get("remediation") or {}).get("retries", 0)
+            if not isinstance(retries, int) or retries < 1:
+                bad.append("%s: %s.remediation.retries %s, want 1 or more" % (name, action, retries))
+if not seen:
+    bad.append("no HelmRelease under k8s/")
+for b in bad:
+    print("helmrelease-check:", b, file=sys.stderr)
+if bad:
+    sys.exit(1)
+print("helmrelease-check: %d HelmReleases retry their install and upgrade and wait their timeout" % seen)

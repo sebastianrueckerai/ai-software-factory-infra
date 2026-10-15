@@ -16,6 +16,13 @@ metadata: {name: forgejo, namespace: forgejo}
 spec:
   interval: 10m
   releaseName: forgejo
+  # A failed install is uninstalled and installed again, a failed upgrade
+  # rolled back and tried again, three times each: without retries a failed
+  # release stalls for good. It was ready 16 s after the 2026-10-13 re-seed
+  # install.
+  timeout: 5m
+  install: {remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
   targetNamespace: forgejo
   chartRef:
     kind: OCIRepository

@@ -9,6 +9,14 @@ metadata: {name: signoz, namespace: platform}
 spec:
   interval: 10m
   releaseName: signoz
+  # A failed install is uninstalled and installed again, a failed upgrade
+  # rolled back and tried again, three times each: without retries a failed
+  # release stalls for good. The 2026-10-13 re-seed install took 4 m 53 s to
+  # its last component (the collector, after ClickHouse and the schema
+  # migration), past the default 5 minutes, and stalled.
+  timeout: 15m
+  install: {remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
   targetNamespace: platform
   chart:
     spec:

@@ -9,6 +9,13 @@ metadata: {name: cert-manager, namespace: platform}
 spec:
   interval: 10m
   releaseName: cert-manager
+  # A failed install is uninstalled and installed again, a failed upgrade
+  # rolled back and tried again, three times each: without retries a failed
+  # release stalls for good. Its pods were ready 8 s after the 2026-10-13
+  # re-seed install; the startupapicheck job waits for the webhook.
+  timeout: 5m
+  install: {remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
   targetNamespace: platform
   chart:
     spec:

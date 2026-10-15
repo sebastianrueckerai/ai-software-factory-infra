@@ -9,6 +9,13 @@ metadata: {name: temporal, namespace: platform}
 spec:
   interval: 10m
   releaseName: temporal
+  # A failed install is uninstalled and installed again, a failed upgrade
+  # rolled back and tried again, three times each: without retries a failed
+  # release stalls for good. The schema jobs set up and migrate both
+  # databases before the services start.
+  timeout: 10m
+  install: {remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
   targetNamespace: platform
   chart:
     spec:

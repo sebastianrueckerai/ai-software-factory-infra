@@ -12,6 +12,13 @@ metadata: {name: k8s-infra, namespace: platform}
 spec:
   interval: 10m
   releaseName: k8s-infra
+  # A failed install is uninstalled and installed again, a failed upgrade
+  # rolled back and tried again, three times each: without retries a failed
+  # release stalls for good. The agent DaemonSet on three nodes was ready 15
+  # s after the 2026-10-13 re-seed install.
+  timeout: 5m
+  install: {remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
   targetNamespace: k8s-infra
   chart:
     spec:

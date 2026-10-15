@@ -16,6 +16,13 @@ metadata: {name: litellm, namespace: platform}
 spec:
   interval: 10m
   releaseName: litellm
+  # A failed install is uninstalled and installed again, a failed upgrade
+  # rolled back and tried again, three times each: without retries a failed
+  # release stalls for good. The migrations job runs LiteLLM's schema
+  # migrations before the proxy starts.
+  timeout: 10m
+  install: {remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
   targetNamespace: platform
   chartRef:
     kind: OCIRepository

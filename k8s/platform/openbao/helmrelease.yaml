@@ -9,6 +9,14 @@ metadata: {name: openbao, namespace: platform}
 spec:
   interval: 10m
   releaseName: openbao
+  # A failed install is uninstalled and installed again, a failed upgrade
+  # rolled back and tried again, three times each: without retries a failed
+  # release stalls for good. The wait passes the StatefulSet at once: under
+  # updateStrategyType OnDelete it does not wait for the pod, which stays
+  # sealed until a human unseals it.
+  timeout: 5m
+  install: {remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
   targetNamespace: platform
   chart:
     spec:

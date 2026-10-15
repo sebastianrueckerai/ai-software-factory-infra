@@ -4,6 +4,13 @@ metadata: {name: forgejo-runner, namespace: forgejo}
 spec:
   interval: 10m
   releaseName: forgejo-runner
+  # A failed install is uninstalled and installed again, a failed upgrade
+  # rolled back and tried again, three times each: without retries a failed
+  # release stalls for good. The config job runs before each upgrade, and
+  # the runner waits for dind.
+  timeout: 10m
+  install: {remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
   targetNamespace: forgejo
   chart:
     spec:
