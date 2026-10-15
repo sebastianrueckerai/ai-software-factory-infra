@@ -32,9 +32,10 @@ spec:
         spec:
           serviceAccountName: forgejo-dump
           restartPolicy: Never
+          imagePullSecrets: [{name: forgejo-registry}]
           initContainers:
             - name: dump
-              image: alpine/kubectl:1.36.1@sha256:c5b35e51aadf9eacc43cd301f519ae862a7f480a5b46d1b36b423d93c3b20abe
+              image: git.aisoftwarefactory.world/upstream/docker.io/alpine/kubectl:1.36.1@sha256:2d03606ac3a584cc425218e563f4d1ea109eeccd9229c24e9f2eedaeda8f5c23
               securityContext:
                 runAsNonRoot: true
                 runAsUser: 1000
@@ -53,7 +54,7 @@ spec:
               volumeMounts: [{name: dump, mountPath: /dump}]
           containers:
             - name: upload
-              image: amazon/aws-cli:2.28.5
+              image: git.aisoftwarefactory.world/upstream/docker.io/amazon/aws-cli:2.28.5@sha256:990624088b305b99f55ee777e3a2c4964a57cb811e78f7f1d6b59e03215b4965
               securityContext:
                 runAsNonRoot: true
                 runAsUser: 1000

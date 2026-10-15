@@ -82,6 +82,11 @@ spec:
               value: /certs/client
             - name: DOCKER_TLS_VERIFY
               value: "1"
+            {{- if .Values.runner.pullSecret }}
+            # the login forgejo-runner pulls the job images with
+            - name: DOCKER_CONFIG
+              value: /etc/docker-pull
+            {{- end }}
             {{- with .Values.extraEnvVars }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -92,6 +97,11 @@ spec:
               mountPath: /certs
             - name: runner-data
               mountPath: /data
+            {{- if .Values.runner.pullSecret }}
+            - name: docker-pull
+              mountPath: /etc/docker-pull
+              readOnly: true
+            {{- end }}
         - name: dind
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -166,6 +176,12 @@ spec:
         - name: runner-configfile
           secret:
             secretName: {{ include "forgejo-runner.fullname" . }}-configfile
+        {{- with .Values.runner.pullSecret }}
+        - name: docker-pull
+          secret:
+            secretName: {{ . }}
+            items: [{key: .dockerconfigjson, path: config.json}]
+        {{- end }}
         {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

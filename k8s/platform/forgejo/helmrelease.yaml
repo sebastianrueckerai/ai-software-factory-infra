@@ -22,6 +22,10 @@ spec:
     name: forgejo
     namespace: flux-system
   values:
+    # Pinned by digest at the upstream: Forgejo serves the factory's store,
+    # so it cannot start from it (the code repository's upstream-images.txt
+    # marks it bootstrap).
+    image: {tag: "15.0.9", digest: "sha256:e0950cca25a2344f0f519b9aff894bcfa80b53601b24f07066d6625033597b55"}
     replicaCount: 1
     resources:
       requests: {memory: 768Mi}

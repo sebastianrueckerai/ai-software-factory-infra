@@ -171,6 +171,21 @@ made during the teardown window, ahead of the dump's tree.
 
 ## 6. runner-init, flux bootstrap, coredns, seed pass 2
 
+The store of outside images (org `upstream`) comes back with the
+packages bucket and the CNPG recovery. Check it; if it is empty, fill it
+before Flux's first sync, since the platform and the trusted runner pull
+from it:
+
+```sh
+set -a; . ~/repos/ai-software-factory/.env.seed; set +a
+curl -s -u "factory-admin:$FORGEJO_FACTORY_ADMIN_PASSWORD" \
+  'https://git.aisoftwarefactory.world/api/v1/packages/upstream?type=container&limit=1' | jq length   # 1: it came back
+# an empty store only: the seed's Forgejo pass makes org upstream, then the copy
+bash scripts/seed-secrets.sh
+printf %s "$FORGEJO_FACTORY_ADMIN_PASSWORD" | crane auth login git.aisoftwarefactory.world -u factory-admin --password-stdin
+~/repos/ai-software-factory-code/scripts/upstream-copy ~/repos/ai-software-factory-code/upstream-images.txt
+```
+
 ```sh
 set -a; . ~/repos/ai-software-factory/.env.tools; . ~/repos/ai-software-factory/.env.seed; set +a
 curl -s -u "factory-admin:$FORGEJO_FACTORY_ADMIN_PASSWORD" \

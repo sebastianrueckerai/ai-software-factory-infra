@@ -16,15 +16,24 @@ spec:
       version: v1.21.2
       sourceRef: {kind: HelmRepository, name: jetstack, namespace: flux-system}
   values:
+    # Pinned by digest at the upstream, not taken from the factory's store:
+    # Forgejo's database needs cert-manager (the barman plugin's webhook
+    # certificate) before the store serves (the code repository's
+    # upstream-images.txt marks these bootstrap).
+    image: {digest: "sha256:57bb397c639e0e94184ba67848e5dad04284f24645e521e764a0ee5f5002f286"}
+    acmesolver: {image: {digest: "sha256:dc5c5b8456d1a50af47a240987e85afce352b5c1155a8a4698b7c91eac19f407"}}
+    startupapicheck: {image: {digest: "sha256:ed347b0ab607058f139b83f41567109456b9776330b63da8086a120afb7f1729"}}
     crds: {enabled: true}
     resources:
       requests: {memory: 64Mi}
       limits: {memory: 128Mi}
     cainjector:
+      image: {digest: "sha256:aa2bc58725d92a643f5069dde58abc93b65566ded8951348873ac9ee7efef66c"}
       resources:
         requests: {memory: 64Mi}
         limits: {memory: 128Mi}
     webhook:
+      image: {digest: "sha256:b929259301ee75270ab4651d5e6bd4ba7b6624b1ce48ba767d064295a9312101"}
       resources:
         requests: {memory: 32Mi}
         limits: {memory: 128Mi}

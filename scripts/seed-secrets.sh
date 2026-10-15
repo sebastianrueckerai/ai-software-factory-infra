@@ -390,22 +390,37 @@ for r in json.load(sys.stdin): print("team factory-registry-read: repository %s 
     echo "$A/forgejo-registry-read: created (${#tok} chars)"
     unset tok
   fi
-  # Image pulls in factory (pull secret forgejo-registry, which factoryd
-  # copies into every CI and agent namespace) and the config check's registry
-  # login (this repository's REGISTRY_USER and REGISTRY_PASSWORD) only read
-  # sf's images: they take the same read:package token, and follow it when it
-  # is minted again.
-  rtok=$(kubectl -n $A get secret forgejo-registry-read -o 'jsonpath={.data.token}' | base64 -d)
-  pull=$(kubectl -n $A get secret forgejo-registry -o 'jsonpath={.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | jq -c '[.auths[] | .username, .password]' 2>/dev/null || true)
-  if [ "$pull" = "$(jq -nc --arg t "$rtok" '["factory-registry-read", $t]')" ]; then
-    echo "$A/forgejo-registry: exists"
-  else
-    kubectl -n $A create secret docker-registry forgejo-registry --docker-server=git.aisoftwarefactory.world --docker-username=factory-registry-read --docker-password="$rtok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
-    echo "$A/forgejo-registry: written for factory-registry-read"
+  # Org upstream is the store of the outside images (the code repository's
+  # upstream-images.txt, roadmap 203): visibility limited, so every
+  # signed-in account reads its packages, factory-registry-read and a CI
+  # job's token among them, and no anonymous caller does. The code
+  # repository's main CI copies into it as factory-admin, its owner.
+  if [ "$(fj -o /dev/null -w '%{http_code}' "$FJ/orgs/upstream")" != 200 ]; then
+    fj -o /dev/null -w 'org upstream: %{http_code}\n' -X POST "$FJ/orgs" \
+      -d '{"username":"upstream","visibility":"limited","description":"Copies of the outside images the factory uses (upstream-images.txt of the code repository)"}'
   fi
+  vis=$(fj "$FJ/orgs/upstream" | jq -r .visibility)
+  [ "$vis" = limited ] || { echo "org upstream: visibility $vis, want limited"; exit 1; }
+  echo "org upstream: limited"
+  # Image pulls (pull secret forgejo-registry: in factory, which factoryd
+  # copies into every CI and agent namespace, and in the namespaces whose
+  # pods run the store's copies) and the config check's registry login
+  # (this repository's REGISTRY_USER and REGISTRY_PASSWORD) only read: sf's
+  # images and upstream's copies. They take the same read:package token,
+  # and follow it when it is minted again.
+  rtok=$(kubectl -n $A get secret forgejo-registry-read -o 'jsonpath={.data.token}' | base64 -d)
+  for n in $A $P $F k8s-infra; do
+    pull=$(kubectl -n $n get secret forgejo-registry -o 'jsonpath={.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | jq -c '[.auths[] | .username, .password]' 2>/dev/null || true)
+    if [ "$pull" = "$(jq -nc --arg t "$rtok" '["factory-registry-read", $t]')" ]; then
+      echo "$n/forgejo-registry: exists"
+    else
+      kubectl -n $n create secret docker-registry forgejo-registry --docker-server=git.aisoftwarefactory.world --docker-username=factory-registry-read --docker-password="$rtok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+      echo "$n/forgejo-registry: written for factory-registry-read"
+    fi
+  done
   put_secret $IR REGISTRY_USER factory-registry-read || exit 1
   put_secret $IR REGISTRY_PASSWORD "$rtok" || exit 1
-  unset rtok pull
+  unset rtok pull vis
 fi
 # forgejo-pat (flux-system) is a copy of Flux's bootstrap token, factory-admin's; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
 for n in $P $F $A; do echo "$n: $(kubectl -n "$n" get secret -o name | wc -l) secrets"; done

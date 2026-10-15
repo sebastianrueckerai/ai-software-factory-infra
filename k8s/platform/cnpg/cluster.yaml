@@ -5,6 +5,11 @@ metadata:
   namespace: platform
 spec:
   instances: 3
+  # Pinned by digest at the upstream (the code repository's
+  # upstream-images.txt, bootstrap): Forgejo's database starts before the
+  # factory's store can serve, and the operator's default names a tag CNPG
+  # rebuilds.
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:4c43fe40a7315223ff869fe6519520c4776fce5097b54e0bc6e0eb2c79c702b6
   superuserSecret:
     name: sf-cluster-superuser
   enableSuperuserAccess: true

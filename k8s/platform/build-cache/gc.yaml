@@ -36,9 +36,10 @@ spec:
         spec:
           serviceAccountName: build-cache-gc
           restartPolicy: Never
+          imagePullSecrets: [{name: forgejo-registry}]
           containers:
             - name: restart
-              image: alpine/kubectl:1.36.1@sha256:c5b35e51aadf9eacc43cd301f519ae862a7f480a5b46d1b36b423d93c3b20abe
+              image: git.aisoftwarefactory.world/upstream/docker.io/alpine/kubectl:1.36.1@sha256:2d03606ac3a584cc425218e563f4d1ea109eeccd9229c24e9f2eedaeda8f5c23
               securityContext:
                 runAsNonRoot: true
                 runAsUser: 1000

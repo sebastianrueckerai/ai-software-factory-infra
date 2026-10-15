@@ -132,7 +132,7 @@ data:
           effect: NoSchedule
       containers:
       - name: helper-pod
-        image: busybox
+        image: docker.io/library/busybox:1.38.0@sha256:f97baa533a26513c453a362be331a43eb60214302f449c16571b23cea141dce4
         imagePullPolicy: IfNotPresent
   setup: |-
     #!/bin/sh
@@ -176,7 +176,7 @@ spec:
               fieldPath: metadata.namespace
         - name: CONFIG_MOUNT_PATH
           value: /etc/config/
-        image: rancher/local-path-provisioner:v0.0.31
+        image: docker.io/rancher/local-path-provisioner:v0.0.31@sha256:5fb0394abf87407a27cc56db94334eb0c92d0b5de2636683a7ec51f38143dfc9
         imagePullPolicy: IfNotPresent
         name: local-path-provisioner
         volumeMounts:

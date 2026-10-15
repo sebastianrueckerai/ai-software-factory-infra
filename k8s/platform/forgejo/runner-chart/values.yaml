@@ -25,6 +25,9 @@ nameOverride: ""
 fullnameOverride: ""
 
 runner:
+  # -- a kubernetes.io/dockerconfigjson secret: forgejo-runner pulls the
+  # job images with its login
+  pullSecret: ""
   config:
     # -- create a secret by run: forgejo-runner register --no-interactive --token {TOKEN} --name runner --instance https://next.forgejo.org
     create: true

@@ -22,6 +22,12 @@ spec:
     name: litellm
     namespace: flux-system
   values:
+    # Every image from the factory's store by its digest (the code
+    # repository's upstream-images.txt, roadmap 203); forgejo-registry reads it.
+    image:
+      repository: git.aisoftwarefactory.world/upstream/ghcr.io/berriai/litellm
+      tag: "1.102.4@sha256:76ea408529343acce6a359f31fa4fe910e9fdda82d0c9fc1b0441ccf9cef0ec3"
+    imagePullSecrets: [{name: forgejo-registry}]
     replicaCount: 1
     masterkeySecretName: litellm-master-key
     db:

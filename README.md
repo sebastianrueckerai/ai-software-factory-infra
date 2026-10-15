@@ -302,6 +302,38 @@ The cache is disposable and nothing restores it: after a rebuild it is
 empty, PR builds log "no cache" and build cold until the next main CI
 run fills it. To empty it by hand, delete the PVC and the pod.
 
+## The store of outside images (roadmap 203)
+
+Every image the factory uses and does not build is a line of the code
+repository's `upstream-images.txt`, pinned by its linux/amd64 digest.
+The code repository's main CI copies each line the store lacks into
+Forgejo's registry, org `upstream` (`scripts/upstream-copy`, its
+`upstream` job, as factory-admin), at
+`git.aisoftwarefactory.world/upstream/<the image's registry and path>`,
+and every manifest here names the copy by its digest: the HelmReleases'
+image values, the raw manifests, and the trusted runner's job image
+(`ubuntu-latest`), which forgejo-runner pulls with the `forgejo-registry`
+login mounted as its docker config (value `runner.pullSecret`). Org
+`upstream` is visible to signed-in accounts only (`limited`; the
+instance requires a login for every read), so every pod that runs a copy
+names the pull secret `forgejo-registry`, which `scripts/seed-secrets.sh`
+writes into `factory`, `platform`, `forgejo` and `k8s-infra`.
+A line marked `bootstrap` is pinned by its digest at its upstream:
+Forgejo, its database (CNPG, the barman plugin, cert-manager for the
+plugin's webhook certificate), local-path and Flux run before the store
+can serve. `sh scripts/upstream-images-test/test.sh [list]` renders the
+platform and every chart and checks each image against the list.
+
+A bump: the code repository's list first (its main CI copies the new
+digests), then the references here; a reference whose copy is missing
+leaves its pod in ImagePullBackOff. The copies live where the other
+packages do: their blobs in bucket `aisoftwarefactory-forgejo`, their
+rows in Forgejo's database, so a rebuild that restores both keeps them
+(the dump skips package data; the CNPG recovery brings the rows). A
+rebuild without them starts from an empty store: copy into it from a
+workstation before Flux's first platform sync (Rebuild step 6), since
+the trusted runner itself runs from the store.
+
 ## OpenBao SSH CA
 
 Commissioned servers (task 53) trust one SSH CA in OpenBao, and the
@@ -709,7 +741,12 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
    NOW, before Flux's first sync. [Pushes made while Forgejo was down
    reached GitHub only; Flux otherwise converges to the dump's stale
    tree.]
-6. Mint `runner-init`, `flux bootstrap` (pinned v2.9.5), let the cascade
+6. When the store of outside images came back empty (see that section),
+   fill it from a workstation first: `scripts/seed-secrets.sh` (its
+   Forgejo pass makes org `upstream`), `crane auth login
+   git.aisoftwarefactory.world -u factory-admin` (the password from the
+   seed env on stdin), then the code repository's `scripts/upstream-copy`.
+   Mint `runner-init`, `flux bootstrap` (pinned v2.9.5), let the cascade
    converge. `runner-init` is always an organisation registration token
    of `sf` (`GET /api/v1/orgs/sf/actions/runners/registration-token`, as
    factory-admin with `FORGEJO_FACTORY_ADMIN_PASSWORD`),
@@ -737,12 +774,15 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
    --export > clusters/sf/flux-system/gotk-components.yaml`, pinned
    version), commit and push them as the controller, and run the bootstrap
    again, which then finds nothing to push. Then run
-   `scripts/seed-secrets.sh` again (the
-   `factory` pods pull their images once its `forgejo-registry` exists):
+   `scripts/seed-secrets.sh` again (the `factory` pods, and the
+   platform's that run the store's copies, pull their images once their
+   namespace's `forgejo-registry` exists):
    with Forgejo up its Forgejo pass logs in as factory-admin, creates
    `sebastian` (site admin) and `controller` when missing, makes
-   `controller` a write collaborator on `sf`'s three repositories, and
-   writes the registry logins (`forgejo-registry` and infra's
+   `controller` a write collaborator on `sf`'s three repositories,
+   creates org `upstream` (limited) when missing, and
+   writes the registry logins (`forgejo-registry` in `factory`,
+   `platform`, `forgejo` and `k8s-infra`, and infra's
    `REGISTRY_USER` and `REGISTRY_PASSWORD` from `forgejo-registry-read`,
    `factory-registry` into code's `REGISTRY_USER` and
    `REGISTRY_PASSWORD`).

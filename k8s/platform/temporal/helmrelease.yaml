@@ -16,7 +16,13 @@ spec:
       version: 1.7.0
       sourceRef: {kind: HelmRepository, name: temporalio, namespace: flux-system}
   values:
+    # Every image from the factory's store by its digest (the code
+    # repository's upstream-images.txt, roadmap 203); forgejo-registry reads it.
+    imagePullSecrets: [{name: forgejo-registry}]
     server:
+      image:
+        repository: git.aisoftwarefactory.world/upstream/docker.io/temporalio/server
+        tag: "1.32.0@sha256:ca47d4de249b9cc28137628dba77ae5e75e8b313ebb5c801c64615c1c99cbb09"
       config:
         persistence:
           defaultStore: default
@@ -64,9 +70,15 @@ spec:
       resources:
         requests: {cpu: 100m, memory: 128Mi}
     web:
+      image:
+        repository: git.aisoftwarefactory.world/upstream/docker.io/temporalio/ui
+        tag: "2.54.1@sha256:1f950ff598c810f371c60f1bf16de742caa6b8f60e0cdba05526a434e09b6d43"
       resources:
         requests: {cpu: 50m, memory: 64Mi}
         limits: {memory: 128Mi}
     admintools:
+      image:
+        repository: git.aisoftwarefactory.world/upstream/docker.io/temporalio/admin-tools
+        tag: "1.32.0@sha256:8bb84e24db4336de48031a66dbda25a7477d300736fe825893e467042135da1f"
       resources:
         requests: {cpu: 50m, memory: 128Mi}

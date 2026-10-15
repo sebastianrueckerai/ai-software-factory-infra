@@ -15,6 +15,13 @@ spec:
       # changes nothing in it restarts no runner
       reconcileStrategy: Revision
   values:
+    # Every image from the factory's store by its digest (the code
+    # repository's upstream-images.txt, roadmap 203), the job image too;
+    # forgejo-registry reads it.
+    image: {registry: git.aisoftwarefactory.world/upstream/code.forgejo.org, repository: forgejo/runner, tag: "12.7.3@sha256:4b0d1075b1ef22f9180776734d4a9f8f5f52eea836a28eec4c9c74429e4d6b2a"}
+    imagePullSecrets: [{name: forgejo-registry}]
+    kubectl:
+      image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: alpine/kubectl, tag: "1.36.1@sha256:2d03606ac3a584cc425218e563f4d1ea109eeccd9229c24e9f2eedaeda8f5c23"}
     resources:
       requests:
         cpu: 100m
@@ -22,6 +29,7 @@ spec:
       limits:
         memory: 1536Mi
     dind:
+      image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: library/docker, tag: "29.5.2-dind@sha256:392437eb2d6e54f9ae2be9c0aac2cbca95e3f5eb9854b0f0b1d664d473856633"}
       # main CI's jobs and image builds run in dind's cgroup. The
       # ephemeral-storage request is docker-data's sizeLimit: the scheduler
       # counts the volume against the node's allocatable, and under
@@ -51,13 +59,14 @@ spec:
         # run is the peak.
         maxGiB: 22
     runner:
+      pullSecret: forgejo-registry
       config:
         create: true
         existingInitSecret: runner-init
         file:
           runner:
             labels:
-              - ubuntu-latest:docker://catthehacker/ubuntu:act-22.04
+              - ubuntu-latest:docker://git.aisoftwarefactory.world/upstream/docker.io/catthehacker/ubuntu:act-22.04@sha256:a03f9d3c8f0930dbf586cf375d09ff2a3718ee794a77d2b635f1a0dd79095488
             envs:
               A_TEST_ENV_NAME_1: null
               A_TEST_ENV_NAME_2: null

@@ -965,7 +965,8 @@ apiVersion: v1
 data:
   SIDECAR_IMAGE: |
     Z2hjci5pby9jbG91ZG5hdGl2ZS1wZy9wbHVnaW4tYmFybWFuLWNsb3VkLXNpZGVjYXI6dj
-    AuMTUuMA==
+    AuMTUuMEBzaGEyNTY6N2IzMDY5YzYxZTU2NzhhMmZkMDVkZDkzN2VmNDdlMDMzN2JmYmFj
+    MWMwNWYxZTEwNTE5MDFiOWE3ZDU0YjM5MQ==
 kind: Secret
 metadata:
   name: plugin-barman-cloud-2b4mtt7m69
@@ -1026,7 +1027,7 @@ spec:
             secretKeyRef:
               key: SIDECAR_IMAGE
               name: plugin-barman-cloud-2b4mtt7m69
-        image: ghcr.io/cloudnative-pg/plugin-barman-cloud:v0.15.0
+        image: ghcr.io/cloudnative-pg/plugin-barman-cloud:v0.15.0@sha256:fe3bad8f38ef45e53e18b8b85fd0427b8b25c09bcd4e2068a04f3ff493ce1afc
         name: barman-cloud
         ports:
         - containerPort: 9090

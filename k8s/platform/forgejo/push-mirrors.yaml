@@ -19,9 +19,10 @@ spec:
         spec:
           automountServiceAccountToken: false
           restartPolicy: Never
+          imagePullSecrets: [{name: forgejo-registry}]
           containers:
             - name: mirrors
-              image: alpine/k8s:1.36.1@sha256:692239d739589247c4a791205ed9619c28ae85a21286e19a6211c04a62c56668
+              image: git.aisoftwarefactory.world/upstream/docker.io/alpine/k8s:1.36.1@sha256:51865f04b31c2f1d18db2c0964f4186d359007beedb9e478d342a7e504c0a3f3
               command: [sh, /scripts/push-mirrors.sh]
               env:
                 - name: FORGEJO_USER

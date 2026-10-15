@@ -27,9 +27,16 @@ spec:
       valuesKey: password
       targetPath: signoz.env.signoz_user_root_password
   values:
+    # Every image from the factory's store by its digest (the code
+    # repository's upstream-images.txt, roadmap 203); forgejo-registry reads it.
     global:
       storageClass: local-path
+      imagePullSecrets: [forgejo-registry]
     clickhouse:
+      image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: clickhouse/clickhouse-server, tag: "25.12.5@sha256:10f54f04de6c61b756c4eaf9f1d17464a4ac3e1f94b5b410e0dec92a24dbeda8"}
+      initContainers:
+        udf:
+          image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: library/alpine, tag: "3.18.2@sha256:25fad2a32ad1f6f510e528448ae1ec69a28ef81916a004d3629874104f8a7f70"}
       persistence:
         enabled: true
         storageClass: local-path
@@ -80,15 +87,18 @@ spec:
       additionalVolumeMounts:
         - {name: signoz-s3, mountPath: /etc/clickhouse-server/secrets, readOnly: true}
       clickhouseOperator:
+        image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: altinity/clickhouse-operator, tag: "0.21.2@sha256:f972ef4aec9959313a4d4407a83803c75f0be215af4a6811b3f2b890c15ba893"}
         resources:
           requests: {cpu: 10m, memory: 32Mi}
           limits: {cpu: 200m, memory: 128Mi}
         metricsExporter:
+          image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: altinity/metrics-exporter, tag: "0.21.2@sha256:084a75d8ab0ba5c31ed9d923d301745d24f0e8a3cadf54cdbfe298443eda8da9"}
           resources:
             requests: {cpu: 10m, memory: 16Mi}
             limits: {cpu: 100m, memory: 64Mi}
       zookeeper:
         enabled: true
+        image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: signoz/zookeeper, tag: "3.7.1@sha256:1e6c92e8656c299818acfaf72f11e59d68a92bfe39fc1b1137cd78d6ab6741aa"}
         # One ClickHouse replica keeps a few MB in ZooKeeper; the chart's
         # 1024 MB heap only reserved memory.
         heapSize: 256
@@ -96,6 +106,7 @@ spec:
           requests: {cpu: 50m, memory: 384Mi}
           limits: {cpu: 500m, memory: 640Mi}
     signoz:
+      image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: signoz/signoz, tag: "v0.143.0@sha256:c0ffe2e61d8152f87be0637b5e66d775fe155920ffe80f0a2422f48d9c1c1bf6"}
       replicaCount: 1
       env:
         signoz_user_root_enabled: "true"
@@ -107,6 +118,7 @@ spec:
         requests: {cpu: 50m, memory: 128Mi}
         limits: {cpu: "1", memory: 768Mi}
     otelCollector:
+      image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: signoz/signoz-otel-collector, tag: "v0.144.11@sha256:c9fe68529e7a035dac786cb755d901049d475347567e3080fa87e8092369fa48"}
       replicaCount: 1
       resources:
         requests: {cpu: 100m, memory: 256Mi}

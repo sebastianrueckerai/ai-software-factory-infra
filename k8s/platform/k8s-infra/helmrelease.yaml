@@ -19,8 +19,11 @@ spec:
       version: 0.17.1
       sourceRef: {kind: HelmRepository, name: signoz, namespace: flux-system}
   values:
+    # Every image from the factory's store by its digest (the code
+    # repository's upstream-images.txt, roadmap 203); forgejo-registry reads it.
     global:
       clusterName: sf
+      imagePullSecrets: [forgejo-registry]
     otelCollectorEndpoint: http://signoz-otel-collector.platform.svc.cluster.local:4318
     presets:
       logsCollection:
@@ -42,6 +45,7 @@ spec:
         rootPath: ""
         scrapers: {network: null, filesystem: null}
     otelAgent:
+      image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: otel/opentelemetry-collector-contrib, tag: "0.139.0@sha256:87b591b18a0a330b6246f6d4f53d4867d1b238d1b85a69145e0f4eb38f92154c"}
       clusterRole:
         rules:
           - apiGroups: [""]
@@ -87,6 +91,7 @@ spec:
         requests: {cpu: 50m, memory: 128Mi}
         limits: {cpu: 500m, memory: 384Mi}
     otelDeployment:
+      image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: otel/opentelemetry-collector-contrib, tag: "0.139.0@sha256:87b591b18a0a330b6246f6d4f53d4867d1b238d1b85a69145e0f4eb38f92154c"}
       securityContext:
         allowPrivilegeEscalation: false
         readOnlyRootFilesystem: true
