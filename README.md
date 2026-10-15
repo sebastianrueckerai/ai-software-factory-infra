@@ -341,7 +341,8 @@ mints the token anew, and once on nodes generated before the mirrors.
 and every chart and checks each image and chart against the list (the
 charts from their upstreams as the list pins them); without a list it
 reads the store with `REGISTRY_USER` and `REGISTRY_PASSWORD`, checks
-every reference is in it and renders the charts from it.
+every reference is in it and renders the charts from it, as
+`config-check` does on every push to main, with `scripts/helmrelease-check`.
 
 A bump: the code repository's list first (its main CI copies the new
 digests), then the references here; a reference whose copy is missing

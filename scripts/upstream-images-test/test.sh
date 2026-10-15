@@ -139,17 +139,22 @@ def chart_of(name, spec):
     check(src["url"] == helmrepo and re.fullmatch(r"v?[0-9]+\.[0-9]+\.[0-9]+", cs["version"]) is not None
           and src.get("secretRef", {}).get("name") == "forgejo-charts",
           "HelmRelease/%s chart: %s from %s, the store's Helm repository at an exact version" % (name, archive, src["url"]))
-    path = os.path.join(tmp, archive)
     if listfile:
         a = archives.get(archive)
         check(a is not None, "HelmRelease/%s chart: %s is a line" % (name, archive))
         if a is None:
             return None
-        data = urllib.request.urlopen(a[0], timeout=120).read()
-        check(hashlib.sha256(data).hexdigest() == a[1], "HelmRelease/%s chart: %s matches its sha256" % (name, archive))
+        req = urllib.request.Request(a[0])
     else:
         req = urllib.request.Request(helmrepo + "/" + archive, headers={"Authorization": "Basic " + login})
+    try:
         data = urllib.request.urlopen(req, timeout=120).read()
+    except Exception as e:
+        check(False, "HelmRelease/%s chart: %s from %s: %s" % (name, archive, req.full_url, e))
+        return None
+    if listfile:
+        check(hashlib.sha256(data).hexdigest() == a[1], "HelmRelease/%s chart: %s matches its sha256" % (name, archive))
+    path = os.path.join(tmp, archive)
     open(path, "wb").write(data)
     return [path]
 for i, hr in enumerate(d for d in docs if d.get("kind") == "HelmRelease"):

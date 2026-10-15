@@ -1,6 +1,8 @@
 # factoryd's own check of the configuration tree factory/ (ruling 183) on
 # every push to main: the decoder factoryd's loader runs, and the committed
-# schema/ against the one the binary generates. The factoryd binary comes
+# schema/ against the one the binary generates. Then the platform's
+# checks: every HelmRelease's remediation and timeout, and every image
+# and chart the cluster takes from the store present in it. The factoryd binary comes
 # from the code repository's image tagged :main, the newest green main's,
 # which the next roll deploys: red means that factoryd refuses (or will
 # refuse) the commit, and the running one keeps its previous version.
@@ -10,6 +12,8 @@ on:
     branches: [main]
 env:
   FACTORYD_IMAGE: git.aisoftwarefactory.world/sf/factory-gateway:main
+  # kubectl, helm and PyYAML, from the store
+  CHECK_IMAGE: git.aisoftwarefactory.world/upstream/docker.io/alpine/k8s:1.36.1@sha256:51865f04b31c2f1d18db2c0964f4186d359007beedb9e478d342a7e504c0a3f3
 jobs:
   config-check:
     # the org runner: this repository is human-only, so it runs only what
@@ -31,3 +35,12 @@ jobs:
           docker cp "$id:/usr/local/bin/factoryd" ./factoryd
           docker rm "$id" >/dev/null
       - run: ./factoryd config check factory
+      - name: every HelmRelease retries and waits its timeout, every image and chart is in the store
+        # scripts/upstream-images-test without a list reads the store with
+        # the registry login; the tree goes into the dind on stdin
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: |
+          git ls-files -z | tar -c --null -T - | docker run -i --rm -e REGISTRY_USER -e REGISTRY_PASSWORD --entrypoint sh "$CHECK_IMAGE" \
+            -c 'set -e; cd "$(mktemp -d)"; tar -x; ./scripts/helmrelease-check; sh scripts/upstream-images-test/test.sh'
