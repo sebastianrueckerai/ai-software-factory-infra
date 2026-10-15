@@ -11,11 +11,9 @@ set -eu
 [ $# -gt 0 ] || { echo "usage: sh talos/registry-mirrors.sh <node address>..."; exit 2; }
 tok=$(kubectl -n factory get secret forgejo-registry-read -o 'jsonpath={.data.token}' | base64 -d)
 [ -n "$tok" ] || { echo "factory/forgejo-registry-read holds no token: run scripts/seed-secrets.sh first"; exit 1; }
-patch=$(mktemp)
-trap 'rm -f "$patch"' EXIT
-awk 'BEGIN { RS = "\n---\n" } /kind: RegistryMirrorConfig/ { printf "%s\n---\n", $0 }' talos/patches.yaml > "$patch"
-printf 'apiVersion: v1alpha1\nkind: RegistryAuthConfig\nname: git.aisoftwarefactory.world\nusername: factory-registry-read\npassword: %s\n' "$tok" >> "$patch"
-unset tok
+mirrors=$(awk 'BEGIN { RS = "\n---\n" } /kind: RegistryMirrorConfig/ { printf "%s\n---\n", $0 }' talos/patches.yaml)
+# the patch travels by pipe, so the token is in no file and no argument
 for n in "$@"; do
-  talosctl --talosconfig talos/talosconfig -e "$n" -n "$n" patch mc --mode=no-reboot --patch @"$patch"
+  printf '%s\napiVersion: v1alpha1\nkind: RegistryAuthConfig\nname: git.aisoftwarefactory.world\nusername: factory-registry-read\npassword: %s\n' "$mirrors" "$tok" |
+    talosctl --talosconfig talos/talosconfig -e "$n" -n "$n" patch mc --mode=no-reboot --patch @/dev/stdin
 done
