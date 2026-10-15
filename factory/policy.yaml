@@ -31,12 +31,15 @@ version: 1
 # share is real money and the day cap bounds it. The window closed early
 # on 2026-10-14 (the plan's quota ran out, ruling 325): day 40 and card
 # default 2 again, month 296, the October ledger at the close (241.00)
-# plus 55.
+# plus 55. The second GLM window opened 2026-10-15 (Sebastian's limit
+# reset) on the first one's caps: day 100, card default 5, month the
+# October ledger at the open (243.42) plus 300. At its close: day 40,
+# card default 2, month the ledger then plus 55.
 budget:
-  task_default_eur: 2
+  task_default_eur: 5
   task_max_eur: 15
-  day_eur: 40
-  month_eur: 296
+  day_eur: 100
+  month_eur: 544
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and

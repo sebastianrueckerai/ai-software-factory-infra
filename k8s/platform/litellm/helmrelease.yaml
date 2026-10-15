@@ -112,11 +112,12 @@ spec:
         model_group_alias:
           supervisor: tier-high
           review-frontier: tier-high
-          # the GLM trial (roadmap 207) ended 2026-10-14 when the plan's
-          # quota ran out: both coding aliases back on DashScope, the glm
-          # deployments stay for the next window
-          coding-frontier: tier-high
-          coding-cheap: tier-low
+          # a GLM window (Sebastian's plan, 2026-10-14): both coding
+          # aliases on his GLM Coding Plan while its quota lasts, then back
+          # to DashScope (tier-high, tier-low). Opened 2026-10-15, his limit
+          # reset; the first window ran 2026-10-13/14
+          coding-frontier: glm-frontier
+          coding-cheap: glm-cheap
           # Stage 15 (ruling 252): the project agent and the pulse
           operator: tier-high
           pulse: tier-low
@@ -137,7 +138,7 @@ spec:
         # litellm-proxy-budget. A backstop only: 1.25 x the policy's
         # budget.month_eur, so the gateway's month cap stops first
         # (scripts/budget-backstop-check, run by config-check).
-        max_budget: 370
+        max_budget: 680
         budget_duration: 1mo
     environmentSecrets:
       - litellm-qwen
