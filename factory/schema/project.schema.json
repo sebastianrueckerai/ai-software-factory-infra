@@ -264,6 +264,10 @@
       ],
       "additionalProperties": false
     },
+    "work_in_progress": {
+      "type": "integer",
+      "description": "WorkInProgress is how many of the project's cards hold a work slot at once (waiting on a dependency, working, in review or waiting on a human); a queued card starts only under it. Absent: the default, 5."
+    },
     "model": {
       "type": "string",
       "description": "Model runs a coding card's first session on Models.Stronger instead of the ladder's first rung; the only accepted value is \"stronger\". Absent: a coding card starts on the first rung. The planner and report sessions keep their own rung.",
@@ -317,6 +321,7 @@
               "move_card",
               "answer",
               "comment",
+              "tell_card",
               "steer",
               "retry",
               "start_plan",
@@ -325,6 +330,7 @@
               "reject_plan",
               "approve_merge",
               "deny_merge",
+              "rerun_checks",
               "set_summary",
               "set_accent",
               "invite",
@@ -334,14 +340,156 @@
               "edit",
               "grant_session",
               "set_dependency",
-              "split_card"
+              "split_card",
+              "read_doc",
+              "write_doc",
+              "set_autonomy",
+              "routines",
+              "routine_write",
+              "routine_delete",
+              "routine_run",
+              "routine_skip",
+              "notes_read",
+              "notes_write",
+              "escalate",
+              "active_threads"
             ]
           },
-          "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. An empty list runs every tool at once."
+          "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. The always-confirm set is confirmed at every autonomy level, so an empty list confirms that set only."
+        },
+        "doc_repo": {
+          "type": "string",
+          "description": "DocRepo is the owner/name of the repository write_doc commits documents to (the project's document repository, the factory's own first); empty: the project's chat writes no documents."
+        },
+        "parallel_turns": {
+          "type": "integer",
+          "description": "ParallelTurns bounds the project's chat turns that call the model at once, across its threads and members, which guards the chat task's month budget (roadmap 239). Absent: DefaultParallelTurns.",
+          "minimum": 1
+        },
+        "window": {
+          "type": "integer",
+          "description": "Window is the context window in tokens of the alias the project agent calls: a thread compacts before a turn projected past 80 percent of it (roadmap 239). The provider's own refusal of a prompt past its window is the bound that always holds. Absent: DefaultChatWindow.",
+          "minimum": 1000
         }
       },
       "description": "Chat is the project agent's block for this project; its keys replace the policy's.",
       "additionalProperties": false
+    },
+    "autonomy": {
+      "type": "string",
+      "description": "Autonomy is how much the project agent may do without its member's OK: manual confirms everything, assisted starts and files ready work itself, autonomous runs the chat within the always-confirm set. Absent: manual.",
+      "enum": [
+        "manual",
+        "assisted",
+        "autonomous"
+      ]
+    },
+    "backlog_cap": {
+      "type": "integer",
+      "description": "BacklogCap bounds how many of the project's cards hold no admission stamp (backlog and queued); a filing at the cap refuses. Absent: 8.",
+      "minimum": 0
+    },
+    "routines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name is the routine's slug, unique in its file."
+          },
+          "title": {
+            "type": "string",
+            "description": "Title is the filed card's title."
+          },
+          "schedule": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cron": {
+                  "type": "string",
+                  "description": "Cron is five fields, minute hour day-of-month month day-of-week, in the factory's time zone."
+                },
+                "merges": {
+                  "type": "integer",
+                  "description": "Merges runs the routine every n merged cards of the project."
+                },
+                "on": {
+                  "type": "string",
+                  "description": "On runs the routine on an event: configuration-version or push-main.",
+                  "enum": [
+                    "configuration-version",
+                    "push-main"
+                  ]
+                }
+              },
+              "description": "Trigger is one entry of a routine's schedule: a cron pattern, a merge count or an event. Exactly one field is set.",
+              "additionalProperties": false
+            },
+            "description": "Schedule lists the triggers, any one of which starts a run."
+          },
+          "files": {
+            "type": "string",
+            "description": "Files is the kind of work a run files: human, agent, pull-request or report.",
+            "enum": [
+              "human",
+              "agent",
+              "pull-request",
+              "report"
+            ]
+          },
+          "brief": {
+            "type": "string",
+            "description": "Brief is the path of the card's body in the tree, routines/\u003cname\u003e.md."
+          },
+          "skill": {
+            "type": "string",
+            "description": "Skill is the skill an agent routine's card runs."
+          },
+          "pass": {
+            "type": "string",
+            "description": "Pass names the pass a pull-request routine runs: template.",
+            "enum": [
+              "template"
+            ]
+          },
+          "while_open": {
+            "type": "string",
+            "description": "WhileOpen says what a run does while the last card is open: hold (the default) skips the run, file opens another, and fold, a pull-request routine's only, has the pass add to its open pull request.",
+            "enum": [
+              "hold",
+              "fold",
+              "file"
+            ]
+          },
+          "missed": {
+            "type": "string",
+            "description": "Missed says what a run does when its time passed while the factory was down: file-once (the default) or skip.",
+            "enum": [
+              "file-once",
+              "skip"
+            ]
+          },
+          "tell": {
+            "type": "string",
+            "description": "Tell says whether a filing pokes the inbox: inbox (the default) or quiet. A human card pokes in any case, and a report must use inbox: its report is the poke.",
+            "enum": [
+              "inbox",
+              "quiet"
+            ]
+          }
+        },
+        "description": "Routine is recurring work the factory does on its own (roadmap 267): what a run files, when, and the rules of a run.",
+        "required": [
+          "name",
+          "title",
+          "schedule",
+          "files"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Routines are the project's recurring work, each run filing a card on its schedule."
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",

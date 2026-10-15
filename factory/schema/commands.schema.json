@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "properties": {
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name is what the member types after the slash: a lowercase letter, then lowercase letters, digits and dashes, at most 24, none of the chat's own."
+          },
+          "words": {
+            "type": "string",
+            "description": "Words say what the command asks, as one line of the palette."
+          },
+          "message": {
+            "type": "string",
+            "description": "Message is the text the chat sends for /name; the chat's own commands have none."
+          }
+        },
+        "description": "Command is one command: a name and the message it sends.",
+        "required": [
+          "name",
+          "words",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Commands are the commands the chat offers after its own /compact and /new."
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "factory/commands",
+  "description": "Commands is commands.yaml: the chat's commands.",
+  "required": [
+    "commands"
+  ],
+  "additionalProperties": false
+}
