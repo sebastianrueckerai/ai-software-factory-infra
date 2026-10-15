@@ -1,15 +1,15 @@
 # factoryd's own check of the configuration tree factory/ (ruling 183) on
 # every push to main: the decoder factoryd's loader runs, and the committed
 # schema/ against the one the binary generates. The factoryd binary comes
-# from the code repository's image, pinned by digest to the one that runs:
-# every roll of factoryd updates FACTORYD_IMAGE here. Red means factoryd
-# refused (or will refuse) the commit and keeps its previous version.
+# from the code repository's image tagged :main, the newest green main's,
+# which the next roll deploys: red means that factoryd refuses (or will
+# refuse) the commit, and the running one keeps its previous version.
 name: config-check
 on:
   push:
     branches: [main]
 env:
-  FACTORYD_IMAGE: git.aisoftwarefactory.world/sf/factory-gateway@sha256:58cd012ae85e79746259c3aa9385233c781490c4e24b3c3e7d0dfd4e241fe052
+  FACTORYD_IMAGE: git.aisoftwarefactory.world/sf/factory-gateway:main
 jobs:
   config-check:
     # the org runner: this repository is human-only, so it runs only what
@@ -21,10 +21,12 @@ jobs:
         run: scripts/budget-backstop-check
       - name: registry login
         run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login git.aisoftwarefactory.world -u "${{ secrets.REGISTRY_USER }}" --password-stdin
-      - name: factoryd from the pinned image
+      - name: factoryd from main's newest image
         # the job's docker is the runner's dind, which cannot see the job's
-        # files: the static binary is copied out instead of the tree in
+        # files: the static binary is copied out instead of the tree in; the
+        # pull takes the newest :main over a copy the runner kept
         run: |
+          docker pull -q "$FACTORYD_IMAGE" >/dev/null
           id=$(docker create "$FACTORYD_IMAGE")
           docker cp "$id:/usr/local/bin/factoryd" ./factoryd
           docker rm "$id" >/dev/null
