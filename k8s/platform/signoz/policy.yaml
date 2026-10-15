@@ -25,3 +25,26 @@ spec:
             - {port: "8082", protocol: TCP}
             - {port: "8888", protocol: TCP}
     - fromEntities: [host]
+---
+# Ingress of SigNoz's ClickHouse. Its native (9000), HTTP (8123) and
+# interserver (9009) ports answer SigNoz's own components alone: the server,
+# the collector, the schema migrator and the operator (which reads metrics and
+# maintains the schema), and ClickHouse's replicas to each other. Any other
+# pod, in any namespace, is denied; the node still probes it.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata: {name: signoz-clickhouse, namespace: platform}
+spec:
+  endpointSelector:
+    matchLabels: {app.kubernetes.io/instance: signoz, app.kubernetes.io/component: clickhouse}
+  ingress:
+    - fromEndpoints:
+        - matchLabels: {app.kubernetes.io/instance: signoz}
+          matchExpressions:
+            - {key: app.kubernetes.io/component, operator: In, values: [signoz, otel-collector, signoz-telemetrystore-migrator, operator, clickhouse]}
+      toPorts:
+        - ports:
+            - {port: "9000", protocol: TCP}
+            - {port: "8123", protocol: TCP}
+            - {port: "9009", protocol: TCP}
+    - fromEntities: [host]

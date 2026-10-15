@@ -21,9 +21,13 @@ spec:
   # SigNoz creates its root user from these at boot, so self-registration is
   # closed before the public route serves; secret signoz-root is imperative.
   # ClickHouse's user admin takes its password from secret signoz-clickhouse,
-  # which scripts/seed-secrets.sh generates: the chart's default is public.
-  # The chart hands it to its clients as a plain env value; it has an
-  # existingSecret for an external ClickHouse alone.
+  # and the operator's own user from signoz-clickhouse-operator-password;
+  # scripts/seed-secrets.sh generates both: the chart's defaults are public.
+  # The chart renders the admin password as a plain value in the
+  # ClickHouseInstallation and in the env of SigNoz's server, collector and
+  # schema migrator (it has an existingSecret for an external ClickHouse
+  # alone), so a placeholder stands there and the post-renderer below swaps it
+  # for a reference to the secret before Helm stores the release.
   valuesFrom:
     - kind: Secret
       name: signoz-root
@@ -34,9 +38,56 @@ spec:
       valuesKey: password
       targetPath: signoz.env.signoz_user_root_password
     - kind: Secret
-      name: signoz-clickhouse
+      name: signoz-clickhouse-operator-password
       valuesKey: password
-      targetPath: clickhouse.password
+      targetPath: clickhouse.clickhouseOperator.secret.password
+  postRenderers:
+    - kustomize:
+        patches:
+          # The operator reads the password of user admin from the secret
+          # (k8s_secret_password); if it cannot, ClickHouse falls back to
+          # the chart's public default, so check the installation's status
+          # after a change.
+          - target: {kind: ClickHouseInstallation, name: signoz-clickhouse}
+            patch: |
+              - {op: remove, path: /spec/configuration/users/admin~1password}
+              - {op: add, path: /spec/configuration/users/admin~1k8s_secret_password, value: signoz-clickhouse/password}
+          - target: {kind: Deployment, name: signoz-otel-collector}
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata: {name: signoz-otel-collector}
+              spec:
+                template:
+                  spec:
+                    initContainers:
+                      - {name: check, env: [{name: CLICKHOUSE_PASSWORD, value: null, valueFrom: {secretKeyRef: {name: signoz-clickhouse, key: password}}}]}
+                    containers:
+                      - {name: collector, env: [{name: CLICKHOUSE_PASSWORD, value: null, valueFrom: {secretKeyRef: {name: signoz-clickhouse, key: password}}}]}
+          - target: {kind: StatefulSet, name: signoz}
+            patch: |
+              apiVersion: apps/v1
+              kind: StatefulSet
+              metadata: {name: signoz}
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - {name: signoz, env: [{name: CLICKHOUSE_PASSWORD, value: null, valueFrom: {secretKeyRef: {name: signoz-clickhouse, key: password}}}]}
+          - target: {kind: Job, name: signoz-telemetrystore-migrator}
+            patch: |
+              apiVersion: batch/v1
+              kind: Job
+              metadata: {name: signoz-telemetrystore-migrator}
+              spec:
+                template:
+                  spec:
+                    initContainers:
+                      - {name: ready, env: [{name: CLICKHOUSE_PASSWORD, value: null, valueFrom: {secretKeyRef: {name: signoz-clickhouse, key: password}}}]}
+                      - {name: bootstrap, env: [{name: CLICKHOUSE_PASSWORD, value: null, valueFrom: {secretKeyRef: {name: signoz-clickhouse, key: password}}}]}
+                      - {name: sync, env: [{name: CLICKHOUSE_PASSWORD, value: null, valueFrom: {secretKeyRef: {name: signoz-clickhouse, key: password}}}]}
+                    containers:
+                      - {name: async, env: [{name: CLICKHOUSE_PASSWORD, value: null, valueFrom: {secretKeyRef: {name: signoz-clickhouse, key: password}}}]}
   values:
     # Every image from the factory's store by its digest (the code
     # repository's upstream-images.txt, roadmap 203); forgejo-registry reads it.
@@ -44,6 +95,7 @@ spec:
       storageClass: local-path
       imagePullSecrets: [forgejo-registry]
     clickhouse:
+      password: replaced-by-post-renderer
       image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: clickhouse/clickhouse-server, tag: "25.12.5@sha256:10f54f04de6c61b756c4eaf9f1d17464a4ac3e1f94b5b410e0dec92a24dbeda8"}
       # The histogramQuantile function's binary from the store, the one
       # layer its copy adds to alpine (the list's line pins the archive by

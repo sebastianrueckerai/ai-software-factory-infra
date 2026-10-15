@@ -260,7 +260,7 @@ kubectl -n platform delete pod openbao-0 && kubectl -n platform wait --for=Ready
 set -a; . ~/repos/ai-software-factory/.env.seed; set +a
 printf '%s' "$OPENBAO_UNSEAL_KEY" | kubectl -n platform exec -i openbao-0 -- \
   sh -c 'k="$(cat)"; bao operator unseal "$k"'
-bash scripts/seed-secrets.sh    # pass 3: platform 27 / forgejo 19 / factory 16
+bash scripts/seed-secrets.sh    # pass 3: platform 28 / forgejo 19 / factory 16
 ```
 
 ## 8. Hand tokens, merge protections, CronJobs
