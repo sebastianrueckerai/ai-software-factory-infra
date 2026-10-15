@@ -16,3 +16,6 @@ namespaces: [factory]
 # factory-ci's registrar token reads the writers and the hooks and runs
 # the Actions; factory-merge's merges
 tokens: {read: forgejo-ci-registrar, actions: forgejo-ci-registrar, merge: forgejo-merge}
+# the factory's document repository: the chat's documents, and what its
+# agent sessions read at /workspace/docs
+chat: {doc_repo: sf/ai-software-factory}

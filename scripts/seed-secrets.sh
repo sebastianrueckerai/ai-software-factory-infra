@@ -278,6 +278,10 @@ else
       -d "{\"username\":\"factory-docs\",\"email\":\"factory-docs@factory.local\",\"password\":\"$(openssl rand -hex 24)\",\"must_change_password\":false,\"visibility\":\"private\"}"
   fi
   fj -o /dev/null -w 'factory-docs write collaborator: %{http_code}\n' -X PUT "$FJ/repos/$DR/collaborators/factory-docs" -d '{"permission":"write"}'
+  # an agent session of a project whose chat.doc_repo names it reads the
+  # document repository's text files at /workspace/docs, through its read
+  # token minted for factory-agent, so factory-agent reads it
+  fj -o /dev/null -w 'factory-agent read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$DR/collaborators/factory-agent" -d '{"permission":"read"}'
   if kubectl -n $A get secret forgejo-docs >/dev/null 2>&1; then
     echo "$A/forgejo-docs: exists"
   else
