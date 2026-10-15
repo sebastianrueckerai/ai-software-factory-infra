@@ -62,7 +62,13 @@ morning re-seed forgot and paid for twice):
 
 ```sh
 kubectl apply --server-side -f k8s/platform/gateway-api/crds.yaml
+# the images by the linux/amd64 digests of the code repository's
+# upstream-images.txt, which the store's copies carry (the chart's
+# defaults are the multi-arch indexes, which the store does not hold)
 cilium install --version 1.20.0 \
+  --set image.digest=sha256:9a9fc73bb594bf2497955a481996c7a4ad146ee2e142152c3890dea10ad6d3c5 \
+  --set operator.image.genericDigest=sha256:79e630e3f5e2344a2c352d341a619c1cb7fbe874cadcfe244edf032d62d037c2 \
+  --set envoy.image.digest=sha256:070017873c423cf294b094eef9794f3670cac8df1872bd30a98f142dd6897e18 \
   --set ipam.mode=kubernetes \
   --set kubeProxyReplacement=true \
   --set k8sServiceHost=localhost \
@@ -184,6 +190,8 @@ platform, its charts and the trusted runner come from it:
 ```sh
 set -a; . ~/repos/ai-software-factory/.env.tools; . ~/repos/ai-software-factory/.env.seed; set +a
 bash scripts/seed-secrets.sh    # the Forgejo pass: org upstream, forgejo-registry, forgejo-charts
+# the nodes' login to the store, for their registry mirrors (no reboot)
+sh talos/registry-mirrors.sh <node0> <node1> <node2>
 curl -s -u "factory-admin:$FORGEJO_FACTORY_ADMIN_PASSWORD" \
   'https://git.aisoftwarefactory.world/api/v1/packages/upstream?type=container&limit=1' | jq length   # 1: it came back
 # an empty store only: the copy (crane's login for the images, the

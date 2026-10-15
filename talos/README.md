@@ -58,7 +58,10 @@ at install time (UserVolumeConfig document, auto-mounted at
 /var/mnt/local-path-provisioner, noexec); the local-path provisioner serves
 PersistentVolumeClaims of class `local-path` from it. Class `factory-cache`
 lives under /var/lib/factory-cache on EPHEMERAL, which is not noexec, since
-its caches hold executables.
+its caches hold executables. The RegistryMirrorConfig documents pull
+outside images from the factory's store first; the store's login is no
+part of these files, `registry-mirrors.sh` patches it into the running
+nodes (the root README, "The store of outside images").
 
 Run from this directory, with tofu initialised in the repo root.
 

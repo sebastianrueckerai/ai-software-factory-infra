@@ -112,6 +112,56 @@ config:
     pid: "100"
     ephemeral-storage: 40Gi
 ---
+# Every node pulls an outside image from the factory's store first
+# (Forgejo's org upstream, the code repository's upstream-images.txt,
+# roadmap 203): Talos's own images by tag, which the store's copy carries
+# at the list's digest, Cilium's and the platform's by digest. A miss, or a
+# store that is not up yet (a rebuild until Forgejo serves), falls back to
+# the upstream. The store's login is RegistryAuthConfig
+# git.aisoftwarefactory.world, applied after the seed by
+# talos/registry-auth.sh, never in this file.
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: docker.io
+endpoints:
+  - url: https://git.aisoftwarefactory.world/v2/upstream/docker.io
+    overridePath: true
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: ghcr.io
+endpoints:
+  - url: https://git.aisoftwarefactory.world/v2/upstream/ghcr.io
+    overridePath: true
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: quay.io
+endpoints:
+  - url: https://git.aisoftwarefactory.world/v2/upstream/quay.io
+    overridePath: true
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: registry.k8s.io
+endpoints:
+  - url: https://git.aisoftwarefactory.world/v2/upstream/registry.k8s.io
+    overridePath: true
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: code.forgejo.org
+endpoints:
+  - url: https://git.aisoftwarefactory.world/v2/upstream/code.forgejo.org
+    overridePath: true
+---
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: factory.talos.dev
+endpoints:
+  - url: https://git.aisoftwarefactory.world/v2/upstream/factory.talos.dev
+    overridePath: true
+---
 machine:
   sysctls:
     user.max_user_namespaces: "11255"

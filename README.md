@@ -326,7 +326,17 @@ A line marked `bootstrap` is pinned by its digest at its upstream:
 Forgejo, its database (CNPG, the barman plugin, cert-manager for the
 plugin's webhook certificate), local-path and Flux run before the store
 can serve, and a rebuild installs Forgejo's and cert-manager's charts by
-hand from their upstreams by the list's digests.
+hand from their upstreams by the list's digests. The nodes pull those
+through registry mirrors of the store (`talos/patches.yaml`: docker.io,
+ghcr.io, quay.io, registry.k8s.io, code.forgejo.org, factory.talos.dev),
+Talos's own images by tag, which the copy carries at the list's digest,
+Cilium by the amd64 digests the runbook installs it with: a pull the
+store misses, or a store that is not up yet, falls back to the
+upstream. `talos/registry-mirrors.sh <node>...` gives the nodes the
+store's read login (RegistryAuthConfig, from
+`factory/forgejo-registry-read`, never in a file here) and the mirrors,
+without a reboot: after the seed's Forgejo pass, again when the seed
+mints the token anew, and once on nodes generated before the mirrors.
 `sh scripts/upstream-images-test/test.sh [list]` renders the platform
 and every chart and checks each image and chart against the list (the
 charts from their upstreams as the list pins them); without a list it

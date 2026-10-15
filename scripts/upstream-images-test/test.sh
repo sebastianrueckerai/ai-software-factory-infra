@@ -6,9 +6,10 @@
 # marked bootstrap (Forgejo's path, which the store cannot serve); a chart
 # by an OCIRepository of the store at its digest or by the store's Helm
 # repository at an exact version; a project template's bases by their
-# copies. Builds k8s/platform and Flux's components with kubectl kustomize
-# and renders every HelmRelease's chart with helm, from the repository
-# root:
+# copies; a bootstrap line's registry through the nodes' mirror of the
+# store (talos/patches.yaml). Builds k8s/platform and Flux's components
+# with kubectl kustomize and renders every HelmRelease's chart with helm,
+# from the repository root:
 #   sh scripts/upstream-images-test/test.sh [upstream-images.txt]
 # Given the list, it checks every reference against it and renders the
 # charts from their upstreams as the list pins them. Without one
@@ -180,6 +181,11 @@ for df in sorted(glob.glob("factory/templates/*/Dockerfile")):
             found.append((df, m.group(1).replace("${UPSTREAM}", upstream or "${UPSTREAM}")))
 for where, img in sorted(set(found)):
     check(pinned(img), "%s: %s, the store's copy of a line or a bootstrap line by its digest" % (where, img))
+mirrors = {d["name"]: d["endpoints"] for d in yaml.safe_load_all(open("talos/patches.yaml"))
+           if d and d.get("kind") == "RegistryMirrorConfig"}
+for reg in sorted({name.split("/")[0] for name, _ in boot}):
+    check(mirrors.get(reg) == [{"url": "https://%s/v2/upstream/%s" % (host, reg), "overridePath": True}],
+          "talos/patches.yaml: the nodes pull %s through the store's mirror" % reg)
 print("%d images, %d failed" % (len(set(found)), len(fails)))
 sys.exit(1 if fails else 0)
 PY
