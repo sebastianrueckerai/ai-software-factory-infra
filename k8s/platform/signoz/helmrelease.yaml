@@ -37,9 +37,13 @@ spec:
       imagePullSecrets: [forgejo-registry]
     clickhouse:
       image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: clickhouse/clickhouse-server, tag: "25.12.5@sha256:10f54f04de6c61b756c4eaf9f1d17464a4ac3e1f94b5b410e0dec92a24dbeda8"}
+      # The histogramQuantile function's binary from the store, the one
+      # layer its copy adds to alpine (the list's line pins the archive by
+      # sha256), not downloaded from GitHub at each start.
       initContainers:
         udf:
-          image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: library/alpine, tag: "3.18.2@sha256:25fad2a32ad1f6f510e528448ae1ec69a28ef81916a004d3629874104f8a7f70"}
+          image: {registry: git.aisoftwarefactory.world/upstream, repository: files/histogram-quantile_linux_amd64.tar.gz, tag: "33997073eb6d@sha256:72b27cf84d625ae61559978fb66788856ac87656a389ff9fa01301b69cc3d3cb"}
+          command: [cp, /histogram-quantile, /var/lib/clickhouse/user_scripts/histogramQuantile]
       persistence:
         enabled: true
         storageClass: local-path
