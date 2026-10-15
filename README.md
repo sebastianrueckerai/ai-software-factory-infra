@@ -565,9 +565,9 @@ on the next run.
 The factory's own namespaces are projects' too (ruling 180):
 `namespaces.yaml` labels `factory` for `ai-software-factory-code` (its
 rules in that repository's `k8s/alerts`) and `platform` and `forgejo` for
-`ai-software-factory-infra` (`signoz/project-rules`: ClickHouse disk above
-80 %, a CNPG instance not ready for 5 minutes, Forgejo's 5xx rate from its
-router log, and `Job failed` bound to each), each with
+`ai-software-factory-infra` (`signoz/project-rules`: a CNPG instance not
+ready for 5 minutes, Forgejo's 5xx rate from its router log, and `Job
+failed` bound to each; the two disk rules below), each with
 `factory/objects: seed`, which keeps factoryd's admission policy out of
 them. The infra project is on agents none: its alerts file human-lane
 issues here; the label `noise` on such an issue when it is closed makes
@@ -616,6 +616,20 @@ then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
   Job holds its promotion for those 15 minutes). The rule routes by
   notification policy (`usePolicy`), because SigNoz refuses a rule that
   routes to its thresholds' channels when they list none.
+- Alert rules `ClickHouse disk above 80 %` and `Node disk above 80 %`:
+  they read what no namespace holds, so no bound rule can; the label
+  `namespace: platform` in their files routes them to factoryd, which
+  files a human-lane issue on this repository. ClickHouse's disk
+  `default` (`/var/lib/clickhouse`) lies on its node's local-path user
+  volume, a host path the kubelet reports no stats for: the rule reads
+  ClickHouse's own `DiskUsed_default` of `DiskTotal_default` in
+  `system.asynchronous_metric_log`, averaged over 10 minutes, a SQL query
+  only a platform rule may hold. Node disk reads each node's EPHEMERAL
+  (`/var`: the images, the pods' writable layers and emptyDirs, the
+  factory caches) through kubeletstats `k8s.node.filesystem.*`, averaged
+  over 5 minutes, per node. The images lie on it too, so the kubelet's
+  `imagefs.available<15%` sets DiskPressure at 85 % and evicts pods; its
+  image garbage collection starts at 75 % (`talos/patches.yaml`).
 - Retention: 7 days hot on ClickHouse's local-path volume, then moved to
   volume `s3` (disk `s3`, bucket `signoz-cold` on
   `fsn1.your-objectstorage.com`, prefix `data/`), deleted after 30 days
@@ -629,8 +643,20 @@ then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
   config on the data volume. Once the local volume is 90 % full, the
   oldest parts move to S3 early. The disk skips its access check, so
   ClickHouse starts even when the bucket is unreachable or the key wrong;
-  parts then stay local, and a full 20 Gi volume stops every insert
-  (ClickHouse's log names the failed moves). ClickHouse keeps the S3
+  parts then stay local, and a full user volume (the 20 Gi claim is no
+  limit) stops every insert (ClickHouse's log names the failed moves).
+  ClickHouse's system log tables lie on the local disk outside the
+  storage policy: one day for `trace_log`, `zookeeper_log` and
+  `processors_profile_log`, three for `query_log`, `part_log`,
+  `metric_log`, `asynchronous_metric_log`, `aggregated_zookeeper_log`
+  and `background_schedule_pool_log`, the chart's 3 to 30 days for the
+  small rest (the HelmRelease: the operator's `clickhouseOperator.*.ttl`,
+  `config.d/system_log.xml` for the tables it does not write). At the
+  rates of 2026-10-15 they peak near 10 GiB. ClickHouse takes a changed
+  retention at its next start and renames the old table to
+  `system.<table>_0`, which keeps its old TTL (none for
+  `background_schedule_pool_log`): drop it by hand,
+  `DROP TABLE system.<table>_0`. ClickHouse keeps the S3
   disk's metadata on the local volume, so after a rebuild the bucket's
   objects belong to nobody: the bucket's lifecycle rule (expire after 31
   days) removes them. For logs, SigNoz reports the retention from its own

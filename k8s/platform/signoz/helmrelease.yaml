@@ -88,6 +88,31 @@ spec:
               </policies>
             </storage_configuration>
           </clickhouse>
+        # The chart's file, plus three days for the two system log tables
+        # the operator does not write (clickhouseOperator below):
+        # aggregated_zookeeper_log (the image's 30) and
+        # background_schedule_pool_log (none).
+        config.d/system_log.xml: |
+          <clickhouse>
+            <text_log>
+              <ttl>event_date + INTERVAL 3 DAY DELETE</ttl>
+            </text_log>
+            <latency_log>
+              <ttl>event_date + INTERVAL 3 DAY DELETE</ttl>
+            </latency_log>
+            <error_log>
+              <ttl>event_date + INTERVAL 7 DAY DELETE</ttl>
+            </error_log>
+            <query_metric_log>
+              <ttl>event_date + INTERVAL 3 DAY DELETE</ttl>
+            </query_metric_log>
+            <aggregated_zookeeper_log>
+              <ttl>event_date + INTERVAL 3 DAY DELETE</ttl>
+            </aggregated_zookeeper_log>
+            <background_schedule_pool_log>
+              <ttl>event_date + INTERVAL 3 DAY DELETE</ttl>
+            </background_schedule_pool_log>
+          </clickhouse>
       additionalVolumes:
         - name: signoz-s3
           secret: {secretName: signoz-s3}
@@ -103,6 +128,21 @@ spec:
           resources:
             requests: {cpu: 10m, memory: 16Mi}
             limits: {cpu: 100m, memory: 64Mi}
+        # ClickHouse's system log tables, whose engines the operator writes,
+        # lie on the local disk outside the tiered policy and held 8 GiB
+        # after 37 hours, sixteen times the telemetry. One day for the
+        # profiler's samples (trace_log, up to 3.8 GiB a day), every
+        # ZooKeeper request (zookeeper_log, 1.2) and processors_profile_log
+        # (0.5); three for query_log, part_log and the metric logs; the
+        # chart's for the small rest. At those rates they peak near 10 GiB,
+        # where the chart's 7 and 30 days settle near 94.
+        traceLog: {ttl: 1}
+        zookeeperLog: {ttl: 1}
+        processorsProfileLog: {ttl: 1}
+        queryLog: {ttl: 3}
+        partLog: {ttl: 3}
+        metricLog: {ttl: 3}
+        asynchronousMetricLog: {ttl: 3}
       zookeeper:
         enabled: true
         image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: signoz/zookeeper, tag: "3.7.1@sha256:1e6c92e8656c299818acfaf72f11e59d68a92bfe39fc1b1137cd78d6ab6741aa"}

@@ -11,16 +11,20 @@ configMapGenerator:
 - name: signoz-dashboards
   namespace: platform
   files: [dashboards/factory-pipeline.json]
+# ClickHouse disk and Node disk read what no namespace holds (ClickHouse's
+# own table, a node's filesystem), which no bound rule can: platform rules
+# whose label namespace platform routes them to factoryd, which files a
+# human-lane issue on this repository.
 - name: signoz-alerts
   namespace: platform
-  files: [alerts/job-failed.json]
+  files: [alerts/job-failed.json, alerts/clickhouse-disk.json, alerts/node-disk.json]
 # The platform's rules as the infra repository's project rules (rulings
 # 159, 180): signoz-objects binds each to its ConfigMap's namespace and
 # routes it to factoryd, which files a human-lane issue on this repository.
 # Job failed is the platform rule above, bound here to each namespace.
 - name: signoz-rules
   namespace: platform
-  files: [project-rules/clickhouse-disk.json, project-rules/cnpg-not-ready.json, alerts/job-failed.json]
+  files: [project-rules/cnpg-not-ready.json, alerts/job-failed.json]
   options:
     disableNameSuffixHash: true
     labels: {factory/signoz-rules: "true"}
