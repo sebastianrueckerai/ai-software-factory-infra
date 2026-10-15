@@ -185,6 +185,25 @@ prices:
   fal:
     # an endpoint priced per megapixel is held at this many
     max_megapixels: 4
+  # each model alias's output limit: the most output tokens a call asks for
+  # and is held at, lowered to its deployment's published max_output_tokens
+  # when that is less. Every alias a class or the chat calls needs one, or
+  # factoryd rejects the version. The values are what the callers ask
+  # today (code repository): opencode's ANSWER_TOKENS 8192 + HEADROOM_TOKENS
+  # 16384 (cmd/factoryd/main.go, the agent's limit.output in
+  # internal/factoryd/opencode.go), the gates' SUPERVISOR_ANSWER_TOKENS 2048
+  # + SUPERVISOR_HEADROOM_TOKENS 16384 (review, supervisors and the audit,
+  # internal/factoryd/supervisor.go), the project agent's operatorTokens
+  # (internal/factoryd/operator.go), and the pulse alias's compaction
+  # (compactTokens 2048) over its pulse (pulseTokens 1024). coding-frontier
+  # is the audit_model too, whose 18432 it covers.
+  max_output_tokens:
+    coding-cheap: 24576
+    coding-frontier: 24576
+    review-frontier: 18432
+    supervisor: 18432
+    operator: 4096
+    pulse: 2048
 
 # Risk rules over a pull request's changed paths (a rename counts both its
 # names). Each path takes the class of the first rule with a matching glob,

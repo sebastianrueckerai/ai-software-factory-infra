@@ -107,9 +107,11 @@ spec:
           pulse: tier-low
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
-        # backstop behind factory-gateway's holds: refuse a call whose
-        # worst case does not fit the key's max_budget instead of shrinking
-        # the reservation and admitting it
+        # a budget that is set stays a hard ceiling: a call whose spend
+        # neither Redis nor the database can confirm is refused (503), not
+        # admitted. factory-gateway mints its task keys without max_budget
+        # (its holds are the per-task budget), so the budget left here is
+        # the proxy-wide max_budget below (user litellm-proxy-budget).
         fail_closed_budget_enforcement: true
       litellm_settings:
         # factory-gateway books a stream's cost from its final usage chunk
