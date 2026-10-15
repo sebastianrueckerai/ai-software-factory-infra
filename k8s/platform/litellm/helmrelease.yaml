@@ -117,9 +117,10 @@ spec:
         # proxy-wide stop behind the gateway's accounting (queue item 64 b):
         # every call is refused once the month's spend passes it (USD; 1mo
         # resets on the 1st, 00:00 UTC); the spend sits in user row
-        # litellm-proxy-budget. 500 during the GLM test window of
-        # 2026-10-13/14; back to 55 since its close.
-        max_budget: 55
+        # litellm-proxy-budget. A backstop only: 1.25 x the policy's
+        # budget.month_eur, so the gateway's month cap stops first
+        # (scripts/budget-backstop-check, run by config-check).
+        max_budget: 370
         budget_duration: 1mo
     environmentSecrets:
       - litellm-qwen

@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: LiteLLM's backstop sits behind the month cap
+        run: scripts/budget-backstop-check
       - name: registry login
         run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login git.aisoftwarefactory.world -u "${{ secrets.REGISTRY_USER }}" --password-stdin
       - name: factoryd from the pinned image

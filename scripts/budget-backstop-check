@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# LiteLLM's proxy-wide max_budget is the backstop behind factory-gateway's
+# month cap (policy budget.month_eur): it must never refuse a call the cap
+# still admits. Its counter is USD and counts only the calls LiteLLM routed,
+# while the ledger is EUR and counts tools and servers too, so the backstop
+# holds at 1.25 times the cap or more. On 2026-10-14 it was set to a bare 55
+# below a counter of 154 USD and refused every model call for eleven hours.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+month=$(awk '/^budget:/ {b = 1; next} b && /^[^ #]/ {b = 0} b && $1 == "month_eur:" {print $2; exit}' factory/policy.yaml)
+max=$(awk '$1 == "max_budget:" {print $2; exit}' k8s/platform/litellm/helmrelease.yaml)
+if [ -z "$month" ] || [ -z "$max" ]; then
+	echo "budget-backstop-check: month_eur '$month' or max_budget '$max' not found" >&2
+	exit 1
+fi
+if ! awk -v m="$month" -v x="$max" 'BEGIN { exit !(x + 0 >= 1.25 * m) }'; then
+	echo "budget-backstop-check: LiteLLM max_budget $max is below 1.25 x month_eur $month; the backstop would stop calls the month cap admits" >&2
+	exit 1
+fi
+echo "budget-backstop-check: max_budget $max >= 1.25 x month_eur $month"
