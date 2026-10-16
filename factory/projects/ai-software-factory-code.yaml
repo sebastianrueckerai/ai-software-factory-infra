@@ -32,8 +32,8 @@ routines:
   - name: live-check
     title: live-check
     schedule:
-      - merges: 1
+      - cron: 0 4 1 1 *
     files: agent
     brief: routines/ai-software-factory-code.live-check.md
-    skill: no-such-skill-live-check
+    skill: live-check
     while_open: hold
