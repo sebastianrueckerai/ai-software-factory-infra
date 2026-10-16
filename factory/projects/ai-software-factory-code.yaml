@@ -29,11 +29,3 @@ routines:
     while_open: hold
     missed: file-once
     tell: inbox
-  - name: live-check
-    title: live-check
-    schedule:
-      - cron: 0 4 1 1 *
-    files: agent
-    brief: routines/ai-software-factory-code.live-check.md
-    skill: live-check
-    while_open: hold
