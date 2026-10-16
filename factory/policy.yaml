@@ -70,6 +70,8 @@ budget:
 # next such run trips same_call to the supervisor (absent: 3 and 1).
 # same_call: identical tool calls in one session, in a row or not, that
 # trip the same_call detector after the nudges; above nudge_after (absent: 4).
+# review_diff_kib: the most diff, in KiB, one review call reads, and the size
+# of a part beyond it (at most 3 parts); about 257 tokens a KiB; absent: 48.
 limits:
   sessions: 3
   agent_time: 2h
@@ -95,6 +97,7 @@ limits:
   plan_warn_at: 67
   no_push_spend: 60
   context_tokens: 100000
+  review_diff_kib: 256
 
 # the progress detectors' windows in seconds; absent keys take the code
 # defaults (ruling 161). no_write at 900: a session on this codebase

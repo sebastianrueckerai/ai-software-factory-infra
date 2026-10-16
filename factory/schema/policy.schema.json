@@ -95,6 +95,12 @@
           "description": "SameCall is how many identical tool calls in one session, in a row or not, trip the same_call detector, at least 2 and above NudgeAfter: a repetition gets its nudges first. Absent: DefaultSameCall.",
           "minimum": 2
         },
+        "review_diff_kib": {
+          "type": "integer",
+          "description": "ReviewDiffKiB is the most diff, in KiB, one model review call reads, and the size of a part when a bigger diff reads in parts (at most ReviewParts). Size it to the review model's context window: about 257 tokens a KiB. Absent: DefaultReviewDiffKiB.",
+          "minimum": 48,
+          "maximum": 1024
+        },
         "warn_at": {
           "type": "integer",
           "description": "WarnAt is the percent of a card's budget, or of a session's agent time, spent when factoryd tells the running agent to wrap up and push, 1 to 99. Absent: DefaultWarnAt.",
@@ -632,7 +638,9 @@
               "notes_read",
               "notes_write",
               "escalate",
-              "active_threads"
+              "active_threads",
+              "board_view",
+              "board_view_reset"
             ]
           },
           "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. The always-confirm set is confirmed at every autonomy level, so an empty list confirms that set only."

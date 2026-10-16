@@ -352,7 +352,9 @@
               "notes_read",
               "notes_write",
               "escalate",
-              "active_threads"
+              "active_threads",
+              "board_view",
+              "board_view_reset"
             ]
           },
           "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. The always-confirm set is confirmed at every autonomy level, so an empty list confirms that set only."
