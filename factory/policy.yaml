@@ -84,6 +84,17 @@ limits:
   nudge_after: 3
   nudges: 1
   same_call: 4
+  # warn_at: percent of a card's budget, or of a session's agent time, spent
+  # when factoryd tells the running agent to wrap up and push (default 80);
+  # plan_warn_at: the same for a planner session (67, two thirds);
+  # no_push_spend: percent of the card's budget spent with nothing pushed at
+  # which the session supervisor is called (60); context_tokens: the context
+  # size at which opencode compacts the conversation (100000, of the 200000
+  # window card #854's calls grew toward: 138,000).
+  warn_at: 80
+  plan_warn_at: 67
+  no_push_spend: 60
+  context_tokens: 100000
 
 # the progress detectors' windows in seconds; absent keys take the code
 # defaults (ruling 161). no_write at 900: a session on this codebase

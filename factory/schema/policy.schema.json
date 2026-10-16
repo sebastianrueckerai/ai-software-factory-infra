@@ -94,6 +94,30 @@
           "type": "integer",
           "description": "SameCall is how many identical tool calls in one session, in a row or not, trip the same_call detector, at least 2 and above NudgeAfter: a repetition gets its nudges first. Absent: DefaultSameCall.",
           "minimum": 2
+        },
+        "warn_at": {
+          "type": "integer",
+          "description": "WarnAt is the percent of a card's budget, or of a session's agent time, spent when factoryd tells the running agent to wrap up and push, 1 to 99. Absent: DefaultWarnAt.",
+          "minimum": 1,
+          "maximum": 99
+        },
+        "plan_warn_at": {
+          "type": "integer",
+          "description": "PlanWarnAt is WarnAt for a planner session. Absent: DefaultPlanWarnAt.",
+          "minimum": 1,
+          "maximum": 99
+        },
+        "no_push_spend": {
+          "type": "integer",
+          "description": "NoPushSpend is the percent of a card's budget spent with nothing pushed at which the session supervisor is called, 1 to 99. Absent: DefaultNoPushSpend.",
+          "minimum": 1,
+          "maximum": 99
+        },
+        "context_tokens": {
+          "type": "integer",
+          "description": "ContextTokens is the context size at which opencode compacts a session's conversation, MinContextTokens to ModelContext. Absent: DefaultContextTokens.",
+          "minimum": 40000,
+          "maximum": 200000
         }
       },
       "description": "Limits bound every task's work: sessions, agent time, supervisor calls.",
