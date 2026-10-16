@@ -81,10 +81,12 @@ spec:
           MINIO_BUCKET_LOOKUP: auto
         service:
           # accounts are made by the admin only (ruling 144), outsiders' test
-          # accounts too; nothing of Forgejo is readable without a login
-          # (item 138): every caller already authenticated
+          # accounts too. Item 138 held nothing readable without a login until
+          # the store's packages needed anonymous build reads (Sebastian,
+          # 2026-10-16): the upstream org is public, every code repo and org
+          # stays private, registration stays off
           DISABLE_REGISTRATION: true
-          REQUIRE_SIGNIN_VIEW: true
+          REQUIRE_SIGNIN_VIEW: false
         actions:
           ENABLED: true
           DEFAULT_ACTIONS_URL: https://data.forgejo.org
