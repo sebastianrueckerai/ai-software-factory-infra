@@ -40,6 +40,11 @@ budget:
   task_max_eur: 15
   day_eur: 100
   month_eur: 544
+  # the least free budget a session starts on, by its rung (plan A of the
+  # escalation ladder, 2026-10-15): the starved sessions of cards #839 and #854
+  # died at 0.15 and 0.07 EUR left
+  session_floor_cheap_eur: 0.30
+  session_floor_frontier_eur: 0.60
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and

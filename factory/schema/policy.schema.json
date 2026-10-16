@@ -26,6 +26,14 @@
         "month_eur": {
           "type": "number",
           "description": "MonthEUR caps all tasks together per UTC calendar month; 0 stops all spend."
+        },
+        "session_floor_cheap_eur": {
+          "type": "number",
+          "description": "SessionFloorCheapEUR is the least free budget a session on the cheap rung needs to start; a card that cannot fund it asks a human to fund it. Absent: 0, no floor beyond the session's opening calls."
+        },
+        "session_floor_frontier_eur": {
+          "type": "number",
+          "description": "SessionFloorFrontierEUR is SessionFloorCheapEUR for a session on the frontier rung."
         }
       },
       "description": "Budget caps spend in EUR per task and per UTC day.",
