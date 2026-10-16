@@ -112,6 +112,10 @@ spec:
         model_group_alias:
           supervisor: tier-high
           review-frontier: tier-high
+          # the check-in agent at the gate moment (escalation ladder plan D):
+          # its own alias in the strong group, so its spend reads apart from
+          # the review's
+          checkin: tier-high
           # a GLM window (Sebastian's plan, 2026-10-14): both coding
           # aliases on his GLM Coding Plan while its quota lasts, then back
           # to DashScope (tier-high, tier-low). Opened 2026-10-15, his limit
