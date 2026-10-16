@@ -98,6 +98,17 @@ limits:
   no_push_spend: 60
   context_tokens: 100000
   review_diff_kib: 256
+  # the check-in's five (plan D): checkin_calls, model calls of the check-in
+  # per card over all moments and rounds together; checkin_share, at most
+  # this percent of the card's budget on check-in calls; checkin_tail_kib,
+  # the parent session record's tail cut into the check-in's statement;
+  # checkin_handover_chars, the handover note's cap; checkin_sessions,
+  # fresh sessions one confirmed finding gets before the human asks for it
+  checkin_calls: 12
+  checkin_share: 10
+  checkin_tail_kib: 24
+  checkin_handover_chars: 2000
+  checkin_sessions: 1
 
 # the progress detectors' windows in seconds; absent keys take the code
 # defaults (ruling 161). no_write at 900: a session on this codebase
@@ -126,6 +137,9 @@ classes:
     # the security audit on the stronger rung, as the screening's (rulings
     # 188, 191); the agent calls this alias too, on its own key
     audit_model: coding-frontier
+    # the check-in at a gate return (plan D), on the strong tier under its
+    # own alias; absent, the review alias
+    checkin_model: checkin
     tools:
       web_scrape: {max_requests: 30, max_eur: 0.20}
       web_search: {max_requests: 30, max_eur: 0.20}
@@ -218,7 +232,9 @@ prices:
   # internal/factoryd/supervisor.go), the project agent's operatorTokens
   # (internal/factoryd/operator.go), and the pulse alias's compaction
   # (compactTokens 2048) over its pulse (pulseTokens 1024). coding-frontier
-  # is the audit_model too, whose 18432 it covers.
+  # is the audit_model too, whose 18432 it covers. The check-in asks the
+  # review's answer shape (the verdicts JSON with its handover), so it takes
+  # the review's 18432; tier-high publishes 131072, so nothing is lowered.
   max_output_tokens:
     coding-cheap: 24576
     coding-frontier: 24576
@@ -226,6 +242,7 @@ prices:
     supervisor: 18432
     operator: 4096
     pulse: 2048
+    checkin: 18432
 
 # Risk rules over a pull request's changed paths (a rename counts both its
 # names). Each path takes the class of the first rule with a matching glob,

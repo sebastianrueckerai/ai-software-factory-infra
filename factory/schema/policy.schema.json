@@ -101,6 +101,26 @@
           "minimum": 48,
           "maximum": 1024
         },
+        "checkin_calls": {
+          "type": "integer",
+          "description": "CheckinCalls is how many model calls the check-in agent gets per card, all moments and rounds together. Absent: DefaultCheckinCalls."
+        },
+        "checkin_share": {
+          "type": "integer",
+          "description": "CheckinShare is the most percent of the card's budget the check-in's calls may spend. Absent: DefaultCheckinShare."
+        },
+        "checkin_tail_kib": {
+          "type": "integer",
+          "description": "CheckinTailKiB is the parent session record's tail cut into the check-in's statement. Absent: DefaultCheckinTailKiB."
+        },
+        "checkin_handover_chars": {
+          "type": "integer",
+          "description": "CheckinHandoverChars is the check-in's handover note cap, matching the session's last-message cut. Absent: DefaultCheckinHandoverChars."
+        },
+        "checkin_sessions": {
+          "type": "integer",
+          "description": "CheckinSessions is how many fresh sessions one confirmed finding gets before the human is asked for it. Absent: DefaultCheckinSessions."
+        },
         "warn_at": {
           "type": "integer",
           "description": "WarnAt is the percent of a card's budget, or of a session's agent time, spent when factoryd tells the running agent to wrap up and push, 1 to 99. Absent: DefaultWarnAt.",
@@ -207,6 +227,10 @@
           "audit_model": {
             "type": "string",
             "description": "AuditModel is the alias factoryd's security audit calls on the task's account (ruling 188)."
+          },
+          "checkin_model": {
+            "type": "string",
+            "description": "CheckinModel is the alias the check-in agent calls on the task's account; absent reads ReviewModel (the escalation ladder's plan D)."
           },
           "time": {
             "type": "object",
