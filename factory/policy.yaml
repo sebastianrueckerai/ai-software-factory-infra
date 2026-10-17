@@ -152,6 +152,9 @@ classes:
       # the delegate tool (roadmap 222, item 6): a small follow-up card on
       # the cheap rung that starts when the caller's card has landed
       delegate: {}
+      # an audit session's filing of its verdict on a red hold-out of the
+      # card (roadmap 289); free
+      file_verdict: {}
       cloud_prices: {}
       commission_server: {}
       list_resources: {}
@@ -180,6 +183,9 @@ classes:
     session: plan
     models: [coding-cheap, coding-frontier]
     supervisor_model: supervisor
+    # the hold-out drafting beside a confirmation round (roadmap 289),
+    # the same review alias the coder class reads
+    review_model: review-frontier
     # a plan is a single short answer with no check-in
     time: {agent_time: 30m, check_in: 0s}
     tools:
