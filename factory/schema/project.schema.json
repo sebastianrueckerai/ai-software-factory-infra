@@ -48,6 +48,10 @@
       },
       "description": "Notify are the Forgejo users told about the project's cards; empty: the project's approvers."
     },
+    "messengers": {
+      "type": "boolean",
+      "description": "Messengers forbids the project's notifications on Telegram and Discord (roadmap 145); absent: they may leave."
+    },
     "approvers": {
       "type": "array",
       "items": {
