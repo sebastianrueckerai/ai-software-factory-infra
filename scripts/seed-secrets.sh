@@ -136,16 +136,15 @@ k -n $A create secret generic gateway-factoryd --from-literal=token="$(openssl r
 k -n $A create secret generic gateway-tool-keys --from-literal=FIRECRAWL_KEY="$FIRECRAWL_KEY" --from-literal=REPLICATE_KEY="$REPLICATE_KEY" --from-literal=FAL_AI_KEY="$FAL_AI_KEY"
 k -n $A create secret generic hetzner-ci --from-literal=token="$HETZNER_CI_KEY"
 k -n $A create secret generic hetzner-agent --from-literal=token="$HETZNER_AGENT_KEY"
-# The messengers' keys (roadmap 145): Telegram's bot and Discord's app, bot
-# and guild, all optional; a key left empty seats no messenger, and without
-# any of them the secret stays away and notifications stay off.
-if [ -n "${TELEGRAM_BOT_KEY:-}${DISCORD_CLIENT_ID:-}${DISCORD_CLIENT_SECRET:-}${DISCORD_BOT_TOKEN:-}${DISCORD_GUILD_ID:-}" ]; then
+# The messengers' keys (roadmap 145): Telegram's bot and Discord's app and
+# bot, all optional; a key left empty seats no messenger, and without any of
+# them the secret stays away and notifications stay off.
+if [ -n "${TELEGRAM_BOT_KEY:-}${DISCORD_CLIENT_ID:-}${DISCORD_CLIENT_SECRET:-}${DISCORD_BOT_TOKEN:-}" ]; then
   k -n $A create secret generic factoryd-messengers \
     --from-literal=telegram_bot_key="${TELEGRAM_BOT_KEY:-}" \
     --from-literal=discord_client_id="${DISCORD_CLIENT_ID:-}" \
     --from-literal=discord_client_secret="${DISCORD_CLIENT_SECRET:-}" \
-    --from-literal=discord_bot_token="${DISCORD_BOT_TOKEN:-}" \
-    --from-literal=discord_guild_id="${DISCORD_GUILD_ID:-}"
+    --from-literal=discord_bot_token="${DISCORD_BOT_TOKEN:-}"
 else
   echo "$A/factoryd-messengers: skipped, no messenger key in .env.tools (notifications stay off)"
 fi
