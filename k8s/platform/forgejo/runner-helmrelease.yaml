@@ -40,12 +40,15 @@ spec:
       # main CI's jobs and image builds run in dind's cgroup. The
       # ephemeral-storage request is docker-data's sizeLimit: the scheduler
       # counts the volume against the node's allocatable, and under
-      # DiskPressure the kubelet evicts pods past their requests first
+      # DiskPressure the kubelet evicts pods past their requests first.
+      # It must stay under sf-1's EPHEMERAL 93 GiB less the 40Gi
+      # systemReserved of talos/patches.yaml: 53 GiB allocatable once
+      # that applies, 83.5 GiB until it does
       resources:
         requests:
           cpu: 500m
           memory: 1Gi
-          ephemeral-storage: 40Gi
+          ephemeral-storage: 50Gi
         limits:
           memory: 8Gi
       # a docker-prune sidecar keeps the build cache to a day's use and the
@@ -56,15 +59,20 @@ spec:
         keep: 24h
         everySeconds: 3600
         checkSeconds: 60
-        # 40Gi less the most a main push run added and a margin. A run
-        # (test, image, image-sandbox, image-runner) added up to 13.3 GiB
-        # on a daemon pruned bare and 9.0 GiB warm (47 runs of 2026-10-13/14:
-        # the pod's k8s.pod.filesystem.usage in SigNoz over each run's task
-        # times in Forgejo); the first run with a buildkitd per image job
-        # (roadmap 242) added 10.0 GiB warm, by du of the volume. The runner
-        # takes one job at a time and pull requests build elsewhere, so one
-        # run is the peak.
-        maxGiB: 22
+        # The ceiling less the most a main push run added and a margin. A
+        # run (test, image, image-sandbox, image-runner) added up to 13.3
+        # GiB on a daemon pruned bare and 9.0 GiB warm (47 runs of
+        # 2026-10-13/14: the pod's k8s.pod.filesystem.usage in SigNoz over
+        # each run's task times in Forgejo); the first run with a buildkitd
+        # per image job (roadmap 242) added 10.0 GiB warm, by du of the
+        # volume. The runner takes one job at a time and pull requests
+        # build elsewhere, so one run is the peak. 2026-10-19: hourly rolls
+        # left the floor near 30 GiB — cache and images the emergency
+        # prune could not reach before the next run started — and 22 + a
+        # run crossed 40 mid-test and evicted the runner (on a fresh
+        # volume that evening the test job alone held 14.5 GiB). 30 + 13.3
+        # leaves 6.7 of the 50.
+        maxGiB: 30
     runner:
       pullSecret: forgejo-registry
       config:
@@ -98,4 +106,4 @@ spec:
     volumes:
       - name: docker-data
         emptyDir:
-          sizeLimit: 40Gi
+          sizeLimit: 50Gi

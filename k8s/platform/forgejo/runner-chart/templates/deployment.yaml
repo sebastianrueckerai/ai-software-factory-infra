@@ -12,6 +12,12 @@ spec:
   selector:
     matchLabels:
       {{- include "forgejo-runner.selectorLabels" . | nindent 6 }}
+  # Recreate: a surge pod cannot schedule beside this one (the volume's
+  # request fills the node) and both would poll one runner UUID from the
+  # shared config. A rollout still kills an in-flight run; apply runner
+  # changes between runs.
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
