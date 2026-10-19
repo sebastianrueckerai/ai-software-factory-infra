@@ -95,6 +95,12 @@ spec:
             api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
             api_key: os.environ/ALIBABA_CLOUD_KEY
             drop_params: true
+            # Costs pinned to Model Studio's intl rate card (read 2026-10-19):
+            # $0.20 in / $1.60 out per 1M tokens, the up-to-32K tier the door
+            # always sits in (one image, an ask under 2000 chars). Pinned so
+            # the spend reads even if LiteLLM's bundled map lacks the model.
+            input_cost_per_token: 0.0000002
+            output_cost_per_token: 0.0000016
             extra_body:
               enable_thinking: false
         # The GLM Coding Plan trial (roadmap 207): Sebastian's subscription
