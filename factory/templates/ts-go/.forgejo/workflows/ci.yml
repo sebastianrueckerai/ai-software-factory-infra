@@ -121,7 +121,7 @@ jobs:
           DIGEST: ${{ needs.image.outputs.digest }}
         run: |
           set -uo pipefail
-          url="$FACTORY_URL/projects/[[.Name]]/alerts?namespace=[[index .Namespaces "deploy/staging"]]&digest=$DIGEST"
+          url="$FACTORY_URL/projects/[[.Name]]/alerts?namespace=[[index .Namespaces "deploy/staging"]]&digest=$DIGEST&commit=${GITHUB_SHA}"
           deadline=$(( $(date +%s) + 600 ))
           while :; do
             rm -f alerts.json
