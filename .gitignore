@@ -9,3 +9,4 @@ talos/controlplane*.yaml
 talos/worker.yaml
 talos/talosconfig
 __pycache__/
+/.worktrees/
