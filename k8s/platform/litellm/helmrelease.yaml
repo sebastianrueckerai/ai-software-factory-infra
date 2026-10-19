@@ -85,6 +85,18 @@ spec:
             drop_params: true
             extra_body:
               enable_thinking: false
+        # The chat's vision door (roadmap 300's images, 2026-10-19): the
+        # look at a member's image. Thinking off as on the text tiers: it
+        # is not bounded by max_tokens, so the gateway's output clamp
+        # would not hold.
+        - model_name: tier-vision
+          litellm_params:
+            model: dashscope/qwen3-vl-plus
+            api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+            api_key: os.environ/ALIBABA_CLOUD_KEY
+            drop_params: true
+            extra_body:
+              enable_thinking: false
         # The GLM Coding Plan trial (roadmap 207): Sebastian's subscription
         # endpoint for both coding tiers. LiteLLM prices them at
         # pay-as-you-go rates (modeled money, roadmap 206; the bundled map
@@ -125,6 +137,9 @@ spec:
           # Stage 15 (ruling 252): the project agent and the pulse
           operator: tier-high
           pulse: tier-low
+          # the chat's image looks (roadmap 300): a member's image is
+          # approved spend, the chat's monthly budget bounds the looks
+          vision: tier-vision
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
         # a budget that is set stays a hard ceiling: a call whose spend

@@ -237,7 +237,9 @@ prices:
   # + SUPERVISOR_HEADROOM_TOKENS 16384 (review, supervisors and the audit,
   # internal/factoryd/supervisor.go), the project agent's operatorTokens
   # (internal/factoryd/operator.go), and the pulse alias's compaction
-  # (compactTokens 2048) over its pulse (pulseTokens 1024). coding-frontier
+  # (compactTokens 2048) over its pulse (pulseTokens 1024); the vision
+  # alias asks the project agent's operatorTokens too (OperatorModel.Vision,
+  # internal/factoryd/operator.go). coding-frontier
   # is the audit_model too, whose 18432 it covers. The check-in asks the
   # review's answer shape (the verdicts JSON with its handover), so it takes
   # the review's 18432; tier-high publishes 131072, so nothing is lowered.
@@ -248,6 +250,7 @@ prices:
     supervisor: 18432
     operator: 4096
     pulse: 2048
+    vision: 4096
     checkin: 18432
 
 # Risk rules over a pull request's changed paths (a rename counts both its
