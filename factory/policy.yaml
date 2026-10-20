@@ -253,8 +253,10 @@ prices:
 # sync, a revert), which is no agent's change, it waits for a human's
 # approval that names the paths. requires_approval waits for a human's
 # approval before factory-merge merges.
-# There is no outcome without a human: the privileged main CI runs merged code
-# (rulings 76, 77, 109).
+# An agent's high-class change merges at full auto when the audit passes
+# (Sebastian, 2026-10-20, amending rulings 76, 77, 109); forbidden and
+# migration keep a human. A pull request factoryd wrote merges on green checks
+# and the merge rule alone, with no class.
 # migration: true lists the class's paths on the approval card and the pull
 # request as "schema migration: human review required".
 risk:
