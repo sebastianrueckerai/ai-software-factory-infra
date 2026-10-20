@@ -284,9 +284,10 @@
       "properties": {
         "model": {
           "type": "string",
-          "description": "Model is the LiteLLM alias the project agent calls (purpose operator).",
+          "description": "Model is the class the project agent calls (purpose operator); the compaction of its threads calls Small.",
           "enum": [
-            "operator"
+            "big",
+            "small"
           ]
         },
         "vision_model": {
