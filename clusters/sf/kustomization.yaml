@@ -4,3 +4,4 @@ resources:
 - flux-system
 - platform.yaml
 - factory.yaml
+- notifications.yaml

@@ -7,8 +7,12 @@ agents: none
 # the platform's alerts file human-lane issues here (ruling 180)
 namespaces: [platform, forgejo]
 # factory-config reads the writers (the trust gate, the heal pass's close
-# of a human-lane task); it cannot read the hooks, the seed keeps them
-tokens: {read: forgejo-config}
+# of a human-lane task) and the push runs the chain records; it cannot read
+# the hooks, the seed keeps them
+tokens: {read: forgejo-config, actions: forgejo-config}
 # the factory's document repository: the chat's documents, and what its
 # agent sessions read at /workspace/docs
 chat: {doc_repo: sf/ai-software-factory}
+# Flux's commit statuses ride the chain (clusters/sf/notifications.yaml): the
+# head is green only when config-check is green and Flux applied it
+chain: {requires: [flux/flux-system, flux/platform]}

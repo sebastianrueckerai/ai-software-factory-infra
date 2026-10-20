@@ -1,0 +1,22 @@
+# Flux posts each reconciliation of this repository's revisions as a commit
+# status on it (spec 6.7): the infra project's chain requires both contexts.
+# The context names the Kustomization only: Flux's default ends in the
+# Provider's UID, which a rebuild changes.
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata: {name: forgejo-infra, namespace: flux-system}
+spec:
+  type: gitea
+  address: https://git.aisoftwarefactory.world/sf/ai-software-factory-infra
+  secretRef: {name: forgejo-commit-status}
+  commitStatusExpr: "'flux/' + event.involvedObject.name"
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata: {name: forgejo-infra, namespace: flux-system}
+spec:
+  providerRef: {name: forgejo-infra}
+  eventSeverity: info
+  eventSources:
+  - {kind: Kustomization, name: flux-system}
+  - {kind: Kustomization, name: platform}
