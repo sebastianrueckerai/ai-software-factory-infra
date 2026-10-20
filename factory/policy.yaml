@@ -318,6 +318,10 @@ envelope_default:
 # release. Forgejo's approvals whitelist on main stays the merge authority,
 # so a merge approver must be on both.
 approvers: [sebastian, controller]
+# the console members an AI works through: the controller, Sebastian's
+# Claude sessions acting by button and chat. Their acts read as an AI's on
+# the metrics page, beside the project agent's own (2026-10-20)
+ai_members: [controller]
 
 # Links in agent-written text factoryd posts on Forgejo (pull request body,
 # issue and pull request comments) may point at these hosts and their
