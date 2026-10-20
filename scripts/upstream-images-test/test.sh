@@ -197,6 +197,21 @@ for i, hr in enumerate(d for d in docs if d.get("kind") == "HelmRelease"):
     if r.returncode:
         check(False, "HelmRelease %s renders: %s" % (name, r.stderr.strip()[-300:]))
         continue
+    patches = [p for x in spec.get("postRenderers") or [] if x.get("kustomize") for p in x["kustomize"].get("patches") or []]
+    if patches:
+        # What Helm stores is the render with the post-renderer patches on;
+        # the scan judges that, not the bare render.
+        pdir = os.path.join(tmp, "postrender-%d" % i)
+        os.makedirs(pdir)
+        open(os.path.join(pdir, "rendered.yaml"), "w").write(r.stdout)
+        open(os.path.join(pdir, "kustomization.yaml"), "w").write(yaml.safe_dump({
+            "apiVersion": "kustomize.config.k8s.io/v1beta1", "kind": "Kustomization",
+            "resources": ["rendered.yaml"], "patches": patches}))
+        k = subprocess.run(["kubectl", "kustomize", pdir], capture_output=True, text=True)
+        if k.returncode:
+            check(False, "HelmRelease %s post-renders: %s" % (name, k.stderr.strip()[-300:]))
+            continue
+        r.stdout = k.stdout
     scan(yaml.safe_load_all(r.stdout))
     labels = ((((spec.get("values") or {}).get("runner") or {}).get("config") or {}).get("file") or {}).get("runner", {}).get("labels") or []
     for l in labels:

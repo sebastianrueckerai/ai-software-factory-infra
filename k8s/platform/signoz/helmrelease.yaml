@@ -23,11 +23,13 @@ spec:
   # ClickHouse's user admin takes its password from secret signoz-clickhouse,
   # and the operator's own user from signoz-clickhouse-operator-password;
   # scripts/seed-secrets.sh generates both: the chart's defaults are public.
-  # The chart renders the admin password as a plain value in the
+  # The chart renders ClickHouse's admin password as a plain value in the
   # ClickHouseInstallation and in the env of SigNoz's server, collector and
   # schema migrator (it has an existingSecret for an external ClickHouse
-  # alone), so a placeholder stands there and the post-renderer below swaps it
-  # for a reference to the secret before Helm stores the release.
+  # alone); no password value is passed and the chart's public default
+  # lands in those spots, so the post-renderer below swaps every one for a
+  # reference to the secret before Helm stores the release — no consumer
+  # reads a value that could authenticate.
   valuesFrom:
     - kind: Secret
       name: signoz-root
@@ -95,7 +97,6 @@ spec:
       storageClass: local-path
       imagePullSecrets: [forgejo-registry]
     clickhouse:
-      password: replaced-by-post-renderer
       image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: clickhouse/clickhouse-server, tag: "25.12.5@sha256:10f54f04de6c61b756c4eaf9f1d17464a4ac3e1f94b5b410e0dec92a24dbeda8"}
       # The histogramQuantile function's binary from the store, the one
       # layer its copy adds to alpine (the list's line pins the archive by
