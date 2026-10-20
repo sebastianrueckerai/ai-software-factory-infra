@@ -121,17 +121,6 @@ spec:
         # meanwhile
         allowed_fails: 3
         cooldown_time: 60
-        model_group_alias:
-          # the purpose aliases of before, on their classes until the code
-          # that names the classes is live (docs/plans/2026-10-20-two-model-classes.md
-          # in the design repository); then they go
-          coding-frontier: big
-          coding-cheap: small
-          review-frontier: big
-          supervisor: big
-          checkin: big
-          operator: big
-          pulse: small
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
         # a budget that is set stays a hard ceiling: a call whose spend
