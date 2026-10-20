@@ -5,7 +5,7 @@
 # The lane works like any build project (roadmap 160, Stage 18 item 3.4):
 # a spec card goes through the plan lane, its planned cards through ready.
 repository: sf/ai-software-factory-code
-merge_rule: auto
+merge_rule: human
 objects: seed
 agents: coder
 process: spec
