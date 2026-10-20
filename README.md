@@ -635,6 +635,15 @@ then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
   host path the kubelet reports no stats for, through the otel-agent's
   hostmetrics `system.filesystem.utilization` of mountpoint
   `/var/mnt/local-path-provisioner`, averaged over 5 minutes, per node.
+- Alert rule `Chain poller stopped`, a platform rule like the two above:
+  factoryd's gauge `factory.chain.poll_age` (seconds since the chain
+  poller's last successful tick of a repository, computed at each
+  30-second export, so a poller that stopped reads older at every export)
+  above 60 for a repository over a 2-minute window. The poller ticks
+  every 15 seconds; three ticks are 45 seconds, and the threshold is the
+  next whole number of exports above, 60, so a healthy poller (age at
+  most about 15) never reaches it and a dead one passes it within two
+  exports.
 - Retention: 7 days hot on ClickHouse's local-path volume, then moved to
   volume `s3` (disk `s3`, bucket `signoz-cold` on
   `fsn1.your-objectstorage.com`, prefix `data/`), deleted after 30 days
