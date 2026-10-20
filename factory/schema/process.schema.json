@@ -34,6 +34,12 @@
           "plan": {
             "type": "object",
             "properties": {
+              "min_cards": {
+                "type": "integer",
+                "description": "MinCards is the least cards a plan may hold, 1 to 20 and at most MaxCards.",
+                "minimum": 1,
+                "maximum": 20
+              },
               "max_cards": {
                 "type": "integer",
                 "description": "MaxCards is the most cards a plan may hold, 2 to 20.",
@@ -51,6 +57,7 @@
             },
             "description": "Plan bounds the plan the planner answers; on lane plan only, and required there.",
             "required": [
+              "min_cards",
               "max_cards",
               "foundation",
               "integration"

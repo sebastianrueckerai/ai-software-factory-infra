@@ -41,16 +41,16 @@
       "type": "boolean",
       "description": "Audit runs the process's audit stage on the project's pull requests (ruling 188); absent: it does not."
     },
+    "messengers": {
+      "type": "boolean",
+      "description": "Messengers forbids delivery on Telegram and Discord (roadmap 145): a notification line leaves the factory for the venue's servers. Absent or true: delivery is on."
+    },
     "notify": {
       "type": "array",
       "items": {
         "type": "string"
       },
       "description": "Notify are the Forgejo users told about the project's cards; empty: the project's approvers."
-    },
-    "messengers": {
-      "type": "boolean",
-      "description": "Messengers forbids the project's notifications on Telegram and Discord (roadmap 145); absent: they may leave."
     },
     "approvers": {
       "type": "array",
@@ -289,6 +289,10 @@
             "operator"
           ]
         },
+        "vision_model": {
+          "type": "string",
+          "description": "VisionModel is the alias a chat turn's image look runs on (purpose vision); the member who pasted the image approved its spend."
+        },
         "monthly_eur": {
           "type": "number",
           "description": "MonthlyEUR is the budget of the project's chat task each UTC month; absent or 0: the policy's.",
@@ -316,7 +320,7 @@
               "ci",
               "alerts",
               "resources",
-              "projects",
+              "settings",
               "policy",
               "alert_verdict",
               "promote_resource",
@@ -356,9 +360,18 @@
               "notes_read",
               "notes_write",
               "escalate",
+              "ask",
+              "attach_analysis",
               "active_threads",
+              "chat_search",
               "board_view",
-              "board_view_reset"
+              "board_view_reset",
+              "watch_card",
+              "unwatch_card",
+              "set_timer",
+              "analyze_image",
+              "read_attachment",
+              "summarize_attachment"
             ]
           },
           "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. The always-confirm set is confirmed at every autonomy level, so an empty list confirms that set only."
@@ -496,6 +509,29 @@
         "additionalProperties": false
       },
       "description": "Routines are the project's recurring work, each run filing a card on its schedule."
+    },
+    "chain": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "description": "Mode runs the watch (run) or turns it off (none). Absent: run; a repository whose workflows list comes back empty watches nothing, which the poller holds."
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Requires are the commit-status contexts every head must carry green beside its push runs; absent: none."
+        },
+        "stall": {
+          "type": "string",
+          "description": "Stall is how long a run or a required context may stay pending before the chain is stalled; absent: 30m.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        }
+      },
+      "description": "Chain is the project's merge chain: its mode, the commit statuses every head must carry and the stall bound; a file without one gets mode run and a 30m stall.",
+      "additionalProperties": false
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",
