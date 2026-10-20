@@ -959,9 +959,10 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
    makes the users, the collaborators, the tokens and the secrets once Forgejo
    answers, lets `factory-agent` read this repository to file the
    `config_rejected` issues, makes `factory-projects` a read collaborator
-   here (the chain poller sees this repository with the projects token:
-   its workflow list and `RepoVisible`, while the run list reads with the
-   project file's `tokens.actions`; the grant holds without the account's
+   here and on the code repository (the projects token needs read on both
+   project repositories: the chain poller sees each with it, its workflow
+   list and `RepoVisible`, while the run list reads with the project
+   file's `tokens.actions`; the grant holds without the account's
    membership in `sf`'s Owners team), mints the controller's
    `forgejo-commit-status` token
    (`write:repository`, this repository only) into `flux-system` when that
