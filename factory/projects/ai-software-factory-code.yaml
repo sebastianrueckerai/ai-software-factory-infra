@@ -5,7 +5,7 @@
 # The lane works like any build project (roadmap 160, Stage 18 item 3.4):
 # a spec card goes through the plan lane, its planned cards through ready.
 repository: sf/ai-software-factory-code
-merge_rule: human
+merge_rule: auto
 objects: seed
 agents: coder
 process: spec
@@ -29,7 +29,7 @@ routines:
     while_open: hold
     missed: file-once
     tell: inbox
-autonomy: manual
+autonomy: autonomous
 # the roll's commit status rides the chain: the head is green only when the
 # run is green and the roll succeeded; 24h covers human approval
 chain: {requires: [factory/roll], stall: 24h}
