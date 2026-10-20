@@ -260,6 +260,16 @@
           "type": "number",
           "description": "TaskMaxEUR is the project's own maximum for one card, up to the policy's task_max_eur; absent: a large card's budget.",
           "minimum": 0
+        },
+        "discretionary_eur": {
+          "type": "number",
+          "description": "DiscretionaryEUR is the monthly pool the project agent funds cards from at autonomous and full auto; absent: no pool.",
+          "minimum": 0
+        },
+        "raise_max_eur": {
+          "type": "number",
+          "description": "RaiseMaxEUR is the most one fund call raises a card; absent: none.",
+          "minimum": 0
         }
       },
       "description": "Budget caps the spend of the project's tasks together; absent: the project has no cap of its own. Stricter wins: bounded by policy.yaml's budget.month_eur and budget.task_max_eur; a looser file is rejected.",
@@ -348,6 +358,7 @@
               "close",
               "edit",
               "grant_session",
+              "fund",
               "set_dependency",
               "split_card",
               "read_doc",

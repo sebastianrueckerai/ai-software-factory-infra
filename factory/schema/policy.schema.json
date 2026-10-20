@@ -656,6 +656,7 @@
               "close",
               "edit",
               "grant_session",
+              "fund",
               "set_dependency",
               "split_card",
               "read_doc",
