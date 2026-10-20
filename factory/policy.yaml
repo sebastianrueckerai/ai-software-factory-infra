@@ -129,17 +129,17 @@ supervisor:
 classes:
   coder:
     session: code
-    models: [coding-cheap, coding-frontier]
+    # the two model classes (2026-10-20): small the start rung, big the
+    # stronger; each class is a z.ai model with an Alibaba fallback
+    # (k8s/platform/litellm/helmrelease.yaml)
+    models: [small, big]
     # factoryd's calls on a coder task's account, through the gateway; the
-    # agent cannot call these
-    review_model: review-frontier
-    supervisor_model: supervisor
-    # the security audit on the stronger rung, as the screening's (rulings
-    # 188, 191); the agent calls this alias too, on its own key
-    audit_model: coding-frontier
-    # the check-in at a gate return (plan D), on the strong tier under its
-    # own alias; absent, the review alias
-    checkin_model: checkin
+    # agent cannot call these. The review, the supervisors, the security
+    # audit (rulings 188, 191) and the check-in at a gate return (plan D,
+    # absent: the review's alias) all call big
+    review_model: big
+    supervisor_model: big
+    audit_model: big
     tools:
       web_scrape: {max_requests: 30, max_eur: 0.20}
       web_search: {max_requests: 30, max_eur: 0.20}
@@ -162,13 +162,13 @@ classes:
       ssh_certificate: {}
       resource_request_status: {}
   # a report session (ruling 185): the screening of an outsider's issue on
-  # coding-frontier (ruling 191), the presort of an improvement; it reads
+  # big (ruling 191), the presort of an improvement; it reads
   # and writes one comment, changes no code and commissions nothing. Its
   # trips and half-way check-in call the supervisor model.
   analyzer:
     session: report
-    models: [coding-cheap, coding-frontier]
-    supervisor_model: supervisor
+    models: [small, big]
+    supervisor_model: big
     tools:
       web_scrape: {max_requests: 30, max_eur: 0.20}
       web_search: {max_requests: 30, max_eur: 0.20}
@@ -181,11 +181,10 @@ classes:
   # sessions of every card it files.
   planner:
     session: plan
-    models: [coding-cheap, coding-frontier]
-    supervisor_model: supervisor
-    # the hold-out drafting beside a confirmation round (roadmap 289),
-    # the same review alias the coder class reads
-    review_model: review-frontier
+    models: [small, big]
+    supervisor_model: big
+    # the hold-out drafting beside a confirmation round (roadmap 289)
+    review_model: big
     # a plan is a single short answer with no check-in
     time: {agent_time: 30m, check_in: 0s}
     tools:
@@ -227,31 +226,20 @@ prices:
   fal:
     # an endpoint priced per megapixel is held at this many
     max_megapixels: 4
-  # each model alias's output limit: the most output tokens a call asks for
-  # and is held at, lowered to its deployment's published max_output_tokens
-  # when that is less. Every alias a class or the chat calls needs one, or
-  # factoryd rejects the version. The values are what the callers ask
-  # today (code repository): opencode's ANSWER_TOKENS 8192 + HEADROOM_TOKENS
-  # 16384 (cmd/factoryd/main.go, the agent's limit.output in
-  # internal/factoryd/opencode.go), the gates' SUPERVISOR_ANSWER_TOKENS 2048
-  # + SUPERVISOR_HEADROOM_TOKENS 16384 (review, supervisors and the audit,
-  # internal/factoryd/supervisor.go), the project agent's operatorTokens
-  # (internal/factoryd/operator.go), and the pulse alias's compaction
-  # (compactTokens 2048) over its pulse (pulseTokens 1024); the vision
-  # alias asks the project agent's operatorTokens too (OperatorModel.Vision,
-  # internal/factoryd/operator.go). coding-frontier
-  # is the audit_model too, whose 18432 it covers. The check-in asks the
-  # review's answer shape (the verdicts JSON with its handover), so it takes
-  # the review's 18432; tier-high publishes 131072, so nothing is lowered.
+  # each model alias's output limit: the most output tokens a call is
+  # held at, of what it asks for (policy.Fit), lowered to the deployment's
+  # published max_output_tokens when that is less. Every alias a class or
+  # the chat calls needs one, or factoryd rejects the version. A class's
+  # limit is the most any caller asks (code repository): opencode's
+  # ANSWER_TOKENS 8192 + HEADROOM_TOKENS 16384 (cmd/factoryd/main.go, the
+  # agent's limit.output in internal/factoryd/opencode.go); the gates,
+  # the project agent and the compaction ask less and are held at less.
+  # The vision alias asks the project agent's operatorTokens
+  # (OperatorModel.Vision, internal/factoryd/operator.go).
   max_output_tokens:
-    coding-cheap: 24576
-    coding-frontier: 24576
-    review-frontier: 18432
-    supervisor: 18432
-    operator: 4096
-    pulse: 2048
+    big: 24576
+    small: 24576
     vision: 4096
-    checkin: 18432
 
 # Risk rules over a pull request's changed paths (a rename counts both its
 # names). Each path takes the class of the first rule with a matching glob,
