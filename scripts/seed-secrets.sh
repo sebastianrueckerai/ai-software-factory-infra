@@ -211,6 +211,9 @@ else
   fi
   fj -o /dev/null -w 'factory-config read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-config" -d '{"permission":"read"}'
   fj -o /dev/null -w 'factory-agent read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-agent" -d '{"permission":"read"}'
+  # the chain poller reads this repository's workflows with the projects
+  # token (factory-projects)
+  fj -o /dev/null -w 'factory-projects read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-projects" -d '{"permission":"read"}'
   # <repository> <name> <value>: PUT an Actions secret; fails on any answer
   # but 201 or 204
   put_secret() {
@@ -412,17 +415,17 @@ for r in json.load(sys.stdin): print("team factory-registry-read: repository %s 
     unset tok
   fi
   # Org upstream is the store of the outside images (the code repository's
-  # upstream-images.txt, roadmap 203): visibility limited, so every
-  # signed-in account reads its packages, factory-registry-read and a CI
-  # job's token among them, and no anonymous caller does. The code
-  # repository's main CI copies into it as factory-admin, its owner.
+  # upstream-images.txt, roadmap 203): public, since a build's ADD and wget
+  # carry no login (Sebastian, 2026-10-16); its copies hold only
+  # digest-pinned public bytes. The code repository's main CI copies into
+  # it as factory-admin, its owner.
   if [ "$(fj -o /dev/null -w '%{http_code}' "$FJ/orgs/upstream")" != 200 ]; then
     fj -o /dev/null -w 'org upstream: %{http_code}\n' -X POST "$FJ/orgs" \
-      -d '{"username":"upstream","visibility":"limited","description":"Copies of the outside images the factory uses (upstream-images.txt of the code repository)"}'
+      -d '{"username":"upstream","visibility":"public","description":"Copies of the outside images the factory uses (upstream-images.txt of the code repository)"}'
   fi
   vis=$(fj "$FJ/orgs/upstream" | jq -r .visibility)
-  [ "$vis" = limited ] || { echo "org upstream: visibility $vis, want limited"; exit 1; }
-  echo "org upstream: limited"
+  [ "$vis" = public ] || { echo "org upstream: visibility $vis, want public"; exit 1; }
+  echo "org upstream: public"
   # Image pulls (pull secret forgejo-registry: in factory, which factoryd
   # copies into every CI and agent namespace, in the namespaces whose pods
   # run the store's copies, and in flux-system, where the OCI charts come
@@ -439,6 +442,23 @@ for r in json.load(sys.stdin): print("team factory-registry-read: repository %s 
   else
     kubectl -n flux-system create secret generic forgejo-charts --from-literal=username=factory-registry-read --from-literal=password="$rtok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
     echo "flux-system/forgejo-charts: written for factory-registry-read"
+  fi
+  # forgejo-commit-status (flux-system): Flux posts its Kustomizations'
+  # results on this repository's commits with it (clusters/sf/notifications.yaml),
+  # the statuses the infra project's chain requires. The controller's
+  # write:repository token, limited to this repository.
+  if kubectl -n flux-system get secret forgejo-commit-status >/dev/null 2>&1; then
+    echo "flux-system/forgejo-commit-status: exists"
+  else
+    for id in $(fj "$FJ/users/controller/tokens?sudo=controller" | jq -r '.[] | select(.name == "forgejo-commit-status") | .id'); do
+      fj -o /dev/null -w "controller revoke token forgejo-commit-status $id: %{http_code}\n" -X DELETE "$FJ/users/controller/tokens/$id?sudo=controller"
+    done
+    tok=$(fj -X POST "$FJ/users/controller/tokens?sudo=controller" \
+      -d '{"name":"forgejo-commit-status","scopes":["write:repository"],"repositories":[{"owner":"sf","name":"ai-software-factory-infra"}]}' | jq -r '.sha1 // empty' || true)
+    [ -n "$tok" ] || { echo "flux-system/forgejo-commit-status: mint failed, no secret written"; exit 1; }
+    kubectl -n flux-system create secret generic forgejo-commit-status --from-literal=token="$tok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+    echo "flux-system/forgejo-commit-status: created (${#tok} chars)"
+    unset tok
   fi
   for n in $A $P $F k8s-infra flux-system; do
     pull=$(kubectl -n $n get secret forgejo-registry -o 'jsonpath={.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | jq -c '[.auths[] | .username, .password]' 2>/dev/null || true)
