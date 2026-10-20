@@ -53,13 +53,19 @@ spec:
       create: true
     proxy_config:
       model_list:
-        # Model tiers (rulings 181, 204): Alibaba, one deployment per tier,
-        # each measured by scripts/model-tiers. The role aliases map onto
-        # tiers in router_settings.model_group_alias. The GLM Coding Plan
-        # trial (roadmap 207, 2026-10-13) adds the two glm deployments: the
-        # coding aliases point at them, every other alias stays on DashScope
-        # (item 197's latency: a 100-line review took 210 s on GLM).
-        - model_name: tier-high
+        # Two model classes (Sebastian, 2026-10-20): big and small, each a
+        # z.ai model and an Alibaba model. A call names its class; the
+        # class's group is its z.ai model, and router_settings.fallbacks
+        # moves a call the z.ai model failed or refused to the Alibaba
+        # group. One alias per class: a call's purpose sits on its audit
+        # row and in its ledger ref, not in its alias.
+        - model_name: big
+          litellm_params:
+            model: zai/glm-5.3
+            api_base: https://api.z.ai/api/coding/paas/v4
+            api_key: os.environ/ZAI_CODING_KEY
+            drop_params: true
+        - model_name: big-alibaba
           litellm_params:
             model: dashscope/qwen3.8-max
             api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
@@ -69,15 +75,13 @@ spec:
             # 60 gave 240 completion tokens), so the gateway's output clamp would not hold
             extra_body:
               enable_thinking: false
-        - model_name: tier-mid
+        - model_name: small
           litellm_params:
-            model: dashscope/qwen3.7-plus
-            api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-            api_key: os.environ/ALIBABA_CLOUD_KEY
+            model: zai/glm-5.3-flash
+            api_base: https://api.z.ai/api/coding/paas/v4
+            api_key: os.environ/ZAI_CODING_KEY
             drop_params: true
-            extra_body:
-              enable_thinking: false
-        - model_name: tier-low
+        - model_name: small-alibaba
           litellm_params:
             model: dashscope/qwen3.8-flash
             api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
@@ -86,10 +90,10 @@ spec:
             extra_body:
               enable_thinking: false
         # The chat's vision door (roadmap 300's images, 2026-10-19): the
-        # look at a member's image. Thinking off as on the text tiers: it
-        # is not bounded by max_tokens, so the gateway's output clamp
-        # would not hold.
-        - model_name: tier-vision
+        # look at a member's image, a tool on the metrics page, not a text
+        # class. Thinking off as on the Alibaba text models: it is not
+        # bounded by max_tokens, so the gateway's output clamp would not hold.
+        - model_name: vision
           litellm_params:
             model: dashscope/qwen3-vl-plus
             api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
@@ -103,49 +107,31 @@ spec:
             output_cost_per_token: 0.0000016
             extra_body:
               enable_thinking: false
-        # The GLM Coding Plan trial (roadmap 207): Sebastian's subscription
-        # endpoint for both coding tiers. LiteLLM prices them at
-        # pay-as-you-go rates (modeled money, roadmap 206; the bundled map
-        # carries both models since 1.102). No enable_thinking: Qwen's extra.
-        - model_name: glm-frontier
-          litellm_params:
-            model: zai/glm-5.3
-            api_base: https://api.z.ai/api/coding/paas/v4
-            api_key: os.environ/ZAI_CODING_KEY
-            drop_params: true
-        - model_name: glm-cheap
-          litellm_params:
-            model: zai/glm-5.3-flash
-            api_base: https://api.z.ai/api/coding/paas/v4
-            api_key: os.environ/ZAI_CODING_KEY
-            drop_params: true
       router_settings:
         # a call failing with 408, 409, 429 or 5xx is retried twice on the
         # same deployment after 0.5 s, then 1 s (or the provider's
-        # Retry-After up to 60 s); other 4xx fail at once
+        # Retry-After up to 60 s); other 4xx fail at once. Then the class's
+        # Alibaba group answers the call
         num_retries: 2
-        # a tier has no second deployment to fail over to, so a cooldown
-        # would only lock the whole tier after a failure
-        disable_cooldowns: true
+        fallbacks:
+          - big: [big-alibaba]
+          - small: [small-alibaba]
+        # a z.ai model that failed allowed_fails calls within a minute rests
+        # cooldown_time seconds, and the Alibaba group serves its class
+        # meanwhile
+        allowed_fails: 3
+        cooldown_time: 60
         model_group_alias:
-          supervisor: tier-high
-          review-frontier: tier-high
-          # the check-in agent at the gate moment (escalation ladder plan D):
-          # its own alias in the strong group, so its spend reads apart from
-          # the review's
-          checkin: tier-high
-          # a GLM window (Sebastian's plan, 2026-10-14): both coding
-          # aliases on his GLM Coding Plan while its quota lasts, then back
-          # to DashScope (tier-high, tier-low). Opened 2026-10-15, his limit
-          # reset; the first window ran 2026-10-13/14
-          coding-frontier: glm-frontier
-          coding-cheap: glm-cheap
-          # Stage 15 (ruling 252): the project agent and the pulse
-          operator: tier-high
-          pulse: tier-low
-          # the chat's image looks (roadmap 300): a member's image is
-          # approved spend, the chat's monthly budget bounds the looks
-          vision: tier-vision
+          # the purpose aliases of before, on their classes until the code
+          # that names the classes is live (docs/plans/2026-10-20-two-model-classes.md
+          # in the design repository); then they go
+          coding-frontier: big
+          coding-cheap: small
+          review-frontier: big
+          supervisor: big
+          checkin: big
+          operator: big
+          pulse: small
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
         # a budget that is set stays a hard ceiling: a call whose spend
