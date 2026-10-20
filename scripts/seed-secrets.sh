@@ -211,11 +211,13 @@ else
   fi
   fj -o /dev/null -w 'factory-config read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-config" -d '{"permission":"read"}'
   fj -o /dev/null -w 'factory-agent read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-agent" -d '{"permission":"read"}'
-  # the chain poller sees this repository with the projects token
+  # the chain poller sees each project repository with the projects token
   # (factory-projects: its workflow list, RepoVisible; the run list reads
   # with the project file's tokens.actions); the grant holds without
   # factory-projects' membership in sf's Owners team
-  fj -o /dev/null -w 'factory-projects read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-projects" -d '{"permission":"read"}'
+  for r in sf/ai-software-factory-code $IR; do
+    fj -o /dev/null -w "factory-projects read collaborator on $r: %{http_code}\n" -X PUT "$FJ/repos/$r/collaborators/factory-projects" -d '{"permission":"read"}'
+  done
   # <repository> <name> <value>: PUT an Actions secret; fails on any answer
   # but 201 or 204
   put_secret() {
