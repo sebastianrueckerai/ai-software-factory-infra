@@ -132,7 +132,9 @@ classes:
     # the two model classes (2026-10-20): small the start rung, big the
     # stronger; each class is a z.ai model with an Alibaba fallback
     # (k8s/platform/litellm/helmrelease.yaml)
-    models: [small, big]
+    # (the ladder names of before stay allowed until the code that names
+    # the classes is live, as the running factoryd's ladder starts on them)
+    models: [small, big, coding-cheap, coding-frontier]
     # factoryd's calls on a coder task's account, through the gateway; the
     # agent cannot call these. The review, the supervisors, the security
     # audit (rulings 188, 191) and the check-in at a gate return (plan D,
@@ -167,7 +169,7 @@ classes:
   # trips and half-way check-in call the supervisor model.
   analyzer:
     session: report
-    models: [small, big]
+    models: [small, big, coding-cheap, coding-frontier]
     supervisor_model: big
     tools:
       web_scrape: {max_requests: 30, max_eur: 0.20}
@@ -181,7 +183,7 @@ classes:
   # sessions of every card it files.
   planner:
     session: plan
-    models: [small, big]
+    models: [small, big, coding-cheap, coding-frontier]
     supervisor_model: big
     # the hold-out drafting beside a confirmation round (roadmap 289)
     review_model: big
