@@ -255,8 +255,9 @@ prices:
 # approval before factory-merge merges.
 # An agent's high-class change merges at full auto when the audit passes
 # (Sebastian, 2026-10-20, amending rulings 76, 77, 109); forbidden and
-# migration keep a human. A pull request factoryd wrote merges on green checks
-# and the merge rule alone, with no class.
+# migration keep a human. A roll, a revert, a template update or a schema copy,
+# which factoryd wrote, merges at full auto on green checks and the merge rule
+# alone, with no class; a GitHub sync follows an agent's rules.
 # migration: true lists the class's paths on the approval card and the pull
 # request as "schema migration: human review required".
 risk:
