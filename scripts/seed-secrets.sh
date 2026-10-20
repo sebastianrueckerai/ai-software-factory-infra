@@ -211,8 +211,10 @@ else
   fi
   fj -o /dev/null -w 'factory-config read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-config" -d '{"permission":"read"}'
   fj -o /dev/null -w 'factory-agent read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-agent" -d '{"permission":"read"}'
-  # the chain poller reads this repository's workflows with the projects
-  # token (factory-projects)
+  # the chain poller sees this repository with the projects token
+  # (factory-projects: its workflow list, RepoVisible; the run list reads
+  # with the project file's tokens.actions); the grant holds without
+  # factory-projects' membership in sf's Owners team
   fj -o /dev/null -w 'factory-projects read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-projects" -d '{"permission":"read"}'
   # <repository> <name> <value>: PUT an Actions secret; fails on any answer
   # but 201 or 204
