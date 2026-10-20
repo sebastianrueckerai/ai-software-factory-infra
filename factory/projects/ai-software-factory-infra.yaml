@@ -13,3 +13,6 @@ tokens: {read: forgejo-config, actions: forgejo-config}
 # the factory's document repository: the chat's documents, and what its
 # agent sessions read at /workspace/docs
 chat: {doc_repo: sf/ai-software-factory}
+# Flux's commit statuses ride the chain (clusters/sf/notifications.yaml): the
+# head is green only when config-check is green and Flux applied it
+chain: {requires: [flux/flux-system, flux/platform]}
