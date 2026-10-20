@@ -25,7 +25,9 @@ sync path `clusters/sf`:
   and `flux/platform` (success, or failure on an error), which the infra
   project's chain requires. The contexts name the Kustomization only,
   through `commitStatusExpr`: Flux's default ends in the Provider's UID,
-  which a rebuild changes.
+  which a rebuild changes. The infra project file's `chain.requires` and
+  the Alert's `eventSources` change together: a Kustomization renamed in
+  or removed from the Alert posts no more, and the head stalls by design.
 - `k8s/platform/` — the platform tree: chart sources, Gateway API edge,
   cert-manager and Forgejo HelmReleases, CNPG, local-path (and its class
   `factory-cache`: the per-project Go build and npm caches of agent
@@ -957,8 +959,11 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
    makes the users, the collaborators, the tokens and the secrets once Forgejo
    answers, lets `factory-agent` read this repository to file the
    `config_rejected` issues, makes `factory-projects` a read collaborator
-   here (the chain poller reads this repository's workflows with the
-   projects token), mints the controller's `forgejo-commit-status` token
+   here (the chain poller sees this repository with the projects token:
+   its workflow list and `RepoVisible`, while the run list reads with the
+   project file's `tokens.actions`; the grant holds without the account's
+   membership in `sf`'s Owners team), mints the controller's
+   `forgejo-commit-status` token
    (`write:repository`, this repository only) into `flux-system` when that
    secret is missing (Flux's commit statuses, `clusters/sf/notifications.yaml`;
    to replace it, delete the secret and run again), PUTs the code repository's Actions secrets
