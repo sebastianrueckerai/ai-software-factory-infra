@@ -224,6 +224,13 @@
             "forgejo-merge",
             "forgejo-config"
           ]
+        },
+        "gate": {
+          "type": "string",
+          "description": "Gate approves, as the merge gate, a pull request the gate merges on the merge rule auto; absent: such a merge is refused.",
+          "enum": [
+            "forgejo-gate"
+          ]
         }
       },
       "description": "Tokens name the seeded secrets factoryd reaches a seed project's repository with; a factory project's are registration's own.",
