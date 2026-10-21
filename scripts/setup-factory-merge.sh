@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
-# The merge bot factory-merge, the approver bot factory-gate and main's
-# protection on the code repository (rulings 109 and R59, README "The merge
-# bot"), idempotent: creates each user if missing, makes it a write
-# collaborator, keeps the token in its secret (factory/forgejo-merge,
-# factory/forgejo-gate, key token) while that token reads the code
-# repository and otherwise revokes the older tokens of its name and mints a
-# new one, and sets main's protection, then prints it; sets infra main's
-# push and merge whitelists (ruling 239). A run that finds everything in
-# place changes nothing and says so on every line. Logs in as the machine
+# The merge bot factory-merge, the approver bot factory-gate, the chat bot
+# factory-chat and main's protection on the code repository (rulings 109
+# and R59, README "The merge bot"), idempotent: creates each user if
+# missing, makes it a write collaborator on its repositories, keeps the
+# token in its secret (factory/forgejo-merge, factory/forgejo-gate,
+# factory/forgejo-chat, key token) while that token reads main of each of
+# them and otherwise revokes the older tokens of its name and mints a new
+# one, and sets main's protection, then prints it; sets infra main's push
+# and merge whitelists (ruling 239). A run that finds everything in place
+# changes nothing and says so on every line. Logs in as the machine
 # admin factory-admin (FORGEJO_FACTORY_ADMIN_PASSWORD from the seed env
 # $SEED_ENV, Forgejo at $FORGEJO_URL) and needs kubectl context admin@sf.
 # Prints no secret values.
@@ -25,13 +26,14 @@ for r in $R $I; do
   perm=$(c "$F/repos/$r/collaborators/controller/permission" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("permission", ""))' || true)
   case $perm in write | admin) ;; *) echo "controller is not a writer on $r (\"$perm\"): run seed-secrets.sh first; nothing changed"; exit 1 ;; esac
 done
-# 1. the bots: <user> <secret>. The user comes from the site admin API, its
-# password random and discarded (its token is minted with sudo); a write
-# collaborator on the code repository only; its one token, write:repository
-# on the code repository only. factoryd reads the token at boot: after a new
-# one, restart factoryd.
+# 1. the bots: <user> <secret> <scopes, comma-separated> <repository>....
+# The user comes from the site admin API, its password random and discarded
+# (its token is minted with sudo); a write collaborator on the repositories
+# and nowhere else; its one token, the scopes on those repositories only.
+# factoryd reads the token at boot: after a new one, restart factoryd.
 bot() {
-  local u=$1 s=$2 tok
+  local u=$1 s=$2 scopes=$3 tok r live
+  shift 3
   if [ "$(c -o /dev/null -w '%{http_code}' "$F/users/$u")" = 200 ]; then
     echo "user $u: exists"
   else
@@ -40,29 +42,40 @@ bot() {
       -d "{\"username\":\"$u\",\"email\":\"$u@factory.local\",\"password\":\"$pw\",\"must_change_password\":false,\"visibility\":\"private\"}"
     unset pw
   fi
-  if [ "$(c -o /dev/null -w '%{http_code}' "$F/repos/$R/collaborators/$u")" = 204 ] &&
-    [ "$(c "$F/repos/$R/collaborators/$u/permission" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("permission", ""))')" = write ]; then
-    echo "$u collaborator write: no change"
-  else
-    c -o /dev/null -w "$u collaborator write: %{http_code}\n" -X PUT "$F/repos/$R/collaborators/$u" -d '{"permission":"write"}'
-  fi
+  for r in "$@"; do
+    if [ "$(c -o /dev/null -w '%{http_code}' "$F/repos/$r/collaborators/$u")" = 204 ] &&
+      [ "$(c "$F/repos/$r/collaborators/$u/permission" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("permission", ""))')" = write ]; then
+      echo "$u collaborator write on $r: no change"
+    else
+      c -o /dev/null -w "$u collaborator write on $r: %{http_code}\n" -X PUT "$F/repos/$r/collaborators/$u" -d '{"permission":"write"}'
+    fi
+  done
   tok=$(kubectl --context admin@sf -n factory get secret "$s" -o 'jsonpath={.data.token}' 2>/dev/null | base64 -d || true)
-  if [ -n "$tok" ] && [ "$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: token $tok" "$F/repos/$R/branches/main")" = 200 ]; then
+  live=${tok:+yes}
+  for r in "$@"; do
+    [ -n "$live" ] && [ "$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: token $tok" "$F/repos/$r/branches/main")" = 200 ] || live=
+  done
+  if [ -n "$live" ]; then
     echo "secret factory/$s: no change"
     return
   fi
   for id in $(c "$F/users/$u/tokens?sudo=$u" | python3 -c 'import json,sys; print(" ".join(str(t["id"]) for t in json.load(sys.stdin) if t["name"]==sys.argv[1]))' "$u"); do
     c -o /dev/null -w "$u revoke token $id: %{http_code}\n" -X DELETE "$F/users/$u/tokens/$id?sudo=$u"
   done
-  tok=$(c -X POST "$F/users/$u/tokens?sudo=$u" \
-    -d "{\"name\":\"$u\",\"scopes\":[\"write:repository\"],\"repositories\":[{\"owner\":\"sf\",\"name\":\"ai-software-factory-code\"}]}" |
+  tok=$(c -X POST "$F/users/$u/tokens?sudo=$u" -d "$(python3 -c 'import json,sys
+u, scopes, *repos = sys.argv[1:]
+print(json.dumps({"name": u, "scopes": scopes.split(","), "repositories": [dict(zip(("owner", "name"), r.split("/"))) for r in repos]}))' "$u" "$scopes" "$@")" |
     python3 -c 'import json,sys; sys.stdout.write(json.load(sys.stdin).get("sha1", ""))' || true)
   [ -n "$tok" ] || { echo "secret factory/$s: mint failed, nothing written"; exit 1; }
   kubectl --context admin@sf -n factory create secret generic "$s" --from-literal=token="$tok" --dry-run=client -o yaml | kubectl --context admin@sf apply -f - >/dev/null
   echo "secret factory/$s: token written (${#tok} chars)"
 }
-bot factory-merge forgejo-merge
-bot factory-gate forgejo-gate
+bot factory-merge forgejo-merge write:repository $R
+bot factory-gate forgejo-gate write:repository $R
+# factory-chat: the project agent's own identity in every turn no member
+# started; it comments, files and closes issues on both repositories (the
+# infra project has a chat too) and is on no whitelist below
+bot factory-chat forgejo-chat write:repository,write:issue $R $I
 # <repository> <want, JSON>: PATCHes main's protection only when a field
 # differs from want (lists compared as sets)
 protect() {

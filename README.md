@@ -126,8 +126,10 @@ editing surface, the console shows it read-only.
   factoryd reaches it with in `tokens` (`read`; `actions`, with which the
   chain poller reads its push runs, and for agents coder its CI; `merge`
   for agents coder; values `forgejo-ci-registrar`, `forgejo-merge`,
-  `forgejo-config`, never `forgejo-projects`); a factory project's are
-  registration's. The code repository's file lists the namespace
+  `forgejo-config`, never `forgejo-projects`; `gate`, only
+  `forgejo-gate`, the merge gate's approval; `chat`, only `forgejo-chat`,
+  the project agent's own identity in a turn no member started); a
+  factory project's are registration's. The code repository's file lists the namespace
   `factory`, factoryd's own: that makes it the factory's own project
   (its rolls, its CI runs, the console's login). A new factory project:
   add its file (the console's new-project button files it as a pull
@@ -224,10 +226,10 @@ notices.
   (ruling 239), and a policy approver, so factoryd's reconcile
   makes it a writer and approver on every factory project. The
   controller's scripts, console login and git pushes use it.
-- The bots (`factory-agent`, `factory-merge`, `factory-gate`, `factory-ci`,
-  `factory-projects`, `factory-config`, `factory-registry-read`,
-  `ci-<project>`) have random passwords nobody keeps and tokens minted
-  with `?sudo=`.
+- The bots (`factory-agent`, `factory-merge`, `factory-gate`,
+  `factory-chat`, `factory-ci`, `factory-projects`, `factory-config`,
+  `factory-registry-read`, `ci-<project>`) have random passwords nobody
+  keeps and tokens minted with `?sudo=`.
 
 `scripts/seed-secrets.sh` appends `FORGEJO_FACTORY_ADMIN_PASSWORD` and
 `FORGEJO_CONTROLLER_PASSWORD` to `.env.seed` when they are missing (32
@@ -280,6 +282,20 @@ It may approve a pull request, never merge one. A leaked gate token can
 approve but not merge, and a leaked merge token can merge only what an
 approver approved.
 
+`factory-chat` is the project agent's own user: every Forgejo call of a
+turn no member started (a wake) goes out as it, so the agent's bounded
+funding and its answers work while no member is logged in. It is made the
+same way, a `write` collaborator on the code and the infra repository
+(the infra project has a chat too) and on none of `main`'s whitelists. Its
+one token, named `factory-chat`, is `write:repository` and `write:issue`
+scoped to those two repositories (Forgejo puts issues and comments under
+the issue scope) and lives in secret `factory/forgejo-chat`, key `token`.
+factoryd's trust gate hears its comments as a writer's, as a member's: an
+answer to an escalation, a steering comment. A leaked chat token can
+comment on, close and file issues on the two repositories and push a
+branch other than `main`; it can never push to `main` or merge, and no
+approval of its counts.
+
 `main` of `sf/ai-software-factory-infra` is human-only (rulings 101a,
 209, 239): push and merge whitelists `[sebastian, controller]`,
 `apply_to_admins` true, `required_approvals` 0, so factory-admin, the bots
@@ -290,18 +306,21 @@ new-project pull request works for both approvers.
 factory-admin: it first requires `controller` to be a writer on both
 repositories (Forgejo silently drops a user without write from a
 whitelist; `scripts/seed-secrets.sh` makes it one) and changes nothing
-otherwise. Then, for each of the two bots, it makes the user and the
-collaboration when they are missing, and keeps the token in the secret
-while that token reads the code repository's `main`; otherwise it revokes
-the older tokens of the bot's name and writes a new one into the secret.
+otherwise. Then, for each of the three bots, it makes the user and its
+collaborations when they are missing, and keeps the token in the secret
+while that token reads `main` of each of the bot's repositories; otherwise
+it revokes the older tokens of the bot's name and writes a new one into
+the secret.
 It PATCHes code `main`'s protection, and on infra `main` only the push
 and merge whitelists, when a field differs. A run that finds everything
 in place prints `no change` on every line. It prints both protections and
 fails when a whitelist read back differs. factoryd reads the bots' tokens
-at boot: after a new token, restart factoryd. To replace a token, delete its
-secret and run the script. On a rebuild the users, their collaborations
-and the protections come back with Forgejo's database; run the script
-anyway, since the new cluster has neither secret.
+at boot and does not start without them: run the script before a factoryd
+that reads a new bot's token rolls, and after a new token, restart
+factoryd. To replace a token, delete its secret and run the script. On a
+rebuild the users, their collaborations and the protections come back
+with Forgejo's database; run the script anyway, since the new cluster has
+none of the secrets.
 
 ## Build cache
 
@@ -1073,10 +1092,12 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
    repository's webhook to factoryd (task
    42, all issue and pull-request events, JSON), the `factory-merge` user
    as a write collaborator on the code repository, and `main`'s branch
-   protection exactly as in "The merge bot" above, and the `factory-gate`
-   user the same way. Mint `factory-merge` a fresh token into
-   `forgejo-merge` and `factory-gate` one into `forgejo-gate` either way
-   (neither secret is in any restore): `scripts/setup-factory-merge.sh`, after the seed's Forgejo
+   protection exactly as in "The merge bot" above, the `factory-gate`
+   user the same way, and the `factory-chat` user as a write collaborator
+   on the code and the infra repository. Mint `factory-merge` a fresh
+   token into `forgejo-merge`, `factory-gate` one into `forgejo-gate` and
+   `factory-chat` one into `forgejo-chat` either way (none of the secrets
+   is in any restore): `scripts/setup-factory-merge.sh`, after the seed's Forgejo
    pass (it whitelists `controller`, which must be a collaborator by
    then).
    factoryd itself recreates, at boot, the issue labels (`agent`,

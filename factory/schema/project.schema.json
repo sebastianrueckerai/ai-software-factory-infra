@@ -231,6 +231,13 @@
           "enum": [
             "forgejo-gate"
           ]
+        },
+        "chat": {
+          "type": "string",
+          "description": "Chat is the project agent's own identity factory-chat in every turn no member started; absent: such a turn is refused.",
+          "enum": [
+            "forgejo-chat"
+          ]
         }
       },
       "description": "Tokens name the seeded secrets factoryd reaches a seed project's repository with; a factory project's are registration's own.",

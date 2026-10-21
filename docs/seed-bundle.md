@@ -79,7 +79,15 @@ this bundle.
       whitelist) comes back with the database restore; mint it a fresh
       `write:repository` token scoped to the code repository only (admin
       basic auth with `?sudo=factory-gate`).
-      `scripts/setup-factory-merge.sh` mints both bot tokens.
+- [x] Forgejo chat token — secret forgejo-chat (key token, namespace
+      factory). Not a seed value: the project agent's own user
+      `factory-chat` (a write collaborator on the code and the infra
+      repository, on none of `main`'s whitelists) comes back with the
+      database restore; mint it a fresh `write:repository` and
+      `write:issue` token scoped to those two repositories (admin basic
+      auth with `?sudo=factory-chat`) before factoryd starts. Every
+      Forgejo call of a chat turn no member started goes out with it.
+      `scripts/setup-factory-merge.sh` mints the three bot tokens.
 - [x] Forgejo webhook secret (Task 42) — secret factoryd-webhook (key
       secret, namespace factory), value `FORGEJO_WEBHOOK_SECRET` in the
       seed env: the code repo's `POST /webhooks/forgejo` webhook lives
