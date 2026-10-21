@@ -8,8 +8,9 @@ agents: none
 namespaces: [platform, forgejo]
 # factory-config reads the writers (the trust gate, the heal pass's close
 # of a human-lane task) and the push runs the chain records; it cannot read
-# the hooks, the seed keeps them
-tokens: {read: forgejo-config, actions: forgejo-config}
+# the hooks, the seed keeps them; factory-chat's is the project agent's own
+# in a turn no member started
+tokens: {read: forgejo-config, actions: forgejo-config, chat: forgejo-chat}
 # the factory's document repository: the chat's documents, and what its
 # agent sessions read at /workspace/docs
 chat: {doc_repo: sf/ai-software-factory}
