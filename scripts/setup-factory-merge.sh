@@ -40,8 +40,8 @@ bot() {
     echo "user $u: exists"
   else
     pw=$(openssl rand -hex 24)
-    c -o /dev/null -w "user $u: %{http_code}\n" -X POST "$F/admin/users" \
-      -d "{\"username\":\"$u\",\"email\":\"$u@factory.local\",\"password\":\"$pw\",\"must_change_password\":false,\"visibility\":\"private\"}"
+    printf '{"username":"%s","email":"%s@factory.local","password":"%s","must_change_password":false,"visibility":"private"}' "$u" "$u" "$pw" |
+      c -o /dev/null -w "user $u: %{http_code}\n" -X POST "$F/admin/users" -d @-
     unset pw
   fi
   for r in "$@"; do
