@@ -292,9 +292,14 @@ scoped to those two repositories (Forgejo puts issues and comments under
 the issue scope) and lives in secret `factory/forgejo-chat`, key `token`.
 factoryd's trust gate hears its comments as a writer's, as a member's: an
 answer to an escalation, a steering comment. A leaked chat token can
-comment on, close and file issues on the two repositories and push a
-branch other than `main`; it can never push to `main` or merge, and no
-approval of its counts.
+comment on, close and file issues on the two repositories. It can push any
+branch but `main` carrying a workflow that Forgejo runs with the
+repository's Actions secrets, and it can post commit statuses that the
+checks trust. `factory-merge`, `factory-gate` and every human writer hold
+the same two powers. It can never push to `main` or merge, and no Forgejo
+review of its counts: an approval the project agent decides goes through
+factoryd, and the merge gate's review carries it on the merge rule `auto`
+only.
 
 `main` of `sf/ai-software-factory-infra` is human-only (rulings 101a,
 209, 239): push and merge whitelists `[sebastian, controller]`,
@@ -308,9 +313,10 @@ repositories (Forgejo silently drops a user without write from a
 whitelist; `scripts/seed-secrets.sh` makes it one) and changes nothing
 otherwise. Then, for each of the three bots, it makes the user and its
 collaborations when they are missing, and keeps the token in the secret
-while that token reads `main` of each of the bot's repositories; otherwise
-it revokes the older tokens of the bot's name and writes a new one into
-the secret.
+while that token reads `main` of each of the bot's repositories and
+carries exactly the bot's scopes; otherwise it revokes the older tokens of
+the bot's name and writes a new one into the secret. No token and no
+password goes on a command line: curl and kubectl read them from a pipe.
 It PATCHes code `main`'s protection, and on infra `main` only the push
 and merge whitelists, when a field differs. A run that finds everything
 in place prints `no change` on every line. It prints both protections and

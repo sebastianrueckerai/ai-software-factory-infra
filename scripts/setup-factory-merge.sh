@@ -6,19 +6,20 @@
 # missing, makes it a write collaborator on its repositories, keeps the
 # token in its secret (factory/forgejo-merge, factory/forgejo-gate,
 # factory/forgejo-chat, key token) while that token reads main of each of
-# them and otherwise revokes the older tokens of its name and mints a new
-# one, and sets main's protection, then prints it; sets infra main's push
-# and merge whitelists (ruling 239). A run that finds everything in place
-# changes nothing and says so on every line. Logs in as the machine
-# admin factory-admin (FORGEJO_FACTORY_ADMIN_PASSWORD from the seed env
-# $SEED_ENV, Forgejo at $FORGEJO_URL) and needs kubectl context admin@sf.
-# Prints no secret values.
+# them and carries exactly its scopes and otherwise revokes the older
+# tokens of its name and mints a new one, and sets main's protection, then
+# prints it; sets infra main's push and merge whitelists (ruling 239). A
+# run that finds everything in place changes nothing and says so on every
+# line. Logs in as the machine admin factory-admin
+# (FORGEJO_FACTORY_ADMIN_PASSWORD from the seed env $SEED_ENV, Forgejo at
+# $FORGEJO_URL) and needs kubectl context admin@sf. Prints no secret value
+# and puts none on a command line: curl and kubectl read them from a pipe.
 set -euo pipefail
 set -a; source "${SEED_ENV:-$HOME/repos/ai-software-factory/.env.seed}"; set +a
 F=${FORGEJO_URL:-https://git.aisoftwarefactory.world}/api/v1
 R=sf/ai-software-factory-code
 A="factory-admin:$FORGEJO_FACTORY_ADMIN_PASSWORD"
-c() { curl -sS -u "$A" -H 'Content-Type: application/json' "$@"; }
+c() { curl -sS -K <(printf 'user = "%s"\n' "$A") -H 'Content-Type: application/json' "$@"; }
 I=sf/ai-software-factory-infra
 # 0. Forgejo drops a user without write from a whitelist: the controller must
 # be a writer on both repositories (seed-secrets.sh) before anything changes
@@ -29,7 +30,8 @@ done
 # 1. the bots: <user> <secret> <scopes, comma-separated> <repository>....
 # The user comes from the site admin API, its password random and discarded
 # (its token is minted with sudo); a write collaborator on the repositories
-# and nowhere else; its one token, the scopes on those repositories only.
+# and nowhere else; its one token, exactly the scopes, on those
+# repositories only.
 # factoryd reads the token at boot: after a new one, restart factoryd.
 bot() {
   local u=$1 s=$2 scopes=$3 tok r live
@@ -53,8 +55,13 @@ bot() {
   tok=$(kubectl --context admin@sf -n factory get secret "$s" -o 'jsonpath={.data.token}' 2>/dev/null | base64 -d || true)
   live=${tok:+yes}
   for r in "$@"; do
-    [ -n "$live" ] && [ "$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: token $tok" "$F/repos/$r/branches/main")" = 200 ] || live=
+    [ -n "$live" ] && [ "$(printf 'Authorization: token %s\n' "$tok" | curl -sS -o /dev/null -w '%{http_code}' -H @- "$F/repos/$r/branches/main")" = 200 ] || live=
   done
+  # the listing names a token by its last eight characters and its scopes
+  [ -n "$live" ] && [ "$(c "$F/users/$u/tokens?sudo=$u" | LAST8=${tok: -8} python3 -c 'import json,os,sys
+u, want = sys.argv[1], sorted(sys.argv[2].split(","))
+print("yes" if any(t["name"] == u and t.get("token_last_eight") == os.environ["LAST8"] and sorted(t.get("scopes") or []) == want
+  for t in json.load(sys.stdin)) else "no")' "$u" "$scopes")" = yes ] || live=
   if [ -n "$live" ]; then
     echo "secret factory/$s: no change"
     return
@@ -67,7 +74,8 @@ u, scopes, *repos = sys.argv[1:]
 print(json.dumps({"name": u, "scopes": scopes.split(","), "repositories": [dict(zip(("owner", "name"), r.split("/"))) for r in repos]}))' "$u" "$scopes" "$@")" |
     python3 -c 'import json,sys; sys.stdout.write(json.load(sys.stdin).get("sha1", ""))' || true)
   [ -n "$tok" ] || { echo "secret factory/$s: mint failed, nothing written"; exit 1; }
-  kubectl --context admin@sf -n factory create secret generic "$s" --from-literal=token="$tok" --dry-run=client -o yaml | kubectl --context admin@sf apply -f - >/dev/null
+  printf '%s' "$tok" | kubectl --context admin@sf -n factory create secret generic "$s" --from-file=token=/dev/stdin --dry-run=client -o yaml |
+    kubectl --context admin@sf apply -f - >/dev/null
   echo "secret factory/$s: token written (${#tok} chars)"
 }
 bot factory-merge forgejo-merge write:repository $R
