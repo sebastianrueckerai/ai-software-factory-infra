@@ -70,7 +70,16 @@ this bundle.
       `write:repository` token scoped to the code repository only (admin
       basic auth with `?sudo=factory-merge`) before factoryd starts.
       factoryd's `Merge` activity merges approved pull requests with it;
-      Forgejo refuses the merge without a whitelisted human's approval.
+      Forgejo refuses the merge without an approval from `main`'s
+      approvals whitelist.
+- [x] Forgejo gate token (ruling R59) — secret forgejo-gate (key token,
+      namespace factory). Not a seed value: the approver bot
+      `factory-gate` (a write collaborator on the code repository, on
+      `main`'s approvals whitelist and on neither its merge nor its push
+      whitelist) comes back with the database restore; mint it a fresh
+      `write:repository` token scoped to the code repository only (admin
+      basic auth with `?sudo=factory-gate`).
+      `scripts/setup-factory-merge.sh` mints both bot tokens.
 - [x] Forgejo webhook secret (Task 42) — secret factoryd-webhook (key
       secret, namespace factory), value `FORGEJO_WEBHOOK_SECRET` in the
       seed env: the code repo's `POST /webhooks/forgejo` webhook lives

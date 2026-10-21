@@ -224,7 +224,7 @@ notices.
   (ruling 239), and a policy approver, so factoryd's reconcile
   makes it a writer and approver on every factory project. The
   controller's scripts, console login and git pushes use it.
-- The bots (`factory-agent`, `factory-merge`, `factory-ci`,
+- The bots (`factory-agent`, `factory-merge`, `factory-gate`, `factory-ci`,
   `factory-projects`, `factory-config`, `factory-registry-read`,
   `ci-<project>`) have random passwords nobody keeps and tokens minted
   with `?sudo=`.
@@ -236,8 +236,11 @@ random hex characters, never printed).
 ## The merge bot (ruling 109)
 
 An approved agent pull request is merged by factoryd's `Merge` activity as
-the dedicated Forgejo user `factory-merge`, never by the agent's bot.
-Forgejo enforces the human's part: `main` of `sf/ai-software-factory-code`
+the dedicated Forgejo user `factory-merge`, never by the agent's bot. At
+full auto, when the merge gate decides that an agent pull request merges
+without a human, the approval comes from a second bot, `factory-gate`
+(ruling R59), and the merge still comes from `factory-merge`.
+Forgejo enforces the approval: `main` of `sf/ai-software-factory-code`
 carries exactly this protection (branch protection `main`, set through
 `PATCH /repos/sf/ai-software-factory-code/branch_protections/main`):
 
@@ -248,7 +251,7 @@ carries exactly this protection (branch protection `main`, set through
 | `enable_merge_whitelist` | true |
 | `merge_whitelist_usernames` | `[sebastian, factory-merge]` |
 | `enable_approvals_whitelist` | true |
-| `approvals_whitelist_username` | `[sebastian, controller]` |
+| `approvals_whitelist_username` | `[sebastian, controller, factory-gate]` |
 | `required_approvals` | 1 |
 | `apply_to_admins` | true |
 | `block_on_rejected_reviews` | true |
@@ -262,12 +265,20 @@ and nowhere else; its one token, named `factory-merge`, is
 `write:repository` scoped to the code repository only (minted with admin
 basic auth and `?sudo=factory-merge`) and lives in secret
 `factory/forgejo-merge`, key `token`. Its merge is refused (405) until
-an APPROVED review of sebastian or the controller is on the head, which
-the console submits through the approver's own OAuth token; a new push
-dismisses the approval. Its push
+an APPROVED review of sebastian, the controller or `factory-gate` is on
+the head. The console submits a human's approval through the approver's
+own OAuth token. A new push dismisses the approval. Its push
 to `main` is refused (git: "Not allowed to push to protected branch main";
-contents API: 403). It cannot read the infra repository (404). A leaked
-token can merge only what an approver already approved.
+contents API: 403). It cannot read the infra repository (404).
+
+`factory-gate` is the approver bot (ruling R59), made the same way: a
+`write` collaborator on the code repository and nowhere else, on the
+approvals whitelist and not on the merge or push whitelists. Its one
+token, named `factory-gate`, is `write:repository` scoped to the code
+repository only and lives in secret `factory/forgejo-gate`, key `token`.
+It may approve a pull request, never merge one. A leaked gate token can
+approve but not merge, and a leaked merge token can merge only what an
+approver approved.
 
 `main` of `sf/ai-software-factory-infra` is human-only (rulings 101a,
 209, 239): push and merge whitelists `[sebastian, controller]`,
@@ -279,12 +290,18 @@ new-project pull request works for both approvers.
 factory-admin: it first requires `controller` to be a writer on both
 repositories (Forgejo silently drops a user without write from a
 whitelist; `scripts/seed-secrets.sh` makes it one) and changes nothing
-otherwise, then the user, the collaboration, a fresh token into the
-secret and code `main`'s protection; on infra `main` it sets only the push
-and merge whitelists. It prints both protections and fails when a
-whitelist read back differs. On a rebuild the user, its collaboration and
-the protections come back with Forgejo's database; run the script anyway
-for the fresh token.
+otherwise. Then, for each of the two bots, it makes the user and the
+collaboration when they are missing, and keeps the token in the secret
+while that token reads the code repository's `main`; otherwise it revokes
+the older tokens of the bot's name and writes a new one into the secret.
+It PATCHes code `main`'s protection, and on infra `main` only the push
+and merge whitelists, when a field differs. A run that finds everything
+in place prints `no change` on every line. It prints both protections and
+fails when a whitelist read back differs. factoryd reads the bots' tokens
+at boot: after a new token, restart factoryd. To replace a token, delete its
+secret and run the script. On a rebuild the users, their collaborations
+and the protections come back with Forgejo's database; run the script
+anyway, since the new cluster has neither secret.
 
 ## Build cache
 
@@ -1056,9 +1073,10 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
    repository's webhook to factoryd (task
    42, all issue and pull-request events, JSON), the `factory-merge` user
    as a write collaborator on the code repository, and `main`'s branch
-   protection exactly as in "The merge bot" above. Mint `factory-merge` a
-   fresh token into `forgejo-merge` either way (the old one is not in any
-   restore): `scripts/setup-factory-merge.sh`, after the seed's Forgejo
+   protection exactly as in "The merge bot" above, and the `factory-gate`
+   user the same way. Mint `factory-merge` a fresh token into
+   `forgejo-merge` and `factory-gate` one into `forgejo-gate` either way
+   (neither secret is in any restore): `scripts/setup-factory-merge.sh`, after the seed's Forgejo
    pass (it whitelists `controller`, which must be a collaborator by
    then).
    factoryd itself recreates, at boot, the issue labels (`agent`,
