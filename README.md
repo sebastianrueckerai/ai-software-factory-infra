@@ -523,6 +523,17 @@ run into the code repository's Actions secrets `COSIGN_PRIVATE_KEY` and
 requests come from the bot's fork, and a fork's run gets no secret.
 Without `factory/cosign` the script says `skipped` and main CI's sign
 steps fail.
+The images key is a second pair, kept apart so neither key can pass for the
+other. The code repository's `project-image.yml` signs project images
+(`sf/sandbox-<project>.<image>`) with it; factoryd verifies them with
+`k8s/images-cosign.pub` (env `IMAGES_COSIGN_PUB`) and factory images with
+the factory key. Neither key verifies the other's images. Its private half
+and password are `factory/images-cosign`, which the seed script PUTs every
+run as `IMAGES_COSIGN_PRIVATE_KEY` and `IMAGES_COSIGN_PASSWORD`; `--images`
+makes it, with the same refusal, `--rotate` and read-back:
+
+    BAO_TOKEN="$OPENBAO_ROOT_TOKEN" scripts/cosign-keygen.sh --images ~/repos/ai-software-factory-code
+
 [scripts/cosign-keygen.sh](scripts/cosign-keygen.sh) makes the pair. Its
 private half and password exist only in the tmpfs of a throwaway
 container (read-only root, no network, no log) and go by pipe into `bao
@@ -965,9 +976,10 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
    the next `openbao-config` run logs `no change`. Then run
    `scripts/seed-secrets.sh` again: it writes `factory/forgejo-admin`
    (its line says `created`; before the engine exists it says `skipped`).
-   The old OpenBao held one thing more, the cosign pair `factory/cosign`,
-   which no seed restores: make a new one ("Image signing"). The seed, the
-   bootstrap and that pair are the whole restore.
+   The old OpenBao held two things more, the cosign pairs `factory/cosign`
+   and `factory/images-cosign`, which no seed restores: make new ones
+   ("Image signing", the second with `--images`). The seed, the bootstrap
+   and those pairs are the whole restore.
    After an infra change to config.sh's engines, policies or roles (and
    the bootstrap's pinned values with it), whether on a restored or a
    running OpenBao: run `scripts/openbao-config-bootstrap.sh` once with the
@@ -1014,7 +1026,9 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
    `write:package` token `factory-registry`, minted and PUT when it or one
    of the two secrets is missing; a failed PUT revokes it) and, every run,
    `COSIGN_PRIVATE_KEY` and `COSIGN_PASSWORD` from OpenBao's
-   `factory/cosign` ("Image signing") for main CI, and
+   `factory/cosign` ("Image signing") for main CI, likewise
+   `IMAGES_COSIGN_PRIVATE_KEY` and `IMAGES_COSIGN_PASSWORD` from
+   `factory/images-cosign` for `project-image.yml`, and
    this repository's (`factory-registry-read` and its `read:package`
    token, every run) for the config check, and makes
    this repository's webhook to factoryd (issue events, the intake secret;

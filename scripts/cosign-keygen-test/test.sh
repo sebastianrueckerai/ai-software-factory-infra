@@ -16,39 +16,45 @@ trap 'docker stop "$BAO_CONTAINER" >/dev/null; rm -r "$t"' EXIT
 until docker exec "$BAO_CONTAINER" bao status >/dev/null 2>&1; do sleep 1; done
 bao() { docker exec -i -e BAO_TOKEN=root-test "$BAO_CONTAINER" bao "$@"; }
 bao secrets enable -path=factory -version=2 kv >/dev/null
-version() { bao kv metadata get -mount=factory -format=json cosign 2>/dev/null | jq -r .data.current_version; }
-# the pair OpenBao holds makes k8s/cosign.pub, checked apart from the script
+version() { bao kv metadata get -mount=factory -format=json "$pair" 2>/dev/null | jq -r .data.current_version; }
+# the pair OpenBao holds makes k8s/$pair.pub, checked apart from the script
 derives() {
-  bao kv get -mount=factory -format=json cosign |
-    docker run --rm -i --read-only --network none --log-driver none --tmpfs /work:mode=1777 -e HOME=/work \
+  bao kv get -mount=factory -format=json "$pair" |
+    docker run --rm -i --read-only --network none --log-driver none --tmpfs /work:mode=1777 -e HOME=/work -e pair="$pair" \
       -v "$t/code/k8s:/k8s:ro" factory-cosign-keygen sh -ec '
       j=$(cat)
       COSIGN_PRIVATE_KEY=$(printf "%s" "$j" | jq -r .data.data.private_key) COSIGN_PASSWORD=$(printf "%s" "$j" | jq -r .data.data.password) \
-        cosign public-key --key env://COSIGN_PRIVATE_KEY 2>/dev/null | cmp -s - /k8s/cosign.pub'
+        cosign public-key --key env://COSIGN_PRIVATE_KEY 2>/dev/null | cmp -s - /k8s/$pair.pub'
 }
 pass=0 fail=0
 # case NAME TOKEN WANT_EXIT WANT_LINE WANT_VERSION WANT_PUB(new|same) ARGS...
 case_() {
   local name=$1 token=$2 want_rc=$3 want_out=$4 want_version=$5 want_pub=$6; shift 6
   local before rc out why=""
-  before=$(cat "$t/code/k8s/cosign.pub" 2>/dev/null)
+  before=$(cat "$t/code/k8s/$pair.pub" 2>/dev/null)
   out=$(BAO_TOKEN=$token "$here/../cosign-keygen.sh" "$@" "$t/code" 2>&1); rc=$?
   [ "$rc" = "$want_rc" ] || why="$why exit $rc, want $want_rc;"
   grep -qxF -- "$want_out" <<<"$out" || why="$why no line [$want_out];"
   [ "$(version)" = "$want_version" ] || why="$why version [$(version)], want [$want_version];"
   if [ "$want_pub" = new ]; then
-    { [ "$(cat "$t/code/k8s/cosign.pub")" != "$before" ] && head -n1 "$t/code/k8s/cosign.pub" | grep -qx -- '-----BEGIN PUBLIC KEY-----' && derives; } ||
-      why="$why no new cosign.pub of the stored pair;"
+    { [ "$(cat "$t/code/k8s/$pair.pub")" != "$before" ] && head -n1 "$t/code/k8s/$pair.pub" | grep -qx -- '-----BEGIN PUBLIC KEY-----' && derives; } ||
+      why="$why no new $pair.pub of the stored pair;"
   else
-    [ "$(cat "$t/code/k8s/cosign.pub" 2>/dev/null)" = "$before" ] || why="$why cosign.pub changed;"
+    [ "$(cat "$t/code/k8s/$pair.pub" 2>/dev/null)" = "$before" ] || why="$why $pair.pub changed;"
   fi
   [ -z "$(ls -A "$TMPDIR")" ] || why="$why left $(ls -A "$TMPDIR") in TMPDIR;"
   ! grep -rqs "PRIVATE KEY" "$t" || why="$why a private key in a file;"
   if [ -z "$why" ]; then pass=$((pass+1)); echo "PASS $name"; else fail=$((fail+1)); printf 'FAIL %s:%s\n%s\n' "$name" "$why" "$out"; fi
 }
+pair=cosign
 case_ fresh root-test 0 "cosign-keygen: factory/cosign written to OpenBao and checked; its public half is $t/code/k8s/cosign.pub" 1 new
 case_ exists-without-rotate root-test 1 "cosign-keygen: OpenBao holds factory/cosign already; --rotate replaces it" 1 same
 case_ rotate root-test 0 "cosign-keygen: factory/cosign written to OpenBao and checked; its public half is $t/code/k8s/cosign.pub" 2 new --rotate
 case_ token-refused wrong-token 1 "cosign-keygen: cannot read factory/cosign (OpenBao sealed, the token refused, or no mount factory)" 2 same --rotate
+pair=images-cosign
+case_ images-fresh root-test 0 "cosign-keygen: factory/images-cosign written to OpenBao and checked; its public half is $t/code/k8s/images-cosign.pub" 1 new --images
+case_ images-exists-without-rotate root-test 1 "cosign-keygen: OpenBao holds factory/images-cosign already; --rotate replaces it" 1 same --images
+case_ images-rotate root-test 0 "cosign-keygen: factory/images-cosign written to OpenBao and checked; its public half is $t/code/k8s/images-cosign.pub" 2 new --rotate --images
+case_ images-token-refused wrong-token 1 "cosign-keygen: cannot read factory/images-cosign (OpenBao sealed, the token refused, or no mount factory)" 2 same --rotate --images
 echo "pass=$pass fail=$fail"
 [ "$fail" = 0 ]

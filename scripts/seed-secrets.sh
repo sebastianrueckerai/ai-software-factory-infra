@@ -257,20 +257,25 @@ else
   # (private_key, the encrypted PEM cosign generate-key-pair writes, and
   # password), and the raft snapshot carries it across a rebuild; every run
   # PUTs it into the code repository's Actions secrets COSIGN_PRIVATE_KEY
-  # and COSIGN_PASSWORD, which only main CI's image jobs read. Read with the
-  # root token over stdin, never printed. No pair yet:
-  # scripts/cosign-keygen.sh makes one.
-  if [ -z "${OPENBAO_ROOT_TOKEN:-}" ]; then
-    echo "$CR signing Actions secrets: skipped, OPENBAO_ROOT_TOKEN is not in .env.seed"
-  elif ! cosign=$(printf '%s\n' "$OPENBAO_ROOT_TOKEN" | kubectl -n $P exec -i openbao-0 -- sh -c '
-      IFS= read -r BAO_TOKEN; export BAO_TOKEN
-      bao kv get -mount=factory -format=json cosign 2>/dev/null' |
-    jq -ce '.data.data | select(.private_key != "" and .password != "")' 2>/dev/null); then
-    echo "$CR signing Actions secrets: skipped, OpenBao holds no factory/cosign, is sealed or does not answer (scripts/cosign-keygen.sh makes the pair)"
-  else
-    put_secret $CR COSIGN_PRIVATE_KEY "$(printf '%s' "$cosign" | jq -r .private_key)" || exit 1
-    put_secret $CR COSIGN_PASSWORD "$(printf '%s' "$cosign" | jq -r .password)" || exit 1
-  fi
+  # and COSIGN_PASSWORD, which only main CI's image jobs read. The images
+  # key, factory/images-cosign, goes the same way into
+  # IMAGES_COSIGN_PRIVATE_KEY and IMAGES_COSIGN_PASSWORD, which only
+  # project-image.yml reads. Read with the root token over stdin, never
+  # printed. No pair yet: scripts/cosign-keygen.sh [--images] makes one.
+  for pair in cosign:COSIGN images-cosign:IMAGES_COSIGN; do
+    kv=${pair%:*} var=${pair#*:}
+    if [ -z "${OPENBAO_ROOT_TOKEN:-}" ]; then
+      echo "$CR signing Actions secrets: skipped, OPENBAO_ROOT_TOKEN is not in .env.seed"
+    elif ! cosign=$(printf '%s\n' "$OPENBAO_ROOT_TOKEN" | kubectl -n $P exec -i openbao-0 -- sh -c '
+        IFS= read -r BAO_TOKEN; export BAO_TOKEN
+        bao kv get -mount=factory -format=json '$kv' 2>/dev/null' |
+      jq -ce '.data.data | select(.private_key != "" and .password != "")' 2>/dev/null); then
+      echo "$CR signing Actions secrets: skipped, OpenBao holds no factory/$kv, is sealed or does not answer (scripts/cosign-keygen.sh makes the pair)"
+    else
+      put_secret $CR ${var}_PRIVATE_KEY "$(printf '%s' "$cosign" | jq -r .private_key)" || exit 1
+      put_secret $CR ${var}_PASSWORD "$(printf '%s' "$cosign" | jq -r .password)" || exit 1
+    fi
+  done
   unset cosign
   if kubectl -n $A get secret forgejo-config >/dev/null 2>&1; then
     echo "$A/forgejo-config: exists"
