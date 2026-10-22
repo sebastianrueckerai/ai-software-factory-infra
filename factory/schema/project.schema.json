@@ -344,6 +344,7 @@
               "session_search",
               "ci",
               "alerts",
+              "deployment_health",
               "resources",
               "settings",
               "policy",

@@ -24,3 +24,4 @@ resources:
 - cronjobs/forgejo-dump.yaml
 - gvisor-runtimeclass.yaml
 - cluster-facts/configmap.yaml
+- factoryd-reader.yaml

@@ -213,7 +213,8 @@
                 "release_resource",
                 "ssh_certificate",
                 "resource_request_status",
-                "manual"
+                "manual",
+                "deployment_health"
               ]
             }
           },
@@ -635,6 +636,7 @@
               "session_search",
               "ci",
               "alerts",
+              "deployment_health",
               "resources",
               "settings",
               "policy",

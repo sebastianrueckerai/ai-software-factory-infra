@@ -1,0 +1,16 @@
+# factoryd reads the infra project's Deployments for deployment_health:
+# their pods, ReplicaSets and events, through the code repository's
+# ClusterRole factoryd-health, which holds those reads and nothing else (no
+# Secrets, no logs). The infra project's namespaces are a seed project's, so
+# no registration binds them.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: factoryd-health, namespace: platform}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: factoryd-health}
+subjects: [{kind: ServiceAccount, name: factoryd, namespace: factory}]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: factoryd-health, namespace: forgejo}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: factoryd-health}
+subjects: [{kind: ServiceAccount, name: factoryd, namespace: factory}]
