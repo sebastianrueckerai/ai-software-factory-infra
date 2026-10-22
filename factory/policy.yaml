@@ -159,6 +159,9 @@ classes:
       # an audit session's filing of its verdict on a red hold-out of the
       # card (roadmap 289); free
       file_verdict: {}
+      # a tool the sandbox lacks (roadmap 281): a card adds it to one of the
+      # project's images and this card restarts on that image; free
+      request_tool: {}
       cloud_prices: {}
       commission_server: {}
       list_resources: {}
