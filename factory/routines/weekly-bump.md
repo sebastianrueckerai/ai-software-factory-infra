@@ -5,5 +5,6 @@ The factory pins every outside input of its builds and its cluster (roadmaps 203
 - **PostgreSQL**: `POSTGRESQL_VERSION`, `LIBPQ_VERSION` and `POSTGRESQL_COMMON_VERSION` in both Dockerfiles, the versions bookworm-pgdg serves now, which apt-archive.postgresql.org keeps.
 - **Go toolchain**: the patch release of go.mod's `toolchain` and of the golang lines, one Go for all (`TestDockerfilesBuildWithOneGo`).
 - **Downloaded tools**: the version ARGs and the `ADD --checksum` sums of Dockerfile.runner and Dockerfile.sandbox, and `buildkitVersion` and `buildkitSHA256` in internal/factoryd/buildvm.go with `BUILDKIT_VERSION`.
+- **Template images**: the `upstream` lines of the ts-go template's `factory/images.yaml`, each to the newest release of its line, with the new URL and its sha256 (Go's from go.dev/dl, Node's from nodejs.org). The sandbox base follows the Debian snapshot bump by itself.
 
 The pull request's image-build builds the changed images from the upstreams at the new digests. Its merge has main CI's upstream job copy the new lines into the store. Only then can the infra repository's references move to them, since a pod whose copy is missing does not start.
