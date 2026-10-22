@@ -558,6 +558,44 @@
       },
       "description": "Chain is the project's merge chain: its mode, the commit statuses every head must carry and the stall bound; a file without one gets mode run and a 30m stall.",
       "additionalProperties": false
+    },
+    "images": {
+      "type": "object",
+      "description": "Images pins the project's sandbox images by name: factoryd writes the block through an auto-merged pull request after each build, and cards run on the pinned digests.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "digest": {
+            "type": "string",
+            "description": "Digest is the image's content digest, sha256:\u003c64 hex\u003e."
+          },
+          "key": {
+            "type": "string",
+            "description": "Key is the build key the image was built under."
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tools are the tools the image carries, at least one."
+          },
+          "egress": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Egress are the hostnames a session on the image may reach beyond the defaults."
+          }
+        },
+        "description": "ImagePin is one image as built: the digest pushed under the BuildKey of its spec, with the tools and egress hosts the spec held then.",
+        "required": [
+          "digest",
+          "key",
+          "tools"
+        ],
+        "additionalProperties": false
+      }
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",
