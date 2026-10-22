@@ -30,7 +30,7 @@ routines:
     while_open: hold
     missed: file-once
     tell: inbox
-autonomy: manual
+autonomy: autonomous
 # the roll's commit status rides the chain: the head is green only when the
 # run is green and the roll succeeded; 24h covers human approval
 chain: {requires: [factory/roll], stall: 24h}
