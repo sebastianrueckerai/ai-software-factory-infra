@@ -316,7 +316,10 @@
         },
         "vision_model": {
           "type": "string",
-          "description": "VisionModel is the alias a chat turn's image look runs on (purpose vision); the member who pasted the image approved its spend."
+          "description": "VisionModel is the alias a chat turn's image look runs on (purpose vision); the member who pasted the image approved its spend.",
+          "enum": [
+            "vision"
+          ]
         },
         "monthly_eur": {
           "type": "number",
@@ -348,10 +351,12 @@
               "resources",
               "settings",
               "policy",
+              "project_images",
               "alert_verdict",
               "promote_resource",
               "release_resource",
               "new_card",
+              "request_image",
               "move_card",
               "answer",
               "comment",

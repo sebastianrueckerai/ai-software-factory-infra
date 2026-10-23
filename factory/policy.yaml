@@ -140,6 +140,9 @@ classes:
     review_model: big
     supervisor_model: big
     audit_model: big
+    # the alias a session's analyze_image calls on the card's account
+    # (purpose vision, the chat's door); the card's budget caps it
+    vision_model: vision
     tools:
       web_scrape: {max_requests: 30, max_eur: 0.20}
       web_search: {max_requests: 30, max_eur: 0.20}
@@ -153,6 +156,10 @@ classes:
       # pods, restarts, last terminations and the last hour's events; no
       # log, no Secret. Free.
       deployment_health: {}
+      # a vision model's look at an image of the card's issue or a file of
+      # the workspace, such as a screenshot the session took; it books as a
+      # model call on vision_model. Free.
+      analyze_image: {}
       # the delegate tool (roadmap 222, item 6): a small follow-up card on
       # the cheap rung that starts when the caller's card has landed
       delegate: {}
@@ -176,6 +183,7 @@ classes:
     session: report
     models: [small, big]
     supervisor_model: big
+    vision_model: vision
     tools:
       web_scrape: {max_requests: 30, max_eur: 0.20}
       web_search: {max_requests: 30, max_eur: 0.20}
@@ -183,6 +191,7 @@ classes:
       escalate_to_human: {}
       manual: {}
       deployment_health: {}
+      analyze_image: {}
   # the plan card's session (ruling 205): reads the repository and the
   # spec, writes nothing, answers a plan as its last message. It runs on
   # the stronger rung, as the screening does: a plan's quality bounds the
@@ -193,6 +202,7 @@ classes:
     supervisor_model: big
     # the hold-out drafting beside a confirmation round (roadmap 289)
     review_model: big
+    vision_model: vision
     # a plan is a single short answer with no check-in
     time: {agent_time: 30m, check_in: 0s}
     tools:
@@ -203,6 +213,7 @@ classes:
       file_plan: {}
       escalate_to_human: {}
       manual: {}
+      analyze_image: {}
 
 # Tool prices no provider API reports (USD prices booked 1:1 as EUR, as
 # LiteLLM's are). fal's prices come from its pricing API per endpoint.

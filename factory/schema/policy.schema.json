@@ -215,7 +215,8 @@
                 "ssh_certificate",
                 "resource_request_status",
                 "manual",
-                "deployment_health"
+                "deployment_health",
+                "analyze_image"
               ]
             }
           },
@@ -234,6 +235,13 @@
           "checkin_model": {
             "type": "string",
             "description": "CheckinModel is the alias the check-in agent calls on the task's account; absent reads ReviewModel (the escalation ladder's plan D)."
+          },
+          "vision_model": {
+            "type": "string",
+            "description": "VisionModel is the alias an analyze_image look calls on the task's account (purpose vision); a class that lists analyze_image names one.",
+            "enum": [
+              "vision"
+            ]
           },
           "time": {
             "type": "object",
@@ -609,7 +617,10 @@
         },
         "vision_model": {
           "type": "string",
-          "description": "VisionModel is the alias a chat turn's image look runs on (purpose vision); the member who pasted the image approved its spend."
+          "description": "VisionModel is the alias a chat turn's image look runs on (purpose vision); the member who pasted the image approved its spend.",
+          "enum": [
+            "vision"
+          ]
         },
         "monthly_eur": {
           "type": "number",
@@ -641,10 +652,12 @@
               "resources",
               "settings",
               "policy",
+              "project_images",
               "alert_verdict",
               "promote_resource",
               "release_resource",
               "new_card",
+              "request_image",
               "move_card",
               "answer",
               "comment",
