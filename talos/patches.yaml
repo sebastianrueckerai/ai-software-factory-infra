@@ -22,6 +22,7 @@ portSelector:
     - 50000
   protocol: tcp
 ingress:
+  # home_cidr of terraform.tfvars, filled in by the generation step (README)
   - subnet: HOME_CIDR
 ---
 apiVersion: v1alpha1
