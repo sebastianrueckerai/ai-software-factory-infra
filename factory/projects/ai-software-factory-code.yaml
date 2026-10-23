@@ -34,3 +34,17 @@ autonomy: autonomous
 # the roll's commit status rides the chain: the head is green only when the
 # run is green and the roll succeeded; 24h covers human approval
 chain: {requires: [factory/roll], stall: 24h}
+images:
+  chromium:
+    digest: sha256:fccaa3931e879d6352834f655c149ea31c32b007c9465cf110047c9bcd56a0f1
+    key: k-d922c93bb2635f54bb914c6b
+    tools:
+      - chromium
+      - fonts-liberation
+      - go
+      - node
+    egress:
+      - proxy.golang.org
+      - sum.golang.org
+      - storage.googleapis.com
+      - registry.npmjs.org
