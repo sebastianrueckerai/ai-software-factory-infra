@@ -204,6 +204,7 @@
                 "fal_run",
                 "escalate_to_human",
                 "request_info",
+                "request_tool",
                 "file_plan",
                 "file_verdict",
                 "delegate",
