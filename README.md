@@ -1158,3 +1158,7 @@ After every task commit:
 
 Forgejo (`origin`) is primary and is what Flux reads; GitHub (`github`)
 is the off-site backup.
+
+## Licence
+
+Source available under the [PolyForm Noncommercial License 1.0.0](LICENSE). Non-commercial use is free as the licence defines it: personal use, research, education, charities and public bodies. Any commercial use, a company's evaluation included, needs a commercial licence: write to mail@sebastianruecker.com. Outside contributions are not accepted yet.
