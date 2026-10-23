@@ -1163,4 +1163,4 @@ is the off-site backup.
 
 Source available under the [PolyForm Noncommercial License 1.0.0](LICENSE). Non-commercial use is free as the licence defines it: personal use, research, education, charities and public bodies. Any commercial use, a company's evaluation included, needs a commercial licence: write to mail@sebastianruecker.com. Outside contributions are not accepted yet.
 
-Files copied from other projects keep their own licences. `k8s/platform/forgejo/runner-chart/` is Forgejo's runner chart under the AGPL 3.0 in its own `LICENSE`, our changes to it included. `k8s/platform/gateway-api/crds.yaml` and `k8s/platform/local-path/upstream-v0.0.31.yaml` are under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+Files copied from other projects keep their own licences. `k8s/platform/forgejo/runner-chart/` is Forgejo's runner chart under the AGPL 3.0 in its own `LICENSE`, our changes to it included. `k8s/platform/gateway-api/crds.yaml`, `k8s/platform/local-path/upstream-v0.0.31.yaml` and Flux's `clusters/sf/flux-system/gotk-components.yaml` are under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
