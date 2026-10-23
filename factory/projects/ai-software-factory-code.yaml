@@ -37,8 +37,8 @@ autonomy: autonomous
 chain: {requires: [factory/roll], stall: 24h}
 images:
   chromium:
-    digest: sha256:0403d84517bfa1197e917569613eac6a69049a24d5538e2085f0c94d7b06330f
-    key: k-150466f6eadef0a3d218a067
+    digest: sha256:82594094c0444a9eb24b24b3028aab9724a8c6cbf7badf96ecec38a897a5ac09
+    key: k-938b8583dea5644d62e9cc5d
     tools:
       - chromium
       - fonts-liberation
