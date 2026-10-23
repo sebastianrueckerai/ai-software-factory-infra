@@ -203,14 +203,15 @@ else
   # forgejo-config (factory): factoryd reads the configuration tree factory/
   # of this repository with it (ruling 183). The user factory-config is a read
   # collaborator on this repository and nothing else, its token
-  # read:repository limited to it. The same pass lets factory-agent (read)
-  # file the config_rejected issues here.
+  # read:repository limited to it. The same pass lets factory-agent file the
+  # config_rejected issues here, and write: it merges the imager's pin pull
+  # requests, which change a project file's images block and nothing else.
   if [ "$(fj -o /dev/null -w '%{http_code}' "$FJ/users/factory-config")" != 200 ]; then
     fj -o /dev/null -w 'factory-config user: %{http_code}\n' -X POST "$FJ/admin/users" \
       -d "{\"username\":\"factory-config\",\"email\":\"factory-config@factory.local\",\"password\":\"$(openssl rand -hex 24)\",\"must_change_password\":false,\"visibility\":\"private\"}"
   fi
   fj -o /dev/null -w 'factory-config read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-config" -d '{"permission":"read"}'
-  fj -o /dev/null -w 'factory-agent read collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-agent" -d '{"permission":"read"}'
+  fj -o /dev/null -w 'factory-agent write collaborator: %{http_code}\n' -X PUT "$FJ/repos/$IR/collaborators/factory-agent" -d '{"permission":"write"}'
   # the chain poller sees each project repository with the projects token
   # (factory-projects: its workflow list, RepoVisible; the run list reads
   # with the project file's tokens.actions); the grant holds without

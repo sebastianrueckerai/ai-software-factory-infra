@@ -112,10 +112,12 @@ want = {"push_whitelist_usernames": ["controller", "sebastian"], "merge_whitelis
 for k, v in want.items():
     if sorted(d[k] or []) != v: sys.exit("protection main: %s is %s, want %s" % (k, d[k], v))'
 # 3. infra main (ruling 239): only its push and merge whitelists; the rest
-# (no approvals, apply_to_admins) stays as it is
-protect $I '{"push_whitelist_usernames": ["sebastian", "controller"], "merge_whitelist_usernames": ["sebastian", "controller"]}'
+# (no approvals, apply_to_admins) stays as it is. factory-agent merges the
+# imager's pin pull requests, which factoryd merges only when they change a
+# project file's images block and nothing else (Sebastian, 2026-10-22)
+protect $I '{"push_whitelist_usernames": ["sebastian", "controller"], "merge_whitelist_usernames": ["sebastian", "controller", "factory-agent"]}'
 c "$F/repos/$I/branch_protections/main" | python3 -c 'import json,sys
 d = json.load(sys.stdin)
 print("infra", {k: d[k] for k in ["enable_push_whitelist","push_whitelist_usernames","enable_merge_whitelist","merge_whitelist_usernames","required_approvals","apply_to_admins"]})
-for k in ["push_whitelist_usernames", "merge_whitelist_usernames"]:
-    if sorted(d[k] or []) != ["controller", "sebastian"]: sys.exit("protection infra main: %s is %s, want [controller, sebastian]" % (k, d[k]))'
+for k, v in {"push_whitelist_usernames": ["controller", "sebastian"], "merge_whitelist_usernames": ["controller", "factory-agent", "sebastian"]}.items():
+    if sorted(d[k] or []) != v: sys.exit("protection infra main: %s is %s, want %s" % (k, d[k], v))'
