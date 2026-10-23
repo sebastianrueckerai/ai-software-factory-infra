@@ -1144,9 +1144,9 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
    open the gate's roll), and one task through the authenticated intake runs to a
    fork PR whose checks run on the untrusted runner: the workflow
    completes with `job-env-audit` green (the job token's push refused).
-   [No egress allowlist admits `storage.googleapis.com` any more: the Go
-   module proxy serves the downloads itself now, so ruling 114's redirect
-   reason ended (removed 2026-10-23).]
+   [The CI, build and sandbox egress allowlists must admit
+   `storage.googleapis.com` by name (ruling 114): the Go module proxy
+   redirects downloads there, and a fork PR's build fails without it.]
    Merged by the human, the task ends `done` and Finish deletes the fork
    branch. The ledger's `spent_eur` must equal the LiteLLM key's own
    recorded spend.
