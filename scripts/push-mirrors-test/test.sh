@@ -24,7 +24,8 @@ fatal: unable to access 'https://github.com/sebastianrueckerai/REPO.git/': The r
 "
 export PATH="/t/bin:$PATH" GITHUB_TOKEN=tok FORGEJO_USER=u FORGEJO_PASSWORD=p
 pass=0; fail=0
-m() { jq -nc --arg n "$1" --arg e "$2" --arg r "$3" '{remote_name: $n, remote_address: ("https://github.com/sebastianrueckerai/" + $r + ".git"), last_error: $e}'; }
+# m NAME LAST_ERROR REPO [BRANCH_FILTER, default main]
+m() { jq -nc --arg n "$1" --arg e "$2" --arg r "$3" --arg b "${4-main}" '{remote_name: $n, remote_address: ("https://github.com/sebastianrueckerai/" + $r + ".git"), last_error: $e, branch_filter: $b}'; }
 # case NAME CODE_MIRRORS INFRA_MIRRORS CODE_SYNCERR WANT_EXIT WANT_LOG WANT_CALLS
 case_() {
   STATE=$(mktemp -d); export STATE
@@ -58,6 +59,15 @@ case_ denied-403 "[$(m mc "$DENY" $C)]" "$ok_i" "" 0 \
 case_ dup-prefers-healthy "[$(m m1 "$GH007" $C),$(m m2 '' $C),$(m m3 "$AUTH" $C)]" "$ok_i" "" 0 \
   "push-mirrors: $C: deleted m1 deleted m3;" \
   "DELETE /repos/sf/$C/push_mirrors/m1;DELETE /repos/sf/$C/push_mirrors/m3;"
+case_ unfiltered-recreate "[$(m mc '' $C '')]" "$ok_i" "" 0 \
+  "push-mirrors: $C: deleted mc created, synced;" \
+  "DELETE /repos/sf/$C/push_mirrors/mc;POST /repos/sf/$C/push_mirrors;POST /repos/sf/$C/push_mirrors-sync;"
+case_ other-filter-recreate "[$(m mc '' $C 'main,console-design')]" "$ok_i" "" 0 \
+  "push-mirrors: $C: deleted mc created, synced;" \
+  "DELETE /repos/sf/$C/push_mirrors/mc;POST /repos/sf/$C/push_mirrors;POST /repos/sf/$C/push_mirrors-sync;"
+case_ dup-keeps-filtered "[$(m m1 '' $C ''),$(m m2 '' $C)]" "$ok_i" "" 0 \
+  "push-mirrors: $C: deleted m1;" \
+  "DELETE /repos/sf/$C/push_mirrors/m1;"
 case_ none "[]" "$ok_i" "" 0 \
   "push-mirrors: $C: created, synced;" \
   "POST /repos/sf/$C/push_mirrors;POST /repos/sf/$C/push_mirrors-sync;"

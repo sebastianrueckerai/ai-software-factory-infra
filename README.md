@@ -1065,8 +1065,11 @@ sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.
    push mirror to GitHub on both repositories (ruling 126, sync_on_commit,
    8 h interval) with the token from `github-mirror` (step 4's seed; until
    that secret exists the job idles and logs `push-mirrors: secret
-   github-mirror missing, nothing to do`), and
-   recreates a mirror whose `last_error` is a credential failure
+   github-mirror missing, nothing to do`). The mirror pushes `main` only
+   (ruling 326, `branch_filter`): Forgejo pushes a filtered mirror with
+   `--mirror`, so the GitHub copy holds `main` and no other branch. The
+   job recreates a mirror with another branch filter, since Forgejo cannot
+   change one, and a mirror whose `last_error` is a credential failure
    (`Authentication failed`, `Repository not found`, `could not read
    Username`, `Invalid username or token`, `Permission to ... denied`,
    `returned error: 401` or `403`). Any other error a new
