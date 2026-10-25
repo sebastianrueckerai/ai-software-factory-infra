@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+# Switches the factory back on: one server per node from its newest
+# factory-off (or sf-pause) snapshot, created off, given its old private
+# address and its old primary IPv4, then powered on. kubeconfig,
+# talosconfig and the dynamic-DNS records keep working because no address
+# changes. Afterwards OpenBao needs its one hand step, the unseal: the
+# seed env's OPENBAO_UNSEAL_KEY is unpadded base64, and the exact pipe
+# lives in docs/factory-off-runbook.md. tofu state is stale after this:
+# the next tofu apply is only ever part of a full re-seed (README
+# "Rebuild"), never of a switch-on. The token comes from terraform.tfvars
+# and is never printed. Run from the repo: scripts/factory-on
+import json, re, subprocess, sys, time, urllib.error, urllib.request
+from pathlib import Path
+
+API = 'https://api.hetzner.cloud/v1'
+ROOT = Path(__file__).resolve().parent.parent
+NODES = {'sf-0': '10.0.1.10', 'sf-1': '10.0.1.11', 'sf-2': '10.0.1.12'}
+SERVER_TYPE = 'cpx42'
+LOCATION = 'fsn1'
+PREFIXES = ('factory-off-', 'sf-pause-')
+
+tok = re.search(r'hcloud_token\s*=\s*"([^"]+)"',
+                (ROOT / 'terraform.tfvars').read_text()).group(1)
+
+
+def api(method, path, body=None):
+    headers = {'Authorization': 'Bearer ' + tok}
+    data = None
+    if body is not None:
+        headers['Content-Type'] = 'application/json'  # without it Hetzner reads form data
+        data = json.dumps(body).encode()
+    req = urllib.request.Request(API + path, method=method, headers=headers, data=data)
+    try:
+        with urllib.request.urlopen(req) as r:
+            raw = r.read()
+            return json.loads(raw) if raw else None
+    except urllib.error.HTTPError as e:
+        sys.exit(f'{method} {path}: HTTP {e.code} {e.read().decode()[:300]}')
+
+
+def wait_action(action, timeout):
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        a = api('GET', f"/actions/{action['id']}")['action']
+        if a['status'] == 'success':
+            return
+        if a['status'] == 'error':
+            sys.exit(f"action {a['command']} failed: {a['error']}")
+        time.sleep(10)
+    sys.exit(f"action {action['command']} timed out")
+
+
+net = next(n for n in api('GET', '/networks')['networks'] if n['name'] == 'sf')
+fw = next((f['id'] for f in api('GET', '/firewalls')['firewalls'] if f['name'] == 'sf'), None)
+pips = {p['name']: p for p in api('GET', '/primary_ips')['primary_ips'] if p['type'] == 'ipv4'}
+imgs = api('GET', '/images?type=snapshot')['images']
+sv = {s['name']: s for s in api('GET', '/servers')['servers']}
+
+for name, ip in sorted(NODES.items()):
+    if name in sv:
+        s = api('GET', f"/servers/{sv[name]['id']}")['server']
+        if net['id'] not in {p['network'] for p in s['private_net']}:
+            wait_action(api('POST', f"/servers/{s['id']}/actions/attach_to_network",
+                            {'network': net['id'], 'ip': ip})['action'], 300)
+        if s['status'] != 'running':
+            wait_action(api('POST', f"/servers/{s['id']}/actions/poweron")['action'], 300)
+        print(f'{name}: exists, network {ip} and power ensured', flush=True)
+        continue
+    mine = [i for i in imgs if i['description'] and i['description'].startswith(
+        tuple(f'{p}{name}-' for p in PREFIXES)) and i['status'] == 'available']
+    if not mine:
+        sys.exit(f'no switch-off snapshot for {name}, this is a re-seed, not a switch-on')
+    if name not in pips:
+        sys.exit(f'primary IPv4 for {name} is gone, this is a re-seed, not a switch-on')
+    image = max(mine, key=lambda i: i['created'])
+    body = {'name': name, 'server_type': SERVER_TYPE, 'location': LOCATION,
+            'image': image['id'], 'start_after_create': False,
+            'public_net': {'ipv4': pips[name]['id'], 'enable_ipv6': False}}
+    if fw:
+        body['firewalls'] = [{'firewall': fw}]
+    r = api('POST', '/servers', body)
+    server = r['server']
+    wait_action(api('POST', f"/servers/{server['id']}/actions/attach_to_network",
+                    {'network': net['id'], 'ip': ip})['action'], 300)
+    wait_action(api('POST', f"/servers/{server['id']}/actions/poweron")['action'], 300)
+    print(f"{name}: server {server['id']} from {image['description']}, "
+          f"{pips[name]['ip']} / {ip}", flush=True)
+
+t0 = time.time()
+while time.time() - t0 < 1200:  # etcd needs all three nodes before any turns Ready
+    out = subprocess.run(['kubectl', 'get', 'nodes', '--no-headers'],
+                         capture_output=True, text=True).stdout
+    states = [l.split()[1] for l in out.splitlines() if l.strip()]
+    print(f"nodes: {states or 'api not up yet'}", flush=True)
+    if len(states) == 3 and all(s == 'Ready' for s in states):
+        print('nodes Ready')
+        break
+    time.sleep(20)
+else:
+    sys.exit('nodes did not turn Ready within 20 minutes')
+print('unseal OpenBao next, if it is sealed: docs/factory-off-runbook.md')

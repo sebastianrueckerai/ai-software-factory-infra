@@ -797,7 +797,10 @@ The cluster is disposable. `tofu destroy` is the off-switch, and this is
 the way back. Every step below was run at least twice (Stage 3 drill,
 Stage 5 rebuild); the traps in brackets each cost hours once. The
 detailed commands live in the design repo's plan (Stages 1 and 2 tasks,
-Stage 3 outline) and in the ledger.
+Stage 3 outline) and in the ledger. A pause that keeps the cluster
+restorable as it was costs less than a destroy:
+[factory-off-runbook](docs/factory-off-runbook.md) (`scripts/factory-off`,
+`scripts/factory-on`).
 
 Before a destroy that must keep Postgres state: a completed CNPG
 `Backup` of the live generation, a WAL switch, an OpenBao raft snapshot,

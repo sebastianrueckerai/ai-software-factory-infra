@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+# Switches the factory off and stops the main cost: one last backup round
+# into S3 (CNPG base backup, WAL switch, OpenBao raft snapshot, Forgejo
+# dump), then every node shuts down, gets a disk snapshot, and only the
+# servers are deleted. Network, firewall, the three primary IPv4s and the
+# S3 buckets stay; scripts/factory-on rebuilds the nodes from the snapshots
+# with the same addresses. A stopped server still bills in full, so the
+# delete is what saves the EUR 9.55 a day. Tokens and keys come from
+# terraform.tfvars and ~/repos/ai-software-factory/.env.* and are never
+# printed. Run from the repo: scripts/factory-off
+import json, os, re, subprocess, sys, time, urllib.error, urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+
+API = 'https://api.hetzner.cloud/v1'
+ROOT = Path(__file__).resolve().parent.parent
+SEED = Path.home() / 'repos/ai-software-factory'
+NODES = ('sf-0', 'sf-1', 'sf-2')
+BUCKET = 'aisoftwarefactory-backups'
+PREFIXES = ('sf-pause-', 'factory-off-')  # factory-on takes the newest per node
+
+tok = re.search(r'hcloud_token\s*=\s*"([^"]+)"',
+                (ROOT / 'terraform.tfvars').read_text()).group(1)
+stamp = datetime.now(timezone.utc).strftime('%Y%m%dt%H%M')  # k8s names need lowercase
+
+
+def run(args, **kw):
+    r = subprocess.run(args, capture_output=True, text=True, **kw)
+    if r.returncode:
+        sys.exit(f"{' '.join(args[:4])}... failed: {(r.stderr or r.stdout).strip()[:300]}")
+    return r.stdout.strip()
+
+
+def api(method, path, body=None):
+    headers = {'Authorization': 'Bearer ' + tok}
+    data = None
+    if body is not None:
+        headers['Content-Type'] = 'application/json'  # without it Hetzner reads form data
+        data = json.dumps(body).encode()
+    req = urllib.request.Request(API + path, method=method, headers=headers, data=data)
+    try:
+        with urllib.request.urlopen(req) as r:
+            raw = r.read()
+            return json.loads(raw) if raw else None
+    except urllib.error.HTTPError as e:
+        sys.exit(f'{method} {path}: HTTP {e.code} {e.read().decode()[:300]}')
+
+
+def wait_action(action, timeout):
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        a = api('GET', f"/actions/{action['id']}")['action']
+        if a['status'] == 'success':
+            return
+        if a['status'] == 'error':
+            sys.exit(f"action {a['command']} failed: {a['error']}")
+        time.sleep(10)
+    sys.exit(f"action {action['command']} timed out")
+
+
+def env_file_vars(path):
+    out = {}
+    for line in path.read_text().splitlines():
+        m = re.match(r'^([A-Z0-9_]+)=(.*)$', line)
+        if m:
+            out[m.group(1)] = m.group(2).strip()
+    return out
+
+
+# --- backup round: needs the cluster up, so it runs first
+
+ready = run(['kubectl', 'get', 'nodes', '--no-headers']).splitlines()
+if len(ready) != 3 or not all(' Ready ' in l for l in ready):
+    sys.exit(f'nodes not 3x Ready, refusing to switch off:\n{ready}')
+
+run(['kubectl', 'apply', '-f', '-'], input=f'''apiVersion: postgresql.cnpg.io/v1
+kind: Backup
+metadata: {{name: factory-off-{stamp}, namespace: platform}}
+spec:
+  cluster: {{name: sf-cluster}}
+  method: plugin
+  pluginConfiguration: {{name: barman-cloud.cloudnative-pg.io}}
+''')
+run(['kubectl', '-n', 'platform', 'wait', '--for=jsonpath={.status.phase}=completed',
+     f'backup/factory-off-{stamp}', '--timeout=1800s'])
+print(f'CNPG backup factory-off-{stamp} completed', flush=True)
+
+primary = run(['kubectl', '-n', 'platform', 'get', 'cluster', 'sf-cluster',
+               '-o', 'jsonpath={.status.currentPrimary}'])
+run(['kubectl', '-n', 'platform', 'exec', primary, '-c', 'postgres', '--',
+     'psql', '-U', 'postgres', '-tAc', 'SELECT pg_switch_wal()'])
+time.sleep(45)  # let the archiver ship the switched WAL to S3
+print(f'WAL switched on {primary}', flush=True)
+
+if 'Sealed true' in run(['kubectl', '-n', 'platform', 'exec', 'openbao-0', '--',
+                         'bao', 'status']):
+    key = env_file_vars(SEED / '.env.seed')['OPENBAO_UNSEAL_KEY']
+    key += '=' * (-len(key) % 4)  # the seed file keeps it unpadded
+    run(['kubectl', 'exec', '-i', '-n', 'platform', 'openbao-0', '--',
+         'sh', '-c', 'k="$(cat)"; bao operator unseal "$k"'], input=key)
+    print('OpenBao unsealed', flush=True)
+
+token = env_file_vars(SEED / '.env.seed')['OPENBAO_ROOT_TOKEN']
+snap_pod = f'/tmp/openbao-{stamp}.snap'
+snap_local = snap_pod
+run(['kubectl', 'exec', '-i', '-n', 'platform', 'openbao-0', '--', 'sh', '-c',
+     't="$(cat)"; BAO_TOKEN="$t" bao operator raft snapshot save ' + snap_pod],
+    input=token)  # the pod loses its token file on restart, the exec must bring one
+run(['kubectl', '-n', 'platform', 'cp', f'openbao-0:/tmp/openbao-{stamp}.snap', snap_local])
+run(['kubectl', '-n', 'platform', 'exec', 'openbao-0', '--', 'rm', f'/tmp/openbao-{stamp}.snap'])
+tools = env_file_vars(SEED / '.env.tools')
+aws_env = {**os.environ,
+           'AWS_ACCESS_KEY_ID': tools['HETZNER_S3_ACCESS_KEY_ID'],
+           'AWS_SECRET_ACCESS_KEY': tools['HETZNER_S3_SECRET_ACCESS_KEY']}
+s3key = f's3://{BUCKET}/openbao/openbao-{stamp}.snap'
+run(['aws', '--endpoint-url', 'https://fsn1.your-objectstorage.com',
+     's3', 'cp', snap_local, s3key], env=aws_env)
+os.remove(snap_local)
+print(f'OpenBao raft snapshot at {s3key}', flush=True)
+
+run(['kubectl', '-n', 'forgejo', 'create', 'job', '--from=cronjob/forgejo-dump',
+     f'factory-off-dump-{stamp}'])
+run(['kubectl', '-n', 'forgejo', 'wait', '--for=condition=complete',
+     f'job/factory-off-dump-{stamp}', '--timeout=1800s'])
+dump_log = run(['kubectl', '-n', 'forgejo', 'logs', f'job/factory-off-dump-{stamp}',
+                '-c', 'upload', '--tail=2'])
+print(f'Forgejo dump: {dump_log}', flush=True)
+
+# --- substrate: shut down, snapshot, delete only the servers
+
+sv = {s['name']: s for s in api('GET', '/servers')['servers']}
+unknown = set(sv) - set(NODES)
+if unknown:
+    sys.exit(f'refusing: servers outside the cluster in this project: {sorted(unknown)}')
+if set(NODES) - set(sv):
+    sys.exit(f'already off, no server for {sorted(set(NODES) - set(sv))}')
+
+for name in NODES:
+    if sv[name]['status'] != 'off':
+        print(f'{name}: shutdown', flush=True)
+        wait_action(api('POST', f"/servers/{sv[name]['id']}/actions/shutdown")['action'], 900)
+
+descs = {}
+for name in NODES:  # snapshot only once every node is off, so etcd stops at one point
+    desc = f'factory-off-{name}-{stamp}'
+    print(f'{name}: snapshot {desc}', flush=True)
+    r = api('POST', f"/servers/{sv[name]['id']}/actions/create_image",
+            {'type': 'snapshot', 'description': desc})
+    wait_action(r['action'], 7200)
+    descs[name] = desc
+
+imgs = {i['description']: i for i in api('GET', '/images?type=snapshot')['images']
+        if i['description']}
+for name, desc in descs.items():  # every snapshot must exist before any server goes
+    if imgs.get(desc, {}).get('status') != 'available':
+        sys.exit(f'snapshot {desc} is not available, keeping the servers')
+
+for name in NODES:
+    print(f'{name}: delete server (primary IPv4 stays)', flush=True)
+    api('DELETE', f"/servers/{sv[name]['id']}")
+
+for name in NODES:  # the snapshot this run made replaces the older ones
+    mine = sorted(d for d in imgs if d.startswith(tuple(f'{p}{name}-' for p in PREFIXES))
+                  and d != descs[name])
+    for d in mine:
+        print(f'delete superseded snapshot {d}', flush=True)
+        api('DELETE', f"/images/{imgs[d]['id']}")
+
+left = sorted(s['name'] for s in api('GET', '/servers')['servers'])
+print(f'off. servers left: {left or "none"}')
+print('back on with: scripts/factory-on, then the OpenBao unseal')

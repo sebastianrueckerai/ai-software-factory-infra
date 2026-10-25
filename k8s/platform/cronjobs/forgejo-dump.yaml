@@ -47,7 +47,7 @@ spec:
               args:
                 - |
                   set -e
-                  POD=$(kubectl -n forgejo get pod -l app.kubernetes.io/instance=forgejo -o jsonpath='{.items[0].metadata.name}')
+                  POD=$(kubectl -n forgejo get pod -l app.kubernetes.io/instance=forgejo --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
                   [ -n "$POD" ] || { echo "no forgejo pod matched"; exit 1; }
                   kubectl -n forgejo exec $POD -- forgejo dump --type zip --skip-package-data --skip-lfs-data --skip-attachment-data --file /tmp/forgejo-dump.zip
                   kubectl -n forgejo cp $POD:/tmp/forgejo-dump.zip /dump/forgejo-dump.zip
