@@ -46,6 +46,12 @@ budget:
   session_floor_cheap_eur: 0.30
   session_floor_frontier_eur: 0.60
 
+# The project agent's chat (architecture 5.4): monthly_eur is each
+# project's chat budget in a UTC month, and a raise reaches the month in
+# progress; a project file may set less.
+chat:
+  monthly_eur: 30
+
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and
 # supervisor or review call too. sessions: agent
