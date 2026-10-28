@@ -344,7 +344,8 @@ else
     echo "$IR webhook to factoryd: exists"
   else
     V="$FORGEJO_WEBHOOK_SECRET" python3 -c 'import json,os,sys; print(json.dumps({"type":"forgejo","active":True,"branch_filter":"*",
-      "events":["issues","issue_assign","issue_label","issue_milestone","issue_comment"],
+      "events":["issues","issue_assign","issue_label","issue_milestone","issue_comment",
+        "workflow_run_success","workflow_run_failure","workflow_run_cancelled","workflow_run_skipped"],
       "config":{"url":sys.argv[1],"content_type":"json","secret":os.environ["V"]}}))' "$HOOK" |
       fj -o /dev/null -w "$IR webhook to factoryd: %{http_code}\n" -X POST "$FJ/repos/$IR/hooks" -d @-
   fi
