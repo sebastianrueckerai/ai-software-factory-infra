@@ -57,7 +57,7 @@
       ]
     }
   },
-  "description": "A Kubernetes Job, a CronJob run included, failed within the last 15 minutes: the Job controller's Warning event BackoffLimitExceeded or DeadlineExceeded. It clears by itself 15 minutes after the failure, whether or not the failed Job is deleted.",
+  "description": "A Kubernetes Job, a CronJob run included, failed within the last 15 minutes: the Job controller's Warning event BackoffLimitExceeded or DeadlineExceeded. It clears by itself 15 minutes after the failure, whether or not the failed Job is deleted. The label event marks the failure as an event: factoryd closes no card when the alert clears.",
   "disabled": false,
   "evaluation": {
     "kind": "rolling",
@@ -67,6 +67,7 @@
     }
   },
   "labels": {
+    "event": "true",
     "severity": "warning"
   },
   "notificationSettings": {

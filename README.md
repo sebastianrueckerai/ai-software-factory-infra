@@ -680,7 +680,9 @@ then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
   event `BackoffLimitExceeded` or `DeadlineExceeded` on a Job, a CronJob
   run included, at least once in the last 15 minutes, per namespace and
   Job name, severity `warning`. It clears by itself 15 minutes after the
-  failure; a failed Job the CronJob keeps does not hold it. It notifies
+  failure; a failed Job the CronJob keeps does not hold it. Its label
+  `event: "true"` marks the failure as an event: factoryd closes no card
+  when the alert clears, so the card waits until it is handled. It notifies
   no channel: the rule's state in SigNoz is the signal, and factoryd's
   alerts endpoint counts it for a project namespace (a project's failed
   Job holds its promotion for those 15 minutes). The rule routes by
