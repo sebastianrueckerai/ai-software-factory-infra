@@ -802,6 +802,18 @@ restorable as it was costs less than a destroy:
 [factory-off-runbook](docs/factory-off-runbook.md) (`scripts/factory-off`,
 `scripts/factory-on`).
 
+Forgejo is 17.0.1 since 2026-10-28, upgraded from 15.0.9 in one step by the
+image pin of `k8s/platform/forgejo/helmrelease.yaml` (the chart, 17.1.7,
+ships Forgejo 15 by default and runs 17 unchanged). The migration is one
+way: a 15 against the migrated database refuses to start, so a restore
+installs the pinned 17.0.1, never an older image. The upgrade's recipe: the
+backup round below without the destroy, `forgejo manager flush-queues` on
+the old pod (the queues' serialised data is not backward compatible), the
+pin, then `forgejo doctor check --all`. Forgejo 17's hook PATCH ignores the
+workflow run events and the secret, so factoryd recreates a hook whose
+events or secret differ; 17.0 is supported until 2027-01-28, 18 is due by
+then. The runner stays at 12.7.3.
+
 Before a destroy that must keep Postgres state: a completed CNPG
 `Backup` of the live generation, a WAL switch, an OpenBao raft snapshot,
 a Forgejo dump, `flux suspend kustomization --all`, and the two-line edit
