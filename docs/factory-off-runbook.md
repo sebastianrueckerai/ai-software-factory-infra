@@ -41,7 +41,13 @@ Rebuilds one server per node from its newest `factory-off-` (or old
 `sf-pause-`) snapshot, created powered off, given its old primary IPv4 at
 create time, attached to the network with its old static private address,
 then powered on. No address changes, so kubeconfig, talosconfig and the
-DDNS records keep pointing correctly. Then the one hand step, the unseal:
+DDNS records keep pointing correctly. Once the three nodes are Ready it
+deletes the shutdown's leftover pods and prints each as `namespace/name`:
+every pod in phase `Succeeded` or `Failed` that no Job owns. The pods that
+ran at the shutdown stay as objects next to their replacements, and a label
+selector that takes the first match lands on them (forgejo-dump on
+2026-10-28); a Job's pods stay, their logs are evidence. Then the one hand
+step, the unseal:
 
 ```sh
 python3 - <<'EOF' | kubectl exec -i -n platform openbao-0 -- sh -c 'k="$(cat)"; bao operator unseal "$k"'

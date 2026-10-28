@@ -23,6 +23,13 @@ tok = re.search(r'hcloud_token\s*=\s*"([^"]+)"',
                 (ROOT / 'terraform.tfvars').read_text()).group(1)
 
 
+def run(args, **kw):
+    r = subprocess.run(args, capture_output=True, text=True, **kw)
+    if r.returncode:
+        sys.exit(f"{' '.join(args[:4])}... failed: {(r.stderr or r.stdout).strip()[:300]}")
+    return r.stdout.strip()
+
+
 def api(method, path, body=None):
     headers = {'Authorization': 'Bearer ' + tok}
     data = None
@@ -98,4 +105,11 @@ while time.time() - t0 < 1200:  # etcd needs all three nodes before any turns Re
     time.sleep(20)
 else:
     sys.exit('nodes did not turn Ready within 20 minutes')
+
+for pod in json.loads(run(['kubectl', 'get', 'pods', '-A', '-o', 'json']))['items']:
+    m = pod['metadata']  # the shutdown's leftovers; a Job's pods keep their logs as evidence
+    if pod['status'].get('phase') in ('Succeeded', 'Failed') and not any(
+            o['kind'] == 'Job' for o in m.get('ownerReferences', [])):
+        run(['kubectl', '-n', m['namespace'], 'delete', 'pod', m['name'], '--ignore-not-found'])
+        print(f"deleted leftover pod {m['namespace']}/{m['name']}", flush=True)
 print('unseal OpenBao next, if it is sealed: docs/factory-off-runbook.md')
