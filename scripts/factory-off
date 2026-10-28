@@ -73,6 +73,18 @@ ready = run(['kubectl', 'get', 'nodes', '--no-headers']).splitlines()
 if len(ready) != 3 or not all(' Ready ' in l for l in ready):
     sys.exit(f'nodes not 3x Ready, refusing to switch off:\n{ready}')
 
+primary = run(['kubectl', '-n', 'platform', 'get', 'cluster', 'sf-cluster',
+               '-o', 'jsonpath={.status.currentPrimary}'])
+active = run(['kubectl', '-n', 'platform', 'exec', primary, '-c', 'postgres', '--',
+              'psql', '-U', 'postgres', '-d', 'forgejo', '-tAc',
+              "SELECT r.owner_name || '/' || r.name || ' run ' || a.index || ' (' ||"
+              " CASE a.status WHEN 5 THEN 'waiting' WHEN 6 THEN 'running' ELSE 'blocked' END || ')'"
+              ' FROM action_run a JOIN repository r ON r.id = a.repo_id'
+              ' WHERE a.status IN (5, 6, 7) ORDER BY a.id'])  # Forgejo's StatusWaiting, StatusRunning, StatusBlocked
+if active:
+    sys.exit(f'{active}\nForgejo Actions runs are not done, refusing to switch off: wait for them'
+             ' or cancel them in Forgejo, then run scripts/factory-off again')
+
 run(['kubectl', 'apply', '-f', '-'], input=f'''apiVersion: postgresql.cnpg.io/v1
 kind: Backup
 metadata: {{name: factory-off-{stamp}, namespace: platform}}
@@ -85,8 +97,6 @@ run(['kubectl', '-n', 'platform', 'wait', '--for=jsonpath={.status.phase}=comple
      f'backup/factory-off-{stamp}', '--timeout=1800s'])
 print(f'CNPG backup factory-off-{stamp} completed', flush=True)
 
-primary = run(['kubectl', '-n', 'platform', 'get', 'cluster', 'sf-cluster',
-               '-o', 'jsonpath={.status.currentPrimary}'])
 run(['kubectl', '-n', 'platform', 'exec', primary, '-c', 'postgres', '--',
      'psql', '-U', 'postgres', '-tAc', 'SELECT pg_switch_wal()'])
 time.sleep(45)  # let the archiver ship the switched WAL to S3

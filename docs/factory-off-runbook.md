@@ -15,7 +15,10 @@ month together), and the three disk snapshots stay (cents).
 ## Switch off: scripts/factory-off
 
 Runs from the repo root, aborts before touching anything unless all three
-nodes are Ready. In order:
+nodes are Ready and no Forgejo Actions run is waiting, running or blocked
+(it lists them as `owner/name run N (status)`, from `action_run` in
+Forgejo's database on the CNPG primary; wait for them or cancel them in
+Forgejo, then run it again). In order:
 
 1. One ad-hoc CNPG `Backup` (`factory-off-<stamp>`, barman plugin), waited
    to `completed`.
