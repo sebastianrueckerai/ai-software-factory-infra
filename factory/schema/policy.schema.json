@@ -34,6 +34,10 @@
         "session_floor_frontier_eur": {
           "type": "number",
           "description": "SessionFloorFrontierEUR is SessionFloorCheapEUR for a session on the frontier rung."
+        },
+        "premium_month_eur": {
+          "type": "number",
+          "description": "PremiumMonthEUR caps the calls on Premium together per UTC calendar month, inside the caps above; the gateway serves a call it cannot fit on Big (ruling 329). Absent or 0: Premium has no cap of its own."
         }
       },
       "description": "Budget caps spend in EUR per task and per UTC day.",
@@ -103,7 +107,7 @@
         },
         "checkin_calls": {
           "type": "integer",
-          "description": "CheckinCalls is how many model calls the check-in agent gets per card, all moments and rounds together. Absent: DefaultCheckinCalls."
+          "description": "CheckinCalls is how many model calls one check-in conversation gets; its last call carries no tools and asks for the answer. Absent: DefaultCheckinCalls."
         },
         "checkin_share": {
           "type": "integer",
@@ -177,6 +181,10 @@
               "type": "string"
             },
             "description": "Models are the aliases the agent may call through the gateway."
+          },
+          "session_model": {
+            "type": "string",
+            "description": "SessionModel is the alias a session of a plan or report class runs on (ruling 330), one of Models; absent: factoryd's stronger rung."
           },
           "tools": {
             "type": "object",
@@ -612,7 +620,8 @@
           "description": "Model is the class the project agent calls (purpose operator); the compaction of its threads calls Small.",
           "enum": [
             "big",
-            "small"
+            "small",
+            "premium"
           ]
         },
         "vision_model": {

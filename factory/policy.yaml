@@ -45,12 +45,21 @@ budget:
   # died at 0.15 and 0.07 EUR left
   session_floor_cheap_eur: 0.30
   session_floor_frontier_eur: 0.60
+  # the premium class's month cap (rulings 328, 329; Sebastian, 2026-10-29):
+  # the planner's sessions, the chat and the coder review run on premium, a
+  # pay-per-token model whose spend is real money, unlike the GLM plan's; a
+  # premium call this cap cannot fit runs on big. A development stopgap:
+  # removing it is this key, chat.model, the coder's review_model, the
+  # planner's premium lines and the premium alias in
+  # k8s/platform/litellm/helmrelease.yaml
+  premium_month_eur: 50
 
 # The project agent's chat (architecture 5.4): monthly_eur is each
 # project's chat budget in a UTC month, and a raise reaches the month in
 # progress; a project file may set less.
 chat:
   monthly_eur: 30
+  model: premium
 
 # Limits on every task's work (rulings 177, 183, 186); a task keeps all of
 # them from the version its workflow started under, in every session and
@@ -142,12 +151,13 @@ classes:
     # (k8s/platform/litellm/helmrelease.yaml)
     models: [small, big]
     # factoryd's calls on a coder task's account, through the gateway; the
-    # agent cannot call these. The review, the supervisors, the security
-    # audit (rulings 188, 191) and the check-in at a gate return (plan D,
-    # absent: the review's alias) all call big
-    review_model: big
+    # agent cannot call these. The review calls premium (ruling 328); the
+    # supervisors, the security audit (rulings 188, 191) and the check-in at
+    # a gate return (plan D; absent it would read the review's alias) call big
+    review_model: premium
     supervisor_model: big
     audit_model: big
+    checkin_model: big
     # the alias a session's analyze_image calls on the card's account
     # (purpose vision, the chat's door); the card's budget caps it
     vision_model: vision
@@ -202,11 +212,12 @@ classes:
       analyze_image: {}
   # the plan card's session (ruling 205): reads the repository and the
   # spec, writes nothing, answers a plan as its last message. It runs on
-  # the stronger rung, as the screening does: a plan's quality bounds the
-  # sessions of every card it files.
+  # premium (ruling 330), above the stronger rung the screening runs on: a
+  # plan's quality bounds the sessions of every card it files.
   planner:
     session: plan
-    models: [small, big]
+    models: [small, big, premium]
+    session_model: premium
     supervisor_model: big
     # the hold-out drafting beside a confirmation round (roadmap 289)
     review_model: big
@@ -266,6 +277,7 @@ prices:
   max_output_tokens:
     big: 24576
     small: 24576
+    premium: 24576
     vision: 4096
 
 # Risk rules over a pull request's changed paths (a rename counts both its

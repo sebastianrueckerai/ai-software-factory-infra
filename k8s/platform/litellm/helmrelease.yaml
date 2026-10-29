@@ -89,6 +89,22 @@ spec:
             drop_params: true
             extra_body:
               enable_thinking: false
+        # The premium class (rulings 328, 329; Sebastian, 2026-10-29): a
+        # pay-per-token model for the planner, the chat and the review, its
+        # spend capped apart by policy.yaml's budget.premium_month_eur. A
+        # development stopgap: removing it is this entry, its fallback line,
+        # the litellm-openai secret and the policy's premium keys. LiteLLM's
+        # own price entry bills it; the gateway's price book leaves out the
+        # OpenAI rates no gateway call reaches (service tiers, batch, 12-hour
+        # cache, web search, the regional uplift without data_residency), so
+        # the OpenAI project stays on the default service tier and this entry
+        # sets no data_residency.
+        - model_name: premium
+          litellm_params:
+            model: openai/gpt-6.1-sol
+            api_key: os.environ/OPENAI_API_KEY
+            drop_params: true
+            reasoning_effort: max
         # The chat's vision door (roadmap 300's images, 2026-10-19): the
         # look at a member's image, a tool on the metrics page, not a text
         # class. Thinking off as on the Alibaba text models: it is not
@@ -111,11 +127,13 @@ spec:
         # a call failing with 408, 409, 429 or 5xx is retried twice on the
         # same deployment after 0.5 s, then 1 s (or the provider's
         # Retry-After up to 60 s); other 4xx fail at once. Then the class's
-        # Alibaba group answers the call
+        # Alibaba group answers the call; premium's falls to big, then big's
+        # Alibaba group, never below big (ruling 329)
         num_retries: 2
         fallbacks:
           - big: [big-alibaba]
           - small: [small-alibaba]
+          - premium: [big, big-alibaba]
         # a z.ai model that failed allowed_fails calls within a minute rests
         # cooldown_time seconds, and the Alibaba group serves its class
         # meanwhile
@@ -143,6 +161,7 @@ spec:
     environmentSecrets:
       - litellm-qwen
       - litellm-zai
+      - litellm-openai
     migrationJob:
       enabled: true
       hooks:
