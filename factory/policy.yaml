@@ -84,9 +84,9 @@ limits:
   check_in: 45m
   supervisor_calls: 6
   supervisor_timeout: 6m
-  # 3, the session cap: a stage's returning findings never climb the tier;
-  # the frontier comes only through the supervisor's retry_stronger
-  # (Stage 17 plan 4.1, ruling 299)
+  # 3, the session cap: a stage's returning findings never climb the tier
+  # (a medium or large card's limit is 1); retry_stronger climbs it, from
+  # the cheap cap or the stuck rule (Stage 17 plan 4.1, ruling 299)
   stronger_after: 3
   steps: 1500
   nudge_after: 3
@@ -96,7 +96,7 @@ limits:
   # when factoryd tells the running agent to wrap up and push (default 80);
   # plan_warn_at: the same for a planner session (67, two thirds);
   # no_push_spend: percent of the card's budget spent with nothing pushed at
-  # which the session supervisor is called (60); context_tokens: the context
+  # which the session's check-in is asked (60); context_tokens: the context
   # size at which opencode compacts the conversation (100000, of the 200000
   # window card #854's calls grew toward: 138,000).
   warn_at: 80
