@@ -100,9 +100,10 @@ editing surface, the console shows it read-only.
   then lowercase letters, digits and dashes, at most 24, and never
   `compact` or `new`, the chat's own commands.
 - `processes/<name>.yaml`: the processes a project's cards pass
-  (rulings 206, 208), four blocks each: `lanes` (backlog, ready and an
-  optional plan, each starting lane naming a class of `policy.yaml` and
-  who may move a card into it), `dependencies` (only with a plan lane),
+  (rulings 206, 208, roadmap 225), four blocks each: `tracks` (`direct`
+  and an optional `plan`, each naming a class of `policy.yaml`; the plan
+  track carries the plan's bounds; whoever files a card sets its track),
+  `dependencies` (only with a plan track),
   `stages` (the stages a task's work passes, in order, each with
   `on_findings: agent | human | fail`, `enabled` and an optional `when:
   outsider`, ruling 177) and `merge: {queue: none | project}`.

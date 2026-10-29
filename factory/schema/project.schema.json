@@ -357,16 +357,12 @@
               "release_resource",
               "new_card",
               "request_image",
-              "move_card",
               "answer",
               "comment",
               "tell_card",
               "steer",
               "retry",
-              "start_plan",
-              "accept_plan",
               "request_changes",
-              "reject_plan",
               "approve_merge",
               "deny_merge",
               "rerun_checks",
@@ -435,9 +431,9 @@
         "autonomous"
       ]
     },
-    "backlog_cap": {
+    "queue_cap": {
       "type": "integer",
-      "description": "BacklogCap bounds how many of the project's cards hold no admission stamp (backlog and queued); a filing at the cap refuses. Absent: 8.",
+      "description": "QueueCap bounds how many of the project's cards hold no admission stamp, the queued cards a slot has not taken yet; a filing at the cap refuses. Absent: 8.",
       "minimum": 0
     },
     "routines": {

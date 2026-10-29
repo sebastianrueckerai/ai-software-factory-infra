@@ -3,8 +3,8 @@
 # seed's (ruling 164), agents fix it, and the console's autonomy dial sets
 # who approves a merge. Its namespace factory is factoryd's own: this is the
 # factory's own project.
-# The lane works like any build project (roadmap 160, Stage 18 item 3.4):
-# a spec card goes through the plan lane, its planned cards through ready.
+# It works like any build project (roadmap 160, Stage 18 item 3.4): a spec
+# card runs on the plan track, its planned cards on the direct track.
 repository: sf/ai-software-factory-code
 merge_rule: auto
 objects: seed

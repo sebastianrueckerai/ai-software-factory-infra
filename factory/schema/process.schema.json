@@ -1,79 +1,109 @@
 {
   "type": "object",
   "properties": {
-    "lanes": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name is backlog, plan or ready, each at most once.",
-            "enum": [
-              "backlog",
-              "plan",
-              "ready"
-            ]
-          },
-          "class": {
-            "type": "string",
-            "description": "Class is the class of the task a card entering the lane starts: on ready a class with session code, on plan one with session plan; not on backlog."
-          },
-          "moved_by": {
-            "type": "string",
-            "description": "MovedBy is who may put a card into a starting lane, at its creation or later: writers of the card's repository, or the policy's approvers. Not on backlog: no card moves into it.",
-            "enum": [
-              "writers",
-              "approvers"
-            ]
-          },
-          "write_up": {
-            "type": "string",
-            "description": "WriteUp is, on backlog only, a class with session report that writes a card up once when it enters (ruling 185)."
-          },
-          "plan": {
-            "type": "object",
-            "properties": {
-              "min_cards": {
-                "type": "integer",
-                "description": "MinCards is the least cards a plan may hold, 1 to 20 and at most MaxCards.",
-                "minimum": 1,
-                "maximum": 20
-              },
-              "max_cards": {
-                "type": "integer",
-                "description": "MaxCards is the most cards a plan may hold, 2 to 20.",
-                "minimum": 2,
-                "maximum": 20
-              },
-              "foundation": {
-                "type": "boolean",
-                "description": "Foundation: exactly one card of role foundation, which every other card depends on."
-              },
-              "integration": {
-                "type": "boolean",
-                "description": "Integration: exactly one card of role integration, which depends on every other card."
-              }
+    "tracks": {
+      "type": "object",
+      "properties": {
+        "direct": {
+          "type": "object",
+          "properties": {
+            "class": {
+              "type": "string",
+              "description": "Class is the class of the task a card on the track starts."
             },
-            "description": "Plan bounds the plan the planner answers; on lane plan only, and required there.",
-            "required": [
-              "min_cards",
-              "max_cards",
-              "foundation",
-              "integration"
-            ],
-            "additionalProperties": false
-          }
+            "plan": {
+              "type": "object",
+              "properties": {
+                "min_cards": {
+                  "type": "integer",
+                  "description": "MinCards is the least cards a plan may hold, 1 to 20 and at most MaxCards.",
+                  "minimum": 1,
+                  "maximum": 20
+                },
+                "max_cards": {
+                  "type": "integer",
+                  "description": "MaxCards is the most cards a plan may hold, 2 to 20.",
+                  "minimum": 2,
+                  "maximum": 20
+                },
+                "foundation": {
+                  "type": "boolean",
+                  "description": "Foundation: exactly one card of role foundation, which every other card depends on."
+                },
+                "integration": {
+                  "type": "boolean",
+                  "description": "Integration: exactly one card of role integration, which depends on every other card."
+                }
+              },
+              "description": "Plan bounds the plan the planner answers; on the plan track only, and required there.",
+              "required": [
+                "min_cards",
+                "max_cards",
+                "foundation",
+                "integration"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "description": "Direct builds a card at once: a class with session code.",
+          "required": [
+            "class"
+          ],
+          "additionalProperties": false
         },
-        "description": "Lane is one lane of a process.",
-        "required": [
-          "name"
-        ],
-        "additionalProperties": false
+        "plan": {
+          "type": "object",
+          "properties": {
+            "class": {
+              "type": "string",
+              "description": "Class is the class of the task a card on the track starts."
+            },
+            "plan": {
+              "type": "object",
+              "properties": {
+                "min_cards": {
+                  "type": "integer",
+                  "description": "MinCards is the least cards a plan may hold, 1 to 20 and at most MaxCards.",
+                  "minimum": 1,
+                  "maximum": 20
+                },
+                "max_cards": {
+                  "type": "integer",
+                  "description": "MaxCards is the most cards a plan may hold, 2 to 20.",
+                  "minimum": 2,
+                  "maximum": 20
+                },
+                "foundation": {
+                  "type": "boolean",
+                  "description": "Foundation: exactly one card of role foundation, which every other card depends on."
+                },
+                "integration": {
+                  "type": "boolean",
+                  "description": "Integration: exactly one card of role integration, which depends on every other card."
+                }
+              },
+              "description": "Plan bounds the plan the planner answers; on the plan track only, and required there.",
+              "required": [
+                "min_cards",
+                "max_cards",
+                "foundation",
+                "integration"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "description": "Plan plans a card first, a class with session plan, and files the plan's cards on the direct track.",
+          "required": [
+            "class"
+          ],
+          "additionalProperties": false
+        }
       },
-      "description": "Lanes are where a card waits or starts: backlog and ready always, plan for a process that builds from a spec. A card entering a starting lane (plan, ready) starts a task of the lane's class.",
-      "minItems": 2,
-      "maxItems": 3
+      "description": "Tracks are how a card's work runs, chosen by whoever files it (roadmap 225): direct always, plan for a process that builds from a spec. A card starts a task of its track's class.",
+      "required": [
+        "direct"
+      ],
+      "additionalProperties": false
     },
     "dependencies": {
       "type": "object",
@@ -93,7 +123,7 @@
           ]
         }
       },
-      "description": "Dependencies is how a plan's cards wait on each other in lane ready; only in a process with a lane plan.",
+      "description": "Dependencies is how a plan's cards wait on each other; only in a process with a plan track.",
       "required": [
         "wait_until",
         "on_failed"
@@ -195,7 +225,7 @@
   "title": "factory/process",
   "description": "Process is processes/\u003cname\u003e.yaml: the blocks a project's cards pass (ruling 206). A class is policy.yaml's; a process only names it.",
   "required": [
-    "lanes",
+    "tracks",
     "stages",
     "merge"
   ],
