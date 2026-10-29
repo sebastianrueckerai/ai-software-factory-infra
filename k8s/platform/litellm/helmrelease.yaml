@@ -93,18 +93,33 @@ spec:
         # pay-per-token model for the planner, the chat and the review, its
         # spend capped apart by policy.yaml's budget.premium_month_eur. A
         # development stopgap: removing it is this entry, its fallback line,
-        # the litellm-openai secret and the policy's premium keys. LiteLLM's
-        # own price entry bills it; the gateway's price book leaves out the
-        # OpenAI rates no gateway call reaches (service tiers, batch, 12-hour
-        # cache, web search, the regional uplift without data_residency), so
-        # the OpenAI project stays on the default service tier and this entry
-        # sets no data_residency.
+        # the litellm-openai secret and the policy's premium keys. Every call
+        # goes through OpenAI's Responses API (openai/responses/): the chat
+        # completions API refuses reasoning_effort max for gpt-6.1-sol
+        # (low to xhigh only, verified 2026-10-29). LiteLLM merges no price
+        # entry for that route, so model_info pins Sol's rates for the
+        # gateway's price book (developers.openai.com/api/docs/pricing, read
+        # 2026-10-29 through LiteLLM's entry): base and above 272k prompt
+        # tokens, cache writes at 1.25 times the input rate. LiteLLM bills
+        # from its own entry. The OpenAI project stays on the default service
+        # tier and this entry sets no data_residency: the price book counts
+        # neither tier rates nor the regional uplift.
         - model_name: premium
           litellm_params:
-            model: openai/gpt-6.1-sol
+            model: openai/responses/gpt-6.1-sol
             api_key: os.environ/OPENAI_API_KEY
             drop_params: true
             reasoning_effort: max
+          model_info:
+            input_cost_per_token: 0.000002
+            input_cost_per_token_above_272k_tokens: 0.000004
+            cache_creation_input_token_cost: 0.0000025
+            cache_creation_input_token_cost_above_272k_tokens: 0.000005
+            cache_read_input_token_cost: 0.0000001
+            cache_read_input_token_cost_above_272k_tokens: 0.0000002
+            output_cost_per_token: 0.00001
+            output_cost_per_token_above_272k_tokens: 0.000015
+            max_output_tokens: 128000
         # The chat's vision door (roadmap 300's images, 2026-10-19): the
         # look at a member's image, a tool on the metrics page, not a text
         # class. Thinking off as on the Alibaba text models: it is not
