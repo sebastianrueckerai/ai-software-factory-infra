@@ -41,11 +41,11 @@ k -n $P create secret generic litellm-qwen --from-literal=ALIBABA_CLOUD_KEY="$AL
 # ZAI_CODING_KEY once the console holds one; today the plan's only key (the
 # probe's Z_AI_KEY) carries the trial.
 k -n $P create secret generic litellm-zai --from-literal=ZAI_CODING_KEY="${ZAI_CODING_KEY:-$Z_AI_KEY}"
-# The premium class (ruling 328): the OpenAI API key. Without one the secret
-# holds an empty key, the premium deployment fails every call and LiteLLM's
-# router serves it on big; to add the key, delete the secret, run this again
-# and restart LiteLLM.
-k -n $P create secret generic litellm-openai --from-literal=OPENAI_API_KEY="${OPENAI_API_KEY:-}"
+# The premium class (ruling 328): the OpenAI API key, OPENAI_API_TOKEN in
+# .env.tools. Without one the secret holds an empty key, the premium
+# deployment fails every call and LiteLLM's router serves it on big; to add
+# the key, delete the secret, run this again and restart LiteLLM.
+k -n $P create secret generic litellm-openai --from-literal=OPENAI_API_KEY="${OPENAI_API_TOKEN:-}"
 F=forgejo
 k -n $F create secret generic forgejo-secret-key --from-literal=SECRET_KEY="$FORGEJO_SECRET_KEY"
 # The chart's site admin: the machine account factory-admin (ruling 229),
