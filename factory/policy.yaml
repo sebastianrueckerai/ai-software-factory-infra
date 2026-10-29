@@ -86,7 +86,8 @@ chat:
 # same_call: identical tool calls in one session, in a row or not, that
 # trip the same_call detector after the nudges; above nudge_after (absent: 4).
 # review_diff_kib: the most diff, in KiB, one review call reads, and the size
-# of a part beyond it (at most 3 parts); about 257 tokens a KiB; absent: 48.
+# of each part of a bigger diff, as many as it needs; about 257 tokens a KiB;
+# absent: 48. The audit reads parts of 48 KiB whatever it says.
 limits:
   sessions: 3
   agent_time: 2h
@@ -374,8 +375,10 @@ link_hosts: [aisoftwarefactory.world]
 bounds:
   GateReproduction: 1800
   # ModelReview and GateAudit take no bound here: the code derives theirs
-  # from supervisor_timeout (three parts of the diff, one call each, plus
-  # two minutes: 20 m at 6 m), since Stage 16.
+  # from supervisor_timeout, three of them and two minutes until the diff
+  # is read (20 m at 6 m), then one for each wave of four calls on its
+  # parts and two minutes, at most 5 h 50 m: ten minutes under the six
+  # hours of their attempt.
 
 time_zone: Europe/Berlin
 routines:
