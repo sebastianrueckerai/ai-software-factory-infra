@@ -104,13 +104,15 @@ limits:
   no_push_spend: 60
   context_tokens: 100000
   review_diff_kib: 256
-  # the check-in's five (plan D): checkin_calls, model calls of the check-in
-  # per card over all moments and rounds together; checkin_share, at most
-  # this percent of the card's budget on check-in calls; checkin_tail_kib,
-  # the parent session record's tail cut into the check-in's statement;
-  # checkin_handover_chars, the handover note's cap; checkin_sessions,
-  # fresh sessions one confirmed finding gets before the human asks for it
-  checkin_calls: 12
+  # the check-in's five (plan D): checkin_calls, the model calls of one
+  # check-in conversation, the last of them without tools so that it
+  # answers (ruling 327); checkin_share, at most this percent of the card's
+  # budget on check-in calls, over all its conversations, moments and
+  # rounds; checkin_tail_kib, the parent session record's tail cut into the
+  # check-in's statement; checkin_handover_chars, the handover note's cap;
+  # checkin_sessions, fresh sessions one confirmed finding gets before the
+  # human asks for it
+  checkin_calls: 20
   checkin_share: 10
   checkin_tail_kib: 24
   checkin_handover_chars: 2000
