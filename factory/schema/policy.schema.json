@@ -101,7 +101,7 @@
         },
         "review_diff_kib": {
           "type": "integer",
-          "description": "ReviewDiffKiB is the most diff, in KiB, one model review call reads, and the size of a part when a bigger diff reads in parts (at most ReviewParts). Size it to the review model's context window: about 257 tokens a KiB. Absent: DefaultReviewDiffKiB.",
+          "description": "ReviewDiffKiB is the most diff, in KiB, one model review call reads, and the size of a part when a bigger diff reads in parts, as many as it needs. Size it to the review model's context window: about 257 tokens a KiB. Absent: DefaultReviewDiffKiB.",
           "minimum": 48,
           "maximum": 1024
         },
@@ -213,6 +213,7 @@
                 "escalate_to_human",
                 "request_info",
                 "request_tool",
+                "request_cut",
                 "file_plan",
                 "file_verdict",
                 "delegate",
@@ -426,7 +427,7 @@
         },
         "large_lines": {
           "type": "integer",
-          "description": "LargeLines: a pull request changing more lines than this, added and deleted, is class large (requires_approval: a human splits or accepts it) unless a more severe class applies; 0 is off. Class large needs no entry in classes, where it ranks just above class normal; listed, it ranks where it is listed.",
+          "description": "LargeLines: a pull request changing more lines than this, added and deleted, is class large (requires_approval: a person approves or denies it) unless a more severe class applies; 0 is off. Class large needs no entry in classes, where it ranks just above class normal; listed, it ranks where it is listed.",
           "minimum": 0
         }
       },
@@ -686,7 +687,7 @@
               "grant_session",
               "fund",
               "set_dependency",
-              "split_card",
+              "replan",
               "read_doc",
               "write_doc",
               "set_autonomy",

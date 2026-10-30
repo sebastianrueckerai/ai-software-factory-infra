@@ -188,6 +188,9 @@ classes:
       # a tool the sandbox lacks (roadmap 281): a card adds it to one of the
       # project's images and this card restarts on that image; free
       request_tool: {}
+      # the cut (roadmap 336): the card asks the check-in to send its work
+      # back to the planner when it is bigger than one card; free
+      request_cut: {}
       cloud_prices: {}
       commission_server: {}
       list_resources: {}

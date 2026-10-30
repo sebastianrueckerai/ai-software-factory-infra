@@ -377,7 +377,7 @@
               "grant_session",
               "fund",
               "set_dependency",
-              "split_card",
+              "replan",
               "read_doc",
               "write_doc",
               "set_autonomy",
