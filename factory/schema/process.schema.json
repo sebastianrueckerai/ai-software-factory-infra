@@ -16,23 +16,23 @@
               "properties": {
                 "min_cards": {
                   "type": "integer",
-                  "description": "MinCards is the least cards a plan may hold, 1 to 20 and at most MaxCards.",
+                  "description": "MinCards is the least cards a plan's first planning round files, 1 to 20 and at most MaxCards; a later round files at least one.",
                   "minimum": 1,
                   "maximum": 20
                 },
                 "max_cards": {
                   "type": "integer",
-                  "description": "MaxCards is the most cards a plan may hold, 2 to 20.",
+                  "description": "MaxCards is the most cards one planning round files, 2 to 20. A plan's later rounds, its delta cards and its replans add more.",
                   "minimum": 2,
                   "maximum": 20
                 },
                 "foundation": {
                   "type": "boolean",
-                  "description": "Foundation: exactly one card of role foundation, which every other card depends on."
+                  "description": "Foundation: the first planning round holds exactly one card of role foundation, which every other card of the round depends on; a later round holds at most one."
                 },
                 "integration": {
                   "type": "boolean",
-                  "description": "Integration: exactly one card of role integration, which depends on every other card."
+                  "description": "Integration: exactly one card of role integration, in the last planning round, which depends on every other card of its round."
                 }
               },
               "description": "Plan bounds the plan the planner answers; on the plan track only, and required there.",
@@ -63,23 +63,23 @@
               "properties": {
                 "min_cards": {
                   "type": "integer",
-                  "description": "MinCards is the least cards a plan may hold, 1 to 20 and at most MaxCards.",
+                  "description": "MinCards is the least cards a plan's first planning round files, 1 to 20 and at most MaxCards; a later round files at least one.",
                   "minimum": 1,
                   "maximum": 20
                 },
                 "max_cards": {
                   "type": "integer",
-                  "description": "MaxCards is the most cards a plan may hold, 2 to 20.",
+                  "description": "MaxCards is the most cards one planning round files, 2 to 20. A plan's later rounds, its delta cards and its replans add more.",
                   "minimum": 2,
                   "maximum": 20
                 },
                 "foundation": {
                   "type": "boolean",
-                  "description": "Foundation: exactly one card of role foundation, which every other card depends on."
+                  "description": "Foundation: the first planning round holds exactly one card of role foundation, which every other card of the round depends on; a later round holds at most one."
                 },
                 "integration": {
                   "type": "boolean",
-                  "description": "Integration: exactly one card of role integration, which depends on every other card."
+                  "description": "Integration: exactly one card of role integration, in the last planning round, which depends on every other card of its round."
                 }
               },
               "description": "Plan bounds the plan the planner answers; on the plan track only, and required there.",
