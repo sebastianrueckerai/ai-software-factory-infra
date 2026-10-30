@@ -6,7 +6,7 @@
 # Unknown keys are rejected; `factoryd config check factory/` shows why.
 version: 1
 
-# EUR caps. A card's budget follows its size (ruling 266): small 2, medium 5,
+# EUR caps. A card's budget follows its size (ruling 266): small 4, medium 5,
 # large 10 EUR from its plan row or its brief's "Size:" line, or the amount
 # of a "Budget: N EUR" line; a card without either gets task_default_eur.
 # The result is held to the project's budget.task_max_eur when set (else to
