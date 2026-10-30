@@ -195,6 +195,14 @@
             "none",
             "project"
           ]
+        },
+        "groups": {
+          "type": "string",
+          "description": "Groups: free merges the cards of every plan as they come, and production waits until no plan is open on main; one_at_a_time admits a plan's card to the merge queue only while no other plan is open on main, and needs queue project. Absent: free.",
+          "enum": [
+            "free",
+            "one_at_a_time"
+          ]
         }
       },
       "description": "Merge is how the project's pull requests merge.",

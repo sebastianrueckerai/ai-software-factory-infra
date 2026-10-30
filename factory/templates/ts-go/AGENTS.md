@@ -72,4 +72,5 @@ still runs `gosec` and `go test -race`, then the names of added migrations, and 
 On `main` (`.forgejo/workflows/ci.yml`) `bash check` runs again, the image
 is pushed by digest, staging rolls and the run waits until staging's pod
 runs that digest; with `deploy/prod/kustomization.yaml` prod follows after
-15 minutes on staging without an alert.
+15 minutes on staging without an alert, unless the factory holds production
+while a plan is open on main.

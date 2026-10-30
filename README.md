@@ -819,7 +819,7 @@ then. The runner stays at 12.7.3.
 
 Before a destroy that must keep Postgres state: a completed CNPG
 `Backup` of the live generation, a WAL switch, an OpenBao raft snapshot,
-a Forgejo dump, `flux suspend kustomization --all`, and the two-line edit
+a Forgejo dump, factoryd scaled to 0 (`kubectl -n factory scale deployment factoryd --replicas=0`: while it runs, factoryd undoes a suspend of flux-system/factory within 15 seconds), `flux suspend kustomization --all`, and the two-line edit
 in `k8s/platform/cnpg/cluster.yaml` (recovery origin = the newest
 generation with a completed base backup, live archive = the next unused
 sibling). `cluster.yaml` on `main` carries the pair for the next rebuild.

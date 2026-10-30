@@ -1,9 +1,11 @@
 # main: bash check as in pr.yml; with a Dockerfile, build and push the
 # image by digest, roll staging, wait until staging runs it and run
 # deploy/smoke.sh against it on the project's smoke runner, the one runner
-# staging admits; with deploy/prod/kustomization.yaml, wait 15
-# minutes, ask the factory whether an alert fires in staging, and on none
-# roll prod. Every roll is a commit by factory-ci on the deploy branch
+# staging admits; with deploy/prod/kustomization.yaml, first ask the factory
+# whether production is held (a plan open on main): held, skip prod and end
+# green, and the factory runs this again once the hold ends; not held, wait
+# 15 minutes, ask whether an alert fires in staging, and on none roll
+# prod. Every roll is a commit by factory-ci on the deploy branch
 # (.forgejo/roll.sh, pushed with the deploy key); Flux tracks deploy. On a
 # repository without a Dockerfile every job after the checks skips.
 # Registration seeded this file from the template ts-go; agents cannot
@@ -169,9 +171,33 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: ask the factory whether production is held
+        id: release
+        env:
+          FACTORY_READ_TOKEN: ${{ secrets.FACTORY_READ_TOKEN }}
+        run: |
+          set -uo pipefail
+          url="$FACTORY_URL/projects/[[.Name]]/release?commit=${GITHUB_SHA}"
+          code=$(curl -sS -m 30 -o release.json -w '%{http_code}' -H "Authorization: Bearer $FACTORY_READ_TOKEN" "$url")
+          if [ $? -ne 0 ]; then echo "the factory did not answer at $url"; exit 1; fi
+          if [ "$code" != 200 ]; then
+            echo "the factory answered $code at $url; without a 200 there is no promotion"
+            head -c 2000 release.json; echo; exit 1
+          fi
+          if ! held=$(node -e 'const r = JSON.parse(require("fs").readFileSync("release.json", "utf8")); console.log(r.held === true ? "true" : r.held === false ? "false" : "")'); then
+            echo "the factory's answer is not JSON:"; head -c 2000 release.json; echo; exit 1
+          fi
+          case "$held" in
+            true) echo "production is held: $(node -e 'console.log(JSON.parse(require("fs").readFileSync("release.json", "utf8")).reason)'). prod stays; the factory runs this again once the hold ends" ;;
+            false) echo "production is not held" ;;
+            *) echo "the factory's answer names no held:"; head -c 2000 release.json; echo; exit 1 ;;
+          esac
+          echo "held=$held" >> "$GITHUB_OUTPUT"
       - name: wait 15 minutes on staging
+        if: steps.release.outputs.held == 'false'
         run: sleep 900
       - name: ask the factory whether an alert fires in [[index .Namespaces "deploy/staging"]]
+        if: steps.release.outputs.held == 'false'
         env:
           FACTORY_READ_TOKEN: ${{ secrets.FACTORY_READ_TOKEN }}
         run: |
@@ -189,6 +215,7 @@ jobs:
             *) echo "alerts fire in staging, prod stays:"; cat alerts.json; echo; exit 1 ;;
           esac
       - name: roll prod
+        if: steps.release.outputs.held == 'false'
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
           FACTORY_SSH_HOST_KEY: ${{ secrets.FACTORY_SSH_HOST_KEY }}

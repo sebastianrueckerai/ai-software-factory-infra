@@ -2,7 +2,8 @@
 # Build from a spec (ruling 205, roadmap 225): a plan-track card's planner
 # answers a plan; one with no open question files one direct-track card per
 # planned card with their dependencies, each waits for its dependencies,
-# and one pull request merges at a time.
+# and one pull request merges at a time. Plans merge freely and production
+# waits until none is open on main.
 tracks:
   direct: {class: coder}
   plan:
@@ -19,4 +20,4 @@ stages:
   - {name: audit, on_findings: human, enabled: true}
   - {name: approval, on_findings: human, enabled: true}
   - {name: merge, on_findings: human, enabled: true}
-merge: {queue: project}
+merge: {queue: project, groups: free}
