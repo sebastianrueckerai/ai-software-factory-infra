@@ -11,3 +11,5 @@ talos/talosconfig
 talos/patches.local.yaml
 __pycache__/
 /.worktrees/
+
+.superpowers/

@@ -6,7 +6,7 @@ set -euo pipefail
 TOOLS_ENV=${TOOLS_ENV:-$HOME/repos/ai-software-factory/.env.tools}
 SEED_ENV=${SEED_ENV:-$HOME/repos/ai-software-factory/.env.seed}
 set -a; source "$TOOLS_ENV"; source "$SEED_ENV"; set +a
-# The machine accounts' passwords (ruling 229) are generated into the seed env
+# The machine accounts' passwords are generated into the seed env
 # once, never printed.
 for key in FORGEJO_FACTORY_ADMIN_PASSWORD FORGEJO_CONTROLLER_PASSWORD; do
   if [ -z "${!key:-}" ]; then
@@ -41,18 +41,18 @@ k -n $P create secret generic litellm-qwen --from-literal=ALIBABA_CLOUD_KEY="$AL
 # ZAI_CODING_KEY once the console holds one; today the plan's only key (the
 # probe's Z_AI_KEY) carries the trial.
 k -n $P create secret generic litellm-zai --from-literal=ZAI_CODING_KEY="${ZAI_CODING_KEY:-$Z_AI_KEY}"
-# The premium class (ruling 328): the OpenAI API key, OPENAI_API_TOKEN in
+# The premium class: the OpenAI API key, OPENAI_API_TOKEN in
 # .env.tools. Without one the secret holds an empty key, the premium
 # deployment fails every call and LiteLLM's router serves it on big; to add
 # the key, delete the secret, run this again and restart LiteLLM.
 k -n $P create secret generic litellm-openai --from-literal=OPENAI_API_KEY="${OPENAI_API_TOKEN:-}"
 F=forgejo
 k -n $F create secret generic forgejo-secret-key --from-literal=SECRET_KEY="$FORGEJO_SECRET_KEY"
-# The chart's site admin: the machine account factory-admin (ruling 229),
+# The chart's site admin: the machine account factory-admin,
 # which every tool of the factory logs in as; no tool uses sebastian's account.
 k -n $F create secret generic forgejo-admin-secret --from-literal=username=factory-admin --from-literal=password="$FORGEJO_FACTORY_ADMIN_PASSWORD"
 # factory/forgejo-admin in OpenBao: the same login, which factoryd's
-# registration reads (role factoryd, ruling 212); the raft snapshot carries it
+# registration reads (role factoryd); the raft snapshot carries it
 # across a rebuild. Root token and password go over stdin; an existing
 # secret is left as it is unless it names another user: then its versions
 # are destroyed and it is written anew. Needs OpenBao unsealed with the
@@ -206,7 +206,7 @@ else
     fj -o /dev/null -w "controller write collaborator on $r: %{http_code}\n" -X PUT "$FJ/repos/$r/collaborators/controller" -d '{"permission":"write"}'
   done
   # forgejo-config (factory): factoryd reads the configuration tree factory/
-  # of this repository with it (ruling 183). The user factory-config is a read
+  # of this repository with it. The user factory-config is a read
   # collaborator on this repository and nothing else, its token
   # read:repository limited to it. The same pass lets factory-agent file the
   # config_rejected issues here, and write: it merges the imager's pin pull
@@ -340,7 +340,7 @@ else
     echo "$A/forgejo-docs: created (${#tok} chars), the write probe passed"
     unset tok probe code del
   fi
-  # The infra repository is a seed project (ruling 179, agents none): the
+  # The infra repository is a seed project (agents none): the
   # seed owns its webhook to factoryd, so its issues reach the human lane;
   # factoryd reports it. factoryd keeps the labels itself, as the bot,
   # with the issues write of team factory-issues-infra below. Idempotent: an existing hook to factoryd is left alone.
@@ -362,7 +362,7 @@ else
   # sets the units again and reads them back.
   tid=$(fj "$FJ/orgs/sf/teams?limit=50" | python3 -c 'import json,sys; print(next((str(t["id"]) for t in json.load(sys.stdin) if t["name"]=="factory-issues-infra"), ""))')
   if [ -z "$tid" ]; then
-    tid=$(fj -X POST "$FJ/orgs/sf/teams" -d '{"name":"factory-issues-infra","description":"factory-agent: issue labels on the infra repository (ruling 179)","includes_all_repositories":false,"can_create_org_repo":false,"units":["repo.code","repo.issues"],"units_map":{"repo.code":"read","repo.issues":"write"}}' |
+    tid=$(fj -X POST "$FJ/orgs/sf/teams" -d '{"name":"factory-issues-infra","description":"factory-agent: issue labels on the infra repository","includes_all_repositories":false,"can_create_org_repo":false,"units":["repo.code","repo.issues"],"units_map":{"repo.code":"read","repo.issues":"write"}}' |
       python3 -c 'import json,sys; print(json.load(sys.stdin).get("id", ""))' || true)
     [ -n "$tid" ] || { echo "team factory-issues-infra: create failed"; exit 1; }
     echo "team factory-issues-infra: created ($tid)"

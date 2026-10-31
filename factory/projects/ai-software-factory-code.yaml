@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../schema/project.schema.json
 # The factory's own code: its objects are the infra repository's and the
-# seed's (ruling 164), agents fix it, and the console's autonomy dial sets
+# seed's, agents fix it, and the console's autonomy dial sets
 # who approves a merge. Its namespace factory is factoryd's own: this is the
 # factory's own project.
 # It works like any build project (roadmap 160, Stage 18 item 3.4): a spec
@@ -11,7 +11,6 @@ objects: seed
 agents: coder
 process: spec
 # the security audit stage reads every pull request before the card
-# (ruling 188)
 audit: true
 namespaces: [factory]
 # factory-ci's registrar token reads the writers and the hooks and runs

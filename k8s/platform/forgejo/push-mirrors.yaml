@@ -1,7 +1,7 @@
-# Keeps one healthy push mirror to GitHub per factory repository (ruling
-# 126, the off-site backup); push-mirrors.sh says how. The GitHub token is
+# Keeps one healthy push mirror to GitHub per factory repository (the
+# off-site backup); push-mirrors.sh says how. The GitHub token is
 # secret github-mirror (scripts/seed-secrets.sh, fine-grained, the two
-# repositories, contents read and write; ruling 144). After a token
+# repositories, contents read and write). After a token
 # rotation the old mirror fails its next sync and the next run recreates it.
 apiVersion: batch/v1
 kind: CronJob

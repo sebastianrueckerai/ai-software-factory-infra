@@ -37,7 +37,7 @@
         },
         "premium_month_eur": {
           "type": "number",
-          "description": "PremiumMonthEUR caps the calls on Premium together per UTC calendar month, inside the caps above; the gateway serves a call it cannot fit on Big (ruling 329). Absent or 0: Premium has no cap of its own."
+          "description": "PremiumMonthEUR caps the calls on Premium together per UTC calendar month, inside the caps above; the gateway serves a call it cannot fit on Big. Absent or 0: Premium has no cap of its own."
         }
       },
       "description": "Budget caps spend in EUR per task and per UTC day.",
@@ -184,7 +184,7 @@
           },
           "session_model": {
             "type": "string",
-            "description": "SessionModel is the alias a session of a plan or report class runs on (ruling 330), one of Models; absent: factoryd's stronger rung."
+            "description": "SessionModel is the alias a session of a plan or report class runs on, one of Models; absent: factoryd's stronger rung."
           },
           "tools": {
             "type": "object",
@@ -239,7 +239,7 @@
           },
           "audit_model": {
             "type": "string",
-            "description": "AuditModel is the alias factoryd's security audit calls on the task's account (ruling 188)."
+            "description": "AuditModel is the alias factoryd's security audit calls on the task's account."
           },
           "checkin_model": {
             "type": "string",
@@ -480,7 +480,7 @@
       "items": {
         "type": "string"
       },
-      "description": "Approvers are the Forgejo users who may authorize spend in the console (ruling 128): approve a resource request or a merge, promote a resource; a project file's approvers replace them for its project. Empty: nobody."
+      "description": "Approvers are the Forgejo users who may authorize spend in the console: approve a resource request or a merge, promote a resource; a project file's approvers replace them for its project. Empty: nobody."
     },
     "ai_members": {
       "type": "array",
@@ -534,7 +534,7 @@
     },
     "supervisor": {
       "type": "object",
-      "description": "Supervisor holds the session supervisor's progress detectors: how many seconds without the progress each names before it trips; absent keys take DefaultDetectors (ruling 161: no_write only).",
+      "description": "Supervisor holds the session supervisor's progress detectors: how many seconds without the progress each names before it trips; absent keys take DefaultDetectors (no_write only).",
       "additionalProperties": {
         "type": "integer"
       },

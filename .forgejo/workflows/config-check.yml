@@ -1,4 +1,4 @@
-# factoryd's own check of the configuration tree factory/ (ruling 183) on
+# factoryd's own check of the configuration tree factory/ on
 # every push to main: the decoder factoryd's loader runs, and the committed
 # schema/ against the one the binary generates. Then the platform's
 # checks: every HelmRelease's remediation and timeout, and every image

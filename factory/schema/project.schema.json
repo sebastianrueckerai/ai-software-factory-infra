@@ -39,7 +39,7 @@
     },
     "audit": {
       "type": "boolean",
-      "description": "Audit runs the process's audit stage on the project's pull requests (ruling 188); absent: it does not."
+      "description": "Audit runs the process's audit stage on the project's pull requests; absent: it does not."
     },
     "messengers": {
       "type": "boolean",
@@ -84,7 +84,7 @@
             "description": "Hostname is the environment's public host name, if any."
           }
         },
-        "description": "Environment is one Flux Kustomization: path of the repository applied into namespace (ruling 157), and the public hostname, if any (ruling 155).",
+        "description": "Environment is one Flux Kustomization: path of the repository applied into namespace, and the public hostname, if any.",
         "required": [
           "namespace",
           "path"
@@ -603,7 +603,7 @@
   },
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "factory/project",
-  "description": "ProjectConfig is projects/\u003cname\u003e.yaml: one project, the file name its name (rulings 146, 179).",
+  "description": "ProjectConfig is projects/\u003cname\u003e.yaml: one project, the file name its name.",
   "required": [
     "repository",
     "merge_rule",

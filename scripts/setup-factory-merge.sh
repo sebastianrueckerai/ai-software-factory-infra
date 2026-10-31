@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 # The merge bot factory-merge, the approver bot factory-gate, the chat bot
-# factory-chat and main's protection on the code repository (rulings 109
-# and R59, README "The merge bot"), idempotent: creates each user if
+# factory-chat and main's protection on the code repository (R59,
+# README "The merge bot"), idempotent: creates each user if
 # missing, makes it a write collaborator on its repositories, keeps the
 # token in its secret (factory/forgejo-merge, factory/forgejo-gate,
 # factory/forgejo-chat, key token) while that token reads main of each of
 # them and carries exactly its scopes and otherwise revokes the older
 # tokens of its name and mints a new one, and sets main's protection, then
-# prints it; sets infra main's push and merge whitelists (ruling 239). A
+# prints it; sets infra main's push and merge whitelists. A
 # run that finds everything in place changes nothing and says so on every
 # line. Logs in as the machine admin factory-admin
 # (FORGEJO_FACTORY_ADMIN_PASSWORD from the seed env $SEED_ENV, Forgejo at
@@ -111,7 +111,7 @@ print({k: d[k] for k in ["enable_push_whitelist","push_whitelist_usernames","ena
 want = {"push_whitelist_usernames": ["controller", "sebastian"], "merge_whitelist_usernames": ["factory-merge", "sebastian"], "approvals_whitelist_username": ["controller", "factory-gate", "sebastian"]}
 for k, v in want.items():
     if sorted(d[k] or []) != v: sys.exit("protection main: %s is %s, want %s" % (k, d[k], v))'
-# 3. infra main (ruling 239): only its push and merge whitelists; the rest
+# 3. infra main: only its push and merge whitelists; the rest
 # (no approvals, apply_to_admins) stays as it is. factory-agent merges the
 # imager's pin pull requests, which factoryd merges only when they change a
 # project file's images block and nothing else (Sebastian, 2026-10-22)

@@ -25,8 +25,8 @@ this bundle.
 - [x] LiteLLM master key (created in Stage 2, secret litellm-master-key
       in namespace platform)
 - [x] Forgejo SECRET_KEY — imperative secret forgejo-secret-key in
-      namespace forgejo, value `FORGEJO_SECRET_KEY` in the seed env
-      (Ruling 85); re-PUT the Actions secrets after any key change
+      namespace forgejo, value `FORGEJO_SECRET_KEY` in the seed env;
+      re-PUT the Actions secrets after any key change
       (Task 34)
 - [x] Forgejo bot account `factory-agent` (`FORGEJO_BOT_PASSWORD`): the
       factory's task-token minting identity — write collaborator on the
@@ -46,7 +46,7 @@ this bundle.
       namespace factory). Not a seed value: generate a fresh one on
       re-seed (`openssl rand -hex 32`) before factoryd starts; callers
       read it from the secret.
-- [x] Forgejo CI registrar token (Tasks 41, 46; rulings 101, 101a) —
+- [x] Forgejo CI registrar token (Tasks 41, 46) —
       secret forgejo-ci-registrar (key token, namespace factory). Not a
       seed value: the dedicated user `factory-ci` (member of org `sf`'s
       Owners team, because Forgejo's repository runner API demands the
@@ -56,13 +56,13 @@ this bundle.
       factoryd starts. The spawner registers ephemeral `pr-untrusted`
       runner pods with it and never mounts it into one; the intake
       reads the code repository's collaborators and assignees with it.
-- [x] Forgejo CI org-read token (Task 47, ruling 108) — secret
+- [x] Forgejo CI org-read token (Task 47) — secret
       forgejo-ci-org-read (key token, namespace factory). Not a seed
       value: mint `factory-ci` a fresh token with the single scope
       `read:organization` and no repository (Forgejo refuses that scope on
       a repository-limited token) before factoryd starts. factoryd's trust
       gate reads org `sf`'s teams, their repositories and members with it.
-- [x] Forgejo merge token (Task 55, ruling 109) — secret forgejo-merge
+- [x] Forgejo merge token (Task 55) — secret forgejo-merge
       (key token, namespace factory). Not a seed value: the dedicated user
       `factory-merge` (a write collaborator on the code repository, on
       `main`'s merge whitelist and not its push whitelist) and `main`'s
@@ -106,6 +106,6 @@ this bundle.
 - [x] GitHub push mirror token — secret github-mirror (key token,
       namespace forgejo), value `GITHUB_MIRROR_PAT` in `.env.tools`: a
       fine-grained GitHub token, the two repositories only, contents
-      read and write (ruling 144). `scripts/seed-secrets.sh` creates it,
+      read and write. `scripts/seed-secrets.sh` creates it,
       or prints one line and skips it when the key is missing; CronJob
       `push-mirrors` fails until it exists.

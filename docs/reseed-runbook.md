@@ -56,8 +56,8 @@ kubectl get nodes                              # three Ready (up to ~15 min)
 
 ## 2. CNI
 
-Gateway API CRDs first (Ruling 46), then Cilium with the full flag set
-(Ruling 47; the gatewayAPI and envoy flags are the ones the 2026-10-13
+Gateway API CRDs first, then Cilium with the full flag set
+(the gatewayAPI and envoy flags are the ones the 2026-10-13
 morning re-seed forgot and paid for twice):
 
 ```sh

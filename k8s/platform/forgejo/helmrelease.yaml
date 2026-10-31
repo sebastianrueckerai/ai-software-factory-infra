@@ -51,7 +51,7 @@ spec:
         port: 3000
     gitea:
       admin:
-        # factory-admin, the machine admin every tool logs in as (ruling 229);
+        # factory-admin, the machine admin every tool logs in as;
         # an email no other account holds, or the init fails
         existingSecret: forgejo-admin-secret
         email: factory-admin@aisoftwarefactory.world
@@ -81,7 +81,7 @@ spec:
           MINIO_LOCATION: fsn1
           MINIO_BUCKET_LOOKUP: auto
         service:
-          # accounts are made by the admin only (ruling 144), outsiders' test
+          # accounts are made by the admin only, outsiders' test
           # accounts too. Item 138 held nothing readable without a login until
           # the store's packages needed anonymous build reads (Sebastian,
           # 2026-10-16): the upstream org is public, every code repo and org

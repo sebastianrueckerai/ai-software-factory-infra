@@ -32,7 +32,7 @@ if ! err=$(bao read ssh-client-signer/config/ca 2>&1 >/dev/null); then
   bao write ssh-client-signer/config/ca generate_signing_key=true key_type=ssh-ed25519 >/dev/null
   changed="$changed ssh-client-signer/config/ca"
 fi
-# any principal: 2.6.3 has no glob; ruling 125 as amended binds a certificate by the
+# any principal: 2.6.3 has no glob; a certificate is bound by the
 # server's AuthorizedPrincipalsFile plus the gateway signing only for the task's own server
 put ssh-client-signer/roles/factory-agent - <<'JSON'
 {"key_type": "ca", "allow_user_certificates": true, "allowed_users": "*", "default_user": "unassigned",

@@ -89,7 +89,7 @@ spec:
             drop_params: true
             extra_body:
               enable_thinking: false
-        # The premium class (rulings 328, 329; Sebastian, 2026-10-29): a
+        # The premium class (Sebastian, 2026-10-29): a
         # pay-per-token model for the planner, the chat and the review, its
         # spend capped apart by policy.yaml's budget.premium_month_eur. A
         # development stopgap: removing it is this entry, its fallback line,
@@ -143,7 +143,7 @@ spec:
         # same deployment after 0.5 s, then 1 s (or the provider's
         # Retry-After up to 60 s); other 4xx fail at once. Then the class's
         # Alibaba group answers the call; premium's falls to big, then big's
-        # Alibaba group, never below big (ruling 329)
+        # Alibaba group, never below big
         num_retries: 2
         fallbacks:
           - big: [big-alibaba]

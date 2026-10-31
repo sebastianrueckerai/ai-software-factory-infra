@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
 - gotk-components.yaml
 - gotk-sync.yaml
-# Multi-tenancy lockdown (ruling 157, Task 65 m9): a Kustomization without
+# Multi-tenancy lockdown (Task 65 m9): a Kustomization without
 # serviceAccountName runs as the target namespace's default account, and
 # remote bases are refused. The factory's own Kustomizations name the
 # controller's account; project ones name `flux` in their namespace.

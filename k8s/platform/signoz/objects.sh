@@ -94,7 +94,7 @@ for file in /alerts/*.json; do
   fi
 done
 
-# A project's rules (ruling 159): each key of a ConfigMap labelled
+# A project's rules: each key of a ConfigMap labelled
 # factory/signoz-rules=true in a namespace labelled factory/project is one
 # rule in SigNoz's v2alpha1 shape, bound to that namespace: every builder
 # query filters on it, as a resource attribute (spans, metrics, pod logs)

@@ -1,7 +1,7 @@
 #!/bin/sh
 # shellcheck shell=busybox
-# Forgejo push mirrors to GitHub (ruling 126): one mirror per repository,
-# of main only (ruling 326). A filtered mirror pushes with --mirror, so the
+# Forgejo push mirrors to GitHub: one mirror per repository,
+# of main only. A filtered mirror pushes with --mirror, so the
 # GitHub copy holds main and nothing else. Forgejo cannot change a mirror's
 # branch filter, so a mirror with another filter is deleted and posted again.
 # So is a mirror whose last_error is a credential failure (a rotated token

@@ -1,4 +1,4 @@
-# The PR image builds' read-only layer cache (ruling 111): main CI exports
+# The PR image builds' read-only layer cache: main CI exports
 # each image's BuildKit cache here, the untrusted PR runner pods read it.
 # No credential anywhere; policy.yaml is the access control. Plain HTTP,
 # in-cluster only. Disposable: after a rebuild it starts empty and the next

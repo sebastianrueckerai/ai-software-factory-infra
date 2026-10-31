@@ -1,5 +1,5 @@
 # Facts about this cluster's substrate that factory workloads need. Written
-# from `tofu output node_public_ips` at every rebuild (ruling 112).
+# from `tofu output node_public_ips` at every rebuild.
 apiVersion: v1
 kind: ConfigMap
 metadata:

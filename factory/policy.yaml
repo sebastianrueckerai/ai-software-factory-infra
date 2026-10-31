@@ -6,7 +6,7 @@
 # Unknown keys are rejected; `factoryd config check factory/` shows why.
 version: 1
 
-# EUR caps. A card's budget follows its size (ruling 266): small 4, medium 5,
+# EUR caps. A card's budget follows its size: small 4, medium 5,
 # large 10 EUR from its plan row or its brief's "Size:" line, or the amount
 # of a "Budget: N EUR" line; a card without either gets task_default_eur.
 # The result is held to the project's budget.task_max_eur when set (else to
@@ -16,7 +16,7 @@ version: 1
 # alerts at 50 and 80 percent of month_eur and files a human issue at the
 # cap: raising it is a commit here. The coder class must allow factoryd's
 # model ladder, or factoryd rejects the version.
-# A card 5 by default (ruling 268 set 2; raised for the window below) and
+# A card 5 by default (normally 2; raised for the window below) and
 # 15 at most. Day 40 and month 120, Sebastian's caps of 2026-10-11 (Stage
 # 18's round ran on 60 and 160.07, the October ledger at open 105.07 plus
 # 55, restored at its close). Stage 19's round (2026-10-13) raises to day
@@ -29,7 +29,7 @@ version: 1
 # 3 x 100. The coding tiers' spend is modeled only (the plan fee is the
 # real bill); reviews, supervisor and pulse stay on DashScope, so their
 # share is real money and the day cap bounds it. The window closed early
-# on 2026-10-14 (the plan's quota ran out, ruling 325): day 40 and card
+# on 2026-10-14 (the plan's quota ran out): day 40 and card
 # default 2 again, month 296, the October ledger at the close (241.00)
 # plus 55. The second GLM window opened 2026-10-15 (Sebastian's limit
 # reset) on the first one's caps: day 100, card default 5, month the
@@ -45,7 +45,7 @@ budget:
   # died at 0.15 and 0.07 EUR left
   session_floor_cheap_eur: 0.30
   session_floor_frontier_eur: 0.60
-  # the premium class's month cap (rulings 328, 329; Sebastian, 2026-10-29):
+  # the premium class's month cap (Sebastian, 2026-10-29):
   # the planner's sessions, the chat and the coder review run on premium, a
   # pay-per-token model whose spend is real money, unlike the GLM plan's; a
   # premium call this cap cannot fit runs on big. A development stopgap:
@@ -61,7 +61,7 @@ chat:
   monthly_eur: 30
   model: premium
 
-# Limits on every task's work (rulings 177, 183, 186); a task keeps all of
+# Limits on every task's work; a task keeps all of
 # them from the version its workflow started under, in every session and
 # supervisor or review call too. sessions: agent
 # sessions before the task goes to a human with every finding (the round
@@ -96,7 +96,7 @@ limits:
   supervisor_timeout: 6m
   # 3, the session cap: a stage's returning findings never climb the tier
   # (a medium or large card's limit is 1); retry_stronger climbs it, from
-  # the cheap cap or the stuck rule (Stage 17 plan 4.1, ruling 299)
+  # the cheap cap or the stuck rule (Stage 17 plan 4.1)
   stronger_after: 3
   steps: 1500
   nudge_after: 3
@@ -116,7 +116,7 @@ limits:
   review_diff_kib: 256
   # the check-in's five (plan D): checkin_calls, the model calls of one
   # check-in conversation, the last of them without tools so that it
-  # answers (ruling 327); checkin_share, at most this percent of the card's
+  # answers; checkin_share, at most this percent of the card's
   # budget on check-in calls, over all its conversations, moments and
   # rounds; checkin_tail_kib, the parent session record's tail cut into the
   # check-in's statement; checkin_handover_chars, the handover note's cap;
@@ -129,7 +129,7 @@ limits:
   checkin_sessions: 1
 
 # the progress detectors' windows in seconds; absent keys take the code
-# defaults (ruling 161). no_write at 900: a session on this codebase
+# defaults. no_write at 900: a session on this codebase
 # reads longer than five minutes before its first write (cards 208/209
 # burned three sessions each to the 300 s default while reading; the
 # repetition, same_failure and same_call detectors still trip fast)
@@ -139,7 +139,7 @@ supervisor:
 # Capability classes a task can hold (tasks.required_capabilities; intake
 # gives agent tasks "coder"). models: the aliases the agent may call through
 # the gateway. tools: the gateway's MCP tools the class may call, nothing
-# else (ruling 132). A paid tool carries max_requests and max_eur per task
+# else. A paid tool carries max_requests and max_eur per task
 # (every admitted call counts; a call is held at its worst case below until
 # its real cost is booked); a free tool is listed as {}: escalate
 # and the commissioning tools, which spend through their reservation and
@@ -152,8 +152,8 @@ classes:
     # (k8s/platform/litellm/helmrelease.yaml)
     models: [small, big]
     # factoryd's calls on a coder task's account, through the gateway; the
-    # agent cannot call these. The review calls premium (ruling 328); the
-    # supervisors, the security audit (rulings 188, 191) and the check-in at
+    # agent cannot call these. The review calls premium; the
+    # supervisors, the security audit and the check-in at
     # a gate return (plan D; absent it would read the review's alias) call big
     review_model: premium
     supervisor_model: big
@@ -197,8 +197,8 @@ classes:
       release_resource: {}
       ssh_certificate: {}
       resource_request_status: {}
-  # a report session (ruling 185): the screening of an outsider's issue on
-  # big (ruling 191), the presort of an improvement; it reads
+  # a report session: the screening of an outsider's issue on
+  # big, the presort of an improvement; it reads
   # and writes one comment, changes no code and commissions nothing. Its
   # trips and half-way check-in call the supervisor model.
   analyzer:
@@ -214,9 +214,9 @@ classes:
       manual: {}
       deployment_health: {}
       analyze_image: {}
-  # the plan card's session (ruling 205): reads the repository and the
+  # the plan card's session: reads the repository and the
   # spec, writes nothing, answers a plan as its last message. It runs on
-  # premium (ruling 330), above the stronger rung the screening runs on: a
+  # premium, above the stronger rung the screening runs on: a
   # plan's quality bounds the sessions of every card it files.
   planner:
     session: plan
@@ -297,7 +297,7 @@ prices:
 # approval that names the paths. requires_approval waits for a human's
 # approval before factory-merge merges.
 # An agent's high-class change merges at full auto when the audit passes
-# (Sebastian, 2026-10-20, amending rulings 76, 77, 109); forbidden and
+# (Sebastian, 2026-10-20); forbidden and
 # migration keep a human. A roll, a revert, a template update or a schema copy,
 # which factoryd wrote, merges at full auto on green checks and the merge rule
 # alone, with no class; a GitHub sync follows an agent's rules.
@@ -330,11 +330,11 @@ risk:
         "**/AGENTS.md", "**/CLAUDE.md", "**/opencode.json", "**/opencode.jsonc", "**/CODEOWNERS",
         ".*/**"]
   default: normal
-  # ruling 266: a pull request over this many changed lines is class large
+  # a pull request over this many changed lines is class large
   # (requires_approval) unless a path rule puts it in a stricter class; a
-  # human splits it or accepts it. Stage 17's exit test ran with 400
-  # (ruling 301); Stage 19's two live checks run with 400 too, restored to
-  # 1000 after each window (ruling 318)
+  # human splits it or accepts it. Stage 17's exit test ran with 400;
+  # Stage 19's two live checks run with 400 too, restored to
+  # 1000 after each window
   large_lines: 1000
 
 # The standard resource envelope (architecture 5.5): a project's first
@@ -343,10 +343,10 @@ risk:
 # accrued cost together; servers (with their primary IPv4) of these types,
 # at most max_count at once, leases up to max_lease_hours, one volume per
 # server up to volume_max_gb (0 = none, else at least 10). Beyond it, a
-# request becomes a human approval card. No buckets (ruling 121): Hetzner's
+# request becomes a human approval card. No buckets: Hetzner's
 # Cloud API has no Object Storage endpoint and its S3 keys reach every
 # bucket of a project. A server's firewall admits SSH only from the cluster
-# nodes and lets it out only on 53, 80 and 443, as build VMs (ruling 122).
+# nodes and lets it out only on 53, 80 and 443, as build VMs.
 envelope_default:
   monthly_eur: 10
   server_types: [cx23, cx33]
@@ -354,7 +354,7 @@ envelope_default:
   max_lease_hours: 4
   volume_max_gb: 20
 
-# Spend approvers (ruling 128): the Forgejo users who may authorize spend
+# Spend approvers: the Forgejo users who may authorize spend
 # in the console: approve a resource request or a merge, promote a
 # resource (an envelope is its project file's). Other writers of the code repository see the cards
 # without those buttons and may still deny, request changes, reject and
@@ -373,8 +373,8 @@ ai_members: [controller]
 # and closing keywords are neutralised either way.
 link_hosts: [aisoftwarefactory.world]
 
-# Activity bounds in seconds (ruling 140); the reproduction gate runs its
-# command twice since ruling 167, so its bound is doubled.
+# Activity bounds in seconds; the reproduction gate runs its
+# command twice (base and head), so its bound is doubled.
 bounds:
   GateReproduction: 1800
   # ModelReview and GateAudit take no bound here: the code derives theirs
