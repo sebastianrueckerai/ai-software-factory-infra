@@ -49,3 +49,4 @@ images:
       - sum.golang.org
       - storage.googleapis.com
       - registry.npmjs.org
+queue_cap: 18
