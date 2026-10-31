@@ -141,7 +141,7 @@ supervisor:
 # the gateway. tools: the gateway's MCP tools the class may call, nothing
 # else (ruling 132). A paid tool carries max_requests and max_eur per task
 # (every admitted call counts; a call is held at its worst case below until
-# its real cost is booked); a free tool is listed as {}: escalate_to_human
+# its real cost is booked); a free tool is listed as {}: escalate
 # and the commissioning tools, which spend through their reservation and
 # the project envelope instead.
 classes:
@@ -167,7 +167,7 @@ classes:
       web_search: {max_requests: 30, max_eur: 0.20}
       replicate_predict: {max_requests: 5, max_eur: 0.50}
       fal_run: {max_requests: 5, max_eur: 0.50}
-      escalate_to_human: {}
+      escalate: {}
       request_info: {}
       # the factory manual: what the factory is, the card states, the gates. Free.
       manual: {}
@@ -210,7 +210,7 @@ classes:
       web_scrape: {max_requests: 30, max_eur: 0.20}
       web_search: {max_requests: 30, max_eur: 0.20}
       request_info: {}
-      escalate_to_human: {}
+      escalate: {}
       manual: {}
       deployment_health: {}
       analyze_image: {}
@@ -234,7 +234,7 @@ classes:
       # the plan's channel (roadmap 184, Stage 18 item 3.1): free, one
       # filing holds the whole plan json
       file_plan: {}
-      escalate_to_human: {}
+      escalate: {}
       manual: {}
       analyze_image: {}
 

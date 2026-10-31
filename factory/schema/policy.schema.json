@@ -210,7 +210,7 @@
                 "web_search",
                 "replicate_predict",
                 "fal_run",
-                "escalate_to_human",
+                "escalate",
                 "request_info",
                 "request_tool",
                 "request_cut",
