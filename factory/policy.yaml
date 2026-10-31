@@ -35,11 +35,15 @@ version: 1
 # reset) on the first one's caps: day 100, card default 5, month the
 # October ledger at the open (243.42) plus 300. At its close: day 40,
 # card default 2, month the ledger then plus 55.
+# The month cap of the October close (Sebastian, 2026-11-01): the cap
+# stopped the factory 36 minutes before the month turned; 600, the
+# October ledger at the cap (543.73) plus headroom, lifts the stop at
+# once and covers November at October's whole-month pace.
 budget:
   task_default_eur: 5
   task_max_eur: 15
   day_eur: 100
-  month_eur: 544
+  month_eur: 600
   # the least free budget a session starts on, by its rung (plan A of the
   # escalation ladder, 2026-10-15): the starved sessions of cards #839 and #854
   # died at 0.15 and 0.07 EUR left
@@ -143,7 +147,9 @@ supervisor:
 # (every admitted call counts; a call is held at its worst case below until
 # its real cost is booked); a free tool is listed as {}: escalate
 # and the commissioning tools, which spend through their reservation and
-# the project envelope instead.
+# the project envelope instead. The name is escalate_to_human below until
+# the roll that carries the rename reaches the cluster: a factoryd that
+# knows only the old name rejects a tree that names the new one.
 classes:
   coder:
     session: code
@@ -167,7 +173,7 @@ classes:
       web_search: {max_requests: 30, max_eur: 0.20}
       replicate_predict: {max_requests: 5, max_eur: 0.50}
       fal_run: {max_requests: 5, max_eur: 0.50}
-      escalate: {}
+      escalate_to_human: {}
       request_info: {}
       # the factory manual: what the factory is, the card states, the gates. Free.
       manual: {}
@@ -210,7 +216,7 @@ classes:
       web_scrape: {max_requests: 30, max_eur: 0.20}
       web_search: {max_requests: 30, max_eur: 0.20}
       request_info: {}
-      escalate: {}
+      escalate_to_human: {}
       manual: {}
       deployment_health: {}
       analyze_image: {}
@@ -234,7 +240,7 @@ classes:
       # the plan's channel (roadmap 184, Stage 18 item 3.1): free, one
       # filing holds the whole plan json
       file_plan: {}
-      escalate: {}
+      escalate_to_human: {}
       manual: {}
       analyze_image: {}
 
