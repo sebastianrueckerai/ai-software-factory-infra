@@ -72,7 +72,7 @@ this bundle.
       factoryd's `Merge` activity merges approved pull requests with it;
       Forgejo refuses the merge without an approval from `main`'s
       approvals whitelist.
-- [x] Forgejo gate token (ruling R59) — secret forgejo-gate (key token,
+- [x] Forgejo gate token — secret forgejo-gate (key token,
       namespace factory). Not a seed value: the approver bot
       `factory-gate` (a write collaborator on the code repository, on
       `main`'s approvals whitelist and on neither its merge nor its push

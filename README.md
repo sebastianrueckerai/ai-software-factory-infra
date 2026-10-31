@@ -241,8 +241,8 @@ random hex characters, never printed).
 An approved agent pull request is merged by factoryd's `Merge` activity as
 the dedicated Forgejo user `factory-merge`, never by the agent's bot. At
 full auto, when the merge gate decides that an agent pull request merges
-without a human, the approval comes from a second bot, `factory-gate`
-(ruling R59), and the merge still comes from `factory-merge`.
+without a human, the approval comes from a second bot, `factory-gate`,
+and the merge still comes from `factory-merge`.
 Forgejo enforces the approval: `main` of `sf/ai-software-factory-code`
 carries exactly this protection (branch protection `main`, set through
 `PATCH /repos/sf/ai-software-factory-code/branch_protections/main`):
@@ -274,7 +274,7 @@ own OAuth token. A new push dismisses the approval. Its push
 to `main` is refused (git: "Not allowed to push to protected branch main";
 contents API: 403). It cannot read the infra repository (404).
 
-`factory-gate` is the approver bot (ruling R59), made the same way: a
+`factory-gate` is the approver bot, made the same way: a
 `write` collaborator on the code repository and nowhere else, on the
 approvals whitelist and not on the merge or push whitelists. Its one
 token, named `factory-gate`, is `write:repository` scoped to the code

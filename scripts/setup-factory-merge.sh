@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 # The merge bot factory-merge, the approver bot factory-gate, the chat bot
-# factory-chat and main's protection on the code repository (R59,
-# README "The merge bot"), idempotent: creates each user if
+# factory-chat and main's protection on the code repository (README
+# "The merge bot"), idempotent: creates each user if
 # missing, makes it a write collaborator on its repositories, keeps the
 # token in its secret (factory/forgejo-merge, factory/forgejo-gate,
 # factory/forgejo-chat, key token) while that token reads main of each of

@@ -24,7 +24,7 @@ while read -r f; do
 		fi
 		;;
 	esac
-	if git show ":$f" 2>/dev/null | grep -Eq '[Rr]ulings? [0-9]'; then
+	if git show ":$f" 2>/dev/null | grep -Eq '[Rr]ulings? ?R?[0-9]'; then
 		echo "pre-commit: $f cites a ruling number; state the decision instead" >&2
 		exit 1
 	fi
