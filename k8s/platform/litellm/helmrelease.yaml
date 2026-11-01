@@ -129,6 +129,11 @@ spec:
             output_cost_per_token: 0.00001
             output_cost_per_token_above_272k_tokens: 0.000015
             max_output_tokens: 128000
+            # LiteLLM's registry knows no gpt-6.1-sol, so it reports no
+            # context window for the Responses route; the window the
+            # gateway serves and compacts by is pinned with the rates
+            # (128000, OpenAI's own figure for gpt-6.1-sol).
+            max_input_tokens: 128000
         # The chat's vision door (roadmap 300's images, 2026-10-19): the
         # look at a member's image, a tool on the metrics page, not a text
         # class. Thinking off as on the Alibaba text models: it is not
