@@ -149,7 +149,8 @@ classes:
   coder:
     session: code
     # the two model classes (2026-10-20): small the start rung, big the
-    # stronger; each class is its one z.ai model
+    # stronger; each class is its z.ai model, with an Alibaba twin behind
+    # it for the plan's quota limit
     # (k8s/platform/litellm/helmrelease.yaml)
     models: [small, big]
     # factoryd's calls on a coder task's account, through the gateway; the

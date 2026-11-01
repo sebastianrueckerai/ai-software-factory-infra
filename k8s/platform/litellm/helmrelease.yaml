@@ -54,16 +54,29 @@ spec:
     proxy_config:
       model_list:
         # Two model classes (Sebastian, 2026-10-20): big and small, each
-        # its z.ai model and nothing beside it (Sebastian, 2026-11-01): a
-        # z.ai model that fails or refuses fails the call after its
-        # retries. One alias per class: a call's purpose sits on its audit
-        # row and in its ledger ref, not in its alias.
+        # its z.ai model, and behind each an Alibaba twin for the plan's
+        # quota limit (Sebastian, 2026-11-01): a call the z.ai model fails
+        # or refuses after its retries moves to the twin by
+        # router_settings.fallbacks, and the twin serves the class while
+        # the model rests in its cooldown. One alias per class: a call's
+        # purpose sits on its audit row and in its ledger ref, not in its
+        # alias.
         - model_name: big
           litellm_params:
             model: zai/glm-5.3
             api_base: https://api.z.ai/api/coding/paas/v4
             api_key: os.environ/ZAI_CODING_KEY
             drop_params: true
+        - model_name: big-alibaba
+          litellm_params:
+            model: dashscope/qwen3.8-max
+            api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+            api_key: os.environ/ALIBABA_CLOUD_KEY
+            drop_params: true
+            # thinking is not bounded by max_tokens (verified on Qwen: max_tokens
+            # 60 gave 240 completion tokens), so the gateway's output clamp would not hold
+            extra_body:
+              enable_thinking: false
         - model_name: small
           litellm_params:
             model: zai/glm-5.3-flash
@@ -79,6 +92,14 @@ spec:
             extra_body:
               thinking:
                 type: disabled
+        - model_name: small-alibaba
+          litellm_params:
+            model: dashscope/qwen3.8-flash
+            api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+            api_key: os.environ/ALIBABA_CLOUD_KEY
+            drop_params: true
+            extra_body:
+              enable_thinking: false
         # The premium class (Sebastian, 2026-10-29): a
         # pay-per-token model for the planner, the chat and the review, its
         # spend capped apart by policy.yaml's budget.premium_month_eur. A
@@ -136,10 +157,19 @@ spec:
       router_settings:
         # a call failing with 408, 409, 429 or 5xx is retried twice on the
         # same deployment after 0.5 s, then 1 s (or the provider's
-        # Retry-After up to 60 s); other 4xx fail at once. A deployment
-        # with no answer left fails the call: each class is its one z.ai
-        # model or OpenAI's, and nothing stands in for either
+        # Retry-After up to 60 s); other 4xx fail at once. Then the class's
+        # Alibaba twin answers the call. Premium is Sol alone
+        # (Sebastian, 2026-11-01): its one deployment has nothing behind
+        # it, and a call OpenAI fails fails
         num_retries: 2
+        fallbacks:
+          - big: [big-alibaba]
+          - small: [small-alibaba]
+        # a z.ai model that failed allowed_fails calls within a minute rests
+        # cooldown_time seconds, and its Alibaba twin serves the class
+        # meanwhile
+        allowed_fails: 3
+        cooldown_time: 60
       general_settings:
         master_key: os.environ/PROXY_MASTER_KEY
         # a budget that is set stays a hard ceiling: a call whose spend
