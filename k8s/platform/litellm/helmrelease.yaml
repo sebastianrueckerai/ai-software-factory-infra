@@ -81,6 +81,15 @@ spec:
             api_base: https://api.z.ai/api/coding/paas/v4
             api_key: os.environ/ZAI_CODING_KEY
             drop_params: true
+            # glm flash's thinking counts against max_tokens and can spend
+            # the whole answer budget before any text (verified 2026-11-01:
+            # a 2048-token cap returned 1519 thinking tokens and empty
+            # content; disabled, 459 clean tokens). The small class is
+            # extraction only (compaction, card titles), so it runs with
+            # thinking off like the Alibaba entries.
+            extra_body:
+              thinking:
+                type: disabled
         - model_name: small-alibaba
           litellm_params:
             model: dashscope/qwen3.8-flash
