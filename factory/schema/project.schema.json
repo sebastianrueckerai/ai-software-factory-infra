@@ -437,6 +437,11 @@
       "description": "QueueCap bounds how many of the project's cards hold no admission stamp, the queued cards a slot has not taken yet; a filing at the cap refuses. Absent: 8.",
       "minimum": 0
     },
+    "refill_below": {
+      "type": "integer",
+      "description": "RefillBelow is the queue depth the roadmap pull wakes at: a waiting-card count under it wakes one turn that files every docs/roadmap.md item whose Priority is filled and whose number no card cites, while the intake switch is open. Absent or 0: no pull wake.",
+      "minimum": 0
+    },
     "routines": {
       "type": "array",
       "items": {

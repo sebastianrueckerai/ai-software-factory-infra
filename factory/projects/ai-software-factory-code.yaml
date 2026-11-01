@@ -49,3 +49,4 @@ images:
       - storage.googleapis.com
       - registry.npmjs.org
 queue_cap: 18
+refill_below: 6
