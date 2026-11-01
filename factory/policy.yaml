@@ -39,10 +39,11 @@ version: 1
 # stopped the factory 36 minutes before the month turned; 600, the
 # October ledger at the cap (543.73) plus headroom, lifts the stop at
 # once and covers November at October's whole-month pace.
+# The day cap 150 (Sebastian, 2026-11-01).
 budget:
   task_default_eur: 5
   task_max_eur: 15
-  day_eur: 100
+  day_eur: 150
   month_eur: 600
   # the least free budget a session starts on, by its rung (plan A of the
   # escalation ladder, 2026-10-15): the starved sessions of cards #839 and #854
