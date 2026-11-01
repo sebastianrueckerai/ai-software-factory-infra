@@ -52,7 +52,7 @@ budget:
   # the premium class's month cap (Sebastian, 2026-10-29):
   # the planner's sessions, the chat and the coder review run on premium, a
   # pay-per-token model whose spend is real money, unlike the GLM plan's; a
-  # premium call this cap cannot fit runs on big. A development stopgap:
+  # premium call this cap cannot fit is refused. A development stopgap:
   # removing it is this key, chat.model, the coder's review_model, the
   # planner's premium lines and the premium alias in
   # k8s/platform/litellm/helmrelease.yaml
@@ -149,7 +149,7 @@ classes:
   coder:
     session: code
     # the two model classes (2026-10-20): small the start rung, big the
-    # stronger; each class is a z.ai model with an Alibaba fallback
+    # stronger; each class is its one z.ai model
     # (k8s/platform/litellm/helmrelease.yaml)
     models: [small, big]
     # factoryd's calls on a coder task's account, through the gateway; the
