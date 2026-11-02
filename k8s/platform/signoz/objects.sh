@@ -3,8 +3,8 @@
 # Puts SigNoz's objects from Git into SigNoz: factoryd's viewer account,
 # the webhook channel factoryd, the dashboards (dashboards/*.json), the
 # platform's alert rules (alerts/*.json), every project's alert rules (the
-# ConfigMaps labelled factory/signoz-rules=true in its namespaces, ruling
-# 159) and the retention of traces, metrics and logs (on the local volume
+# ConfigMaps labelled factory/signoz-rules=true in its namespaces) and
+# the retention of traces, metrics and logs (on the local volume
 # for HOT_DAYS, then on the S3 volume, deleted after RETENTION_DAYS).
 # SigNoz keeps all of it on local-path volumes, which a rebuild loses. Each
 # platform file holds its object as SigNoz v0.143.0 returns it, so an

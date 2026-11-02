@@ -75,8 +75,8 @@ editing surface, the console shows it read-only.
   when absent); the capability classes (the model aliases and
   tools a task class may use: a paid tool with per-task `max_requests`
   and `max_eur`, a free one, `escalate` and the commissioning
-  tools, as `{}`; a tool no class of the task lists is refused, ruling
-  132); `prices`, the tool prices no provider API reports (Firecrawl's
+  tools, as `{}`; a tool no class of the task lists is refused);
+  `prices`, the tool prices no provider API reports (Firecrawl's
   EUR per credit, Replicate's EUR per second by hardware SKU and the SKU
   of each usable model, fal's megapixel bound), each with its source
   URL; `risk`, the rules that classify an agent pull request by its

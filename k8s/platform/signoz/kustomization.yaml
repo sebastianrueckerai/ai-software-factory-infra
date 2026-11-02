@@ -19,8 +19,8 @@ configMapGenerator:
 - name: signoz-alerts
   namespace: platform
   files: [alerts/job-failed.json, alerts/node-disk.json, alerts/local-path-disk.json, alerts/chain-poll-age.json]
-# The platform's rules as the infra repository's project rules (rulings
-# 159, 180): signoz-objects binds each to its ConfigMap's namespace and
+# The platform's rules as the infra repository's project rules:
+# signoz-objects binds each to its ConfigMap's namespace and
 # routes it to factoryd, which files a human-lane issue on this repository.
 # Job failed is the platform rule above, bound here to each namespace.
 - name: signoz-rules
