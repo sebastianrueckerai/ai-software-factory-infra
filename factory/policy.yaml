@@ -126,8 +126,9 @@ limits:
   # human asks for it
   checkin_calls: 20
   # checkin_time, how long one check-in conversation may run: its model
-  # answers in 36 to 91 s a call, so 5 minutes ended check-ins of six calls
-  checkin_time: 30m
+  # answers in 36 to 91 s a call, so 5 minutes ended check-ins of six
+  # calls; 10 stays inside a small card's 15-minute session slice
+  checkin_time: 10m
   checkin_share: 10
   checkin_tail_kib: 24
   checkin_handover_chars: 2000
