@@ -109,6 +109,11 @@
           "type": "integer",
           "description": "CheckinCalls is how many model calls one check-in conversation gets; its last call carries no tools and asks for the answer. Absent: DefaultCheckinCalls."
         },
+        "checkin_time": {
+          "type": "string",
+          "description": "CheckinTime is how long one check-in conversation may run before its ask goes to a human; 0 means DefaultCheckinTime.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
         "checkin_share": {
           "type": "integer",
           "description": "CheckinShare is the most percent of the card's budget the check-in's calls may spend. Absent: DefaultCheckinShare."
@@ -142,12 +147,6 @@
           "description": "NoPushSpend is the percent of a card's budget spent with nothing pushed at which the session supervisor is called, 1 to 99. Absent: DefaultNoPushSpend.",
           "minimum": 1,
           "maximum": 99
-        },
-        "context_tokens": {
-          "type": "integer",
-          "description": "ContextTokens is the context size at which opencode compacts a session's conversation, MinContextTokens to ModelContext. Absent: DefaultContextTokens.",
-          "minimum": 40000,
-          "maximum": 200000
         }
       },
       "description": "Limits bound every task's work: sessions, agent time, supervisor calls.",
@@ -225,7 +224,8 @@
                 "resource_request_status",
                 "manual",
                 "deployment_health",
-                "analyze_image"
+                "analyze_image",
+                "digest"
               ]
             }
           },
@@ -527,6 +527,7 @@
           "RollCommit",
           "RerunChecks",
           "GateAudit",
+          "GateCompanion",
           "TaskConfig",
           "default"
         ]
@@ -652,6 +653,11 @@
               "plan",
               "pr",
               "file",
+              "tree",
+              "grep",
+              "web_search",
+              "web_scrape",
+              "research",
               "session",
               "session_steps",
               "session_step",
@@ -677,6 +683,7 @@
               "approve_merge",
               "deny_merge",
               "rerun_checks",
+              "answer_criteria",
               "set_summary",
               "set_accent",
               "invite",
@@ -688,6 +695,7 @@
               "fund",
               "set_dependency",
               "replan",
+              "set_pool",
               "read_doc",
               "write_doc",
               "set_autonomy",
@@ -699,7 +707,6 @@
               "notes_read",
               "notes_write",
               "escalate",
-              "ask",
               "attach_analysis",
               "active_threads",
               "chat_search",
@@ -710,7 +717,8 @@
               "set_timer",
               "analyze_image",
               "read_attachment",
-              "summarize_attachment"
+              "summarize_attachment",
+              "ask"
             ]
           },
           "description": "Confirm are the tools a member must OK: a call proposes, and the member's Do it runs it. The always-confirm set is confirmed at every autonomy level, so an empty list confirms that set only."
@@ -726,8 +734,27 @@
         },
         "window": {
           "type": "integer",
-          "description": "Window is the context window in tokens of the alias the project agent calls: a thread compacts before a turn projected past 80 percent of it (roadmap 239). The provider's own refusal of a prompt past its window is the bound that always holds. Absent: DefaultChatWindow.",
+          "description": "Window is the context window in tokens of the alias the project agent calls: a thread compacts before a turn projected past 80 percent of it (roadmap 239). The provider's own refusal of a prompt past its window is the bound that always holds. Absent: the window the gateway serves for the alias.",
           "minimum": 1000
+        },
+        "tools": {
+          "type": "object",
+          "description": "Tools are the paid gateway tools the chat may call, with the chat task's per-tool caps: the web door's two, a policy that lists one carrying its Firecrawl prices. Absent: the chat reaches no web.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "max_requests": {
+                "type": "integer",
+                "description": "MaxRequests is how many calls of the tool a task may make."
+              },
+              "max_eur": {
+                "type": "number",
+                "description": "MaxEUR is how much a task may spend on the tool."
+              }
+            },
+            "description": "ToolCap caps a paid tool per task; a free tool carries none.",
+            "additionalProperties": false
+          }
         }
       },
       "description": "Chat is the project agent's block: its model, its monthly budget and the tools that need the member's OK. Absent: DefaultChat.",

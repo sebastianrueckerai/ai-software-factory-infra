@@ -61,10 +61,15 @@ budget:
 
 # The project agent's chat (architecture 5.4): monthly_eur is each
 # project's chat budget in a UTC month, and a raise reaches the month in
-# progress; a project file may set less.
+# progress; a project file may set less. tools are the chat's web reads,
+# capped like a class's on the month's chat task: 500 searches at 2
+# credits are 5 EUR, 500 scrapes at 1 credit 2.50 EUR.
 chat:
   monthly_eur: 30
   model: premium
+  tools:
+    web_search: {max_requests: 500, max_eur: 5}
+    web_scrape: {max_requests: 500, max_eur: 5}
 
 # Limits on every task's work; a task keeps all of
 # them from the version its workflow started under, in every session and
