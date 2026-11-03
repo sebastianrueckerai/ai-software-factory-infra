@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # The repository's checks: CI runs `bash check` on every pull request and on
-# main, and an agent runs it before it ends. The agents own this file: extend
-# it with what the app needs checked.
+# main. An agent runs `bash check changed` before it ends: the same checks,
+# the Go tests only of the packages the change since origin/HEAD reaches
+# (scripts/affected-packages.sh), without the race detector and two at a
+# time. The agents own this file: extend it with what the app needs checked.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -18,4 +20,13 @@ go vet ./...
 unformatted=$(gofmt -l $(find . -path ./web/node_modules -prune -o -name '*.go' -print) </dev/null)
 if [ -n "$unformatted" ]; then echo "gofmt -w these files:"; echo "$unformatted"; exit 1; fi
 go run github.com/securego/gosec/v2/cmd/gosec@v2.29.0 -quiet ./...
+if [ "${1:-}" = changed ]; then
+  base=$(git merge-base HEAD refs/remotes/origin/HEAD) || {
+    echo "bash check changed tests the change since origin/HEAD, which this clone lacks: run git remote set-head origin --auto, or bash check" >&2
+    exit 1
+  }
+  pkgs=$(bash scripts/affected-packages.sh "$base")
+  go test -p 2 $pkgs
+  exit
+fi
 go test -race ./...
