@@ -1,0 +1,69 @@
+{
+  "alert": "Premium served by another model",
+  "alertType": "LOGS_BASED_ALERT",
+  "condition": {
+    "compositeQuery": {
+      "panelType": "graph",
+      "queries": [
+        {
+          "spec": {
+            "aggregations": [
+              {
+                "expression": "count()"
+              }
+            ],
+            "disabled": false,
+            "filter": {
+              "expression": "attribute.audit.model_alias = 'premium' AND attribute.audit.deployment EXISTS AND attribute.audit.deployment NOT LIKE 'openai/%'"
+            },
+            "groupBy": [],
+            "legend": "",
+            "name": "A",
+            "signal": "logs",
+            "source": "",
+            "stepInterval": 60
+          },
+          "type": "builder_query"
+        }
+      ],
+      "queryType": "builder"
+    },
+    "selectedQueryName": "A",
+    "thresholds": {
+      "kind": "basic",
+      "spec": [
+        {
+          "channels": [
+            "factoryd"
+          ],
+          "matchType": "1",
+          "name": "warning",
+          "op": "1",
+          "recoveryTarget": null,
+          "target": 0,
+          "targetUnit": ""
+        }
+      ]
+    }
+  },
+  "description": "A call on the premium class was answered by another model within the last 15 minutes: the gateway's audit record names premium as its alias and a deployment that is not OpenAI's. LiteLLM falls back to big when OpenAI fails a premium call, its credits spent or the API down (k8s/platform/litellm/helmrelease.yaml), and the gateway runs a call on big when the premium month cap cannot fit it. Add OpenAI credits or raise budget.premium_month_eur. The label event marks the fallback as an event: factoryd closes no card when the alert clears.",
+  "disabled": false,
+  "evaluation": {
+    "kind": "rolling",
+    "spec": {
+      "evalWindow": "15m",
+      "frequency": "1m"
+    }
+  },
+  "labels": {
+    "event": "true",
+    "namespace": "platform",
+    "severity": "warning"
+  },
+  "notificationSettings": {
+    "usePolicy": false
+  },
+  "ruleType": "threshold_rule",
+  "schemaVersion": "v2alpha1",
+  "version": "v5"
+}

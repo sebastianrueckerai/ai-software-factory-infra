@@ -101,8 +101,8 @@ spec:
             extra_body:
               enable_thinking: false
         # The premium class (Sebastian, 2026-10-29): a
-        # pay-per-token model for the planner, the chat and the review, its
-        # spend capped apart by policy.yaml's budget.premium_month_eur. A
+        # pay-per-token model for the chat, its spend capped apart by
+        # policy.yaml's budget.premium_month_eur. A
         # development stopgap: removing it is this entry, the litellm-openai
         # secret and the policy's premium keys. Every call
         # goes through OpenAI's Responses API (openai/responses/): the chat
@@ -158,13 +158,16 @@ spec:
         # a call failing with 408, 409, 429 or 5xx is retried twice on the
         # same deployment after 0.5 s, then 1 s (or the provider's
         # Retry-After up to 60 s); other 4xx fail at once. Then the class's
-        # Alibaba twin answers the call. Premium is Sol alone
-        # (Sebastian, 2026-11-01): its one deployment has nothing behind
-        # it, and a call OpenAI fails fails
+        # Alibaba twin answers the call. A premium call OpenAI fails, its
+        # credits spent or the API down, is answered by big (Sebastian,
+        # 2026-11-03): the audit row names the deployment that answered,
+        # and SigNoz's alert Premium served by another model files a card
+        # for a person (k8s/platform/signoz/alerts/premium-fallback.json)
         num_retries: 2
         fallbacks:
           - big: [big-alibaba]
           - small: [small-alibaba]
+          - premium: [big]
         # a z.ai model that failed allowed_fails calls within a minute rests
         # cooldown_time seconds, and its Alibaba twin serves the class
         # meanwhile

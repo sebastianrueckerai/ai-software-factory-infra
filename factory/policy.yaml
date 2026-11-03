@@ -50,12 +50,12 @@ budget:
   # died at 0.15 and 0.07 EUR left
   session_floor_cheap_eur: 0.30
   session_floor_frontier_eur: 0.60
-  # the premium class's month cap (Sebastian, 2026-10-29):
-  # the planner's sessions, the chat and the coder review run on premium, a
-  # pay-per-token model whose spend is real money, unlike the GLM plan's; a
-  # premium call this cap cannot fit is refused. A development stopgap:
-  # removing it is this key, chat.model, the coder's review_model, the
-  # planner's premium lines and the premium alias in
+  # the premium class's month cap (Sebastian, 2026-10-29): the chat runs
+  # on premium, a pay-per-token model whose spend is real money, unlike the
+  # GLM plan's; a premium call this cap cannot fit is refused. The planner
+  # and the coder review run on big (Sebastian, 2026-11-03), each a key
+  # away from premium again. A development stopgap: removing it is this
+  # key, chat.model and the premium alias in
   # k8s/platform/litellm/helmrelease.yaml
   premium_month_eur: 50
 
@@ -164,10 +164,11 @@ classes:
     # (k8s/platform/litellm/helmrelease.yaml)
     models: [small, big]
     # factoryd's calls on a coder task's account, through the gateway; the
-    # agent cannot call these. The review calls premium; the
-    # supervisors, the security audit and the check-in at
-    # a gate return (plan D; absent it would read the review's alias) call big
-    review_model: premium
+    # agent cannot call these. The review, the supervisors, the security
+    # audit and the check-in at a gate return (plan D; absent it would read
+    # the review's alias) call big; review_model: premium is the review's
+    # stronger model (Sebastian, 2026-11-03: off for now)
+    review_model: big
     supervisor_model: big
     audit_model: big
     checkin_model: big
@@ -228,12 +229,12 @@ classes:
       analyze_image: {}
   # the plan card's session: reads the repository and the
   # spec, writes nothing, answers a plan as its last message. It runs on
-  # premium, above the stronger rung the screening runs on: a
-  # plan's quality bounds the sessions of every card it files.
+  # big (Sebastian, 2026-11-03); premium in models and session_model is
+  # its stronger model, off for now.
   planner:
     session: plan
-    models: [small, big, premium]
-    session_model: premium
+    models: [small, big]
+    session_model: big
     supervisor_model: big
     # the hold-out drafting beside a confirmation round (roadmap 289)
     review_model: big
