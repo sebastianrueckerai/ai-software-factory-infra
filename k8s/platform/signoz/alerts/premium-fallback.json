@@ -14,7 +14,7 @@
             ],
             "disabled": false,
             "filter": {
-              "expression": "attribute.audit.model_alias = 'premium' AND attribute.audit.deployment EXISTS AND attribute.audit.deployment NOT LIKE 'openai/%'"
+              "expression": "(attribute.audit.model_alias = 'premium' AND attribute.audit.deployment EXISTS AND attribute.audit.deployment NOT LIKE 'openai/%') OR attribute.audit.reason LIKE '%premium_month_eur%served on big%'"
             },
             "groupBy": [],
             "legend": "",
@@ -46,7 +46,7 @@
       ]
     }
   },
-  "description": "A call on the premium class was answered by another model within the last 15 minutes: the gateway's audit record names premium as its alias and a deployment that is not OpenAI's. LiteLLM falls back to big when OpenAI fails a premium call, its credits spent or the API down (k8s/platform/litellm/helmrelease.yaml), and the gateway runs a call on big when the premium month cap cannot fit it. Add OpenAI credits or raise budget.premium_month_eur. The label event marks the fallback as an event: factoryd closes no card when the alert clears.",
+  "description": "A call on the premium class was answered by another model within the last 15 minutes. Either the gateway's audit record names premium as its alias and a deployment that is not OpenAI's: LiteLLM fell back to big because OpenAI failed the call, its credits spent or the API down (k8s/platform/litellm/helmrelease.yaml); add OpenAI credits. Or the record's reason names the premium cap and served on big: the gateway ran the call on big because budget.premium_month_eur could not fit it; raise the cap in factory/policy.yaml or wait for the next UTC month. The label event marks the fallback as an event: factoryd closes no card when the alert clears.",
   "disabled": false,
   "evaluation": {
     "kind": "rolling",

@@ -52,7 +52,9 @@ budget:
   session_floor_frontier_eur: 0.60
   # the premium class's month cap (Sebastian, 2026-10-29): the chat runs
   # on premium, a pay-per-token model whose spend is real money, unlike the
-  # GLM plan's; a premium call this cap cannot fit is refused. The planner
+  # GLM plan's; a premium call this cap cannot fit runs on big, and
+  # SigNoz's alert Premium served by another model files a card for a
+  # person (Sebastian, 2026-11-03). The planner
   # and the coder review run on big (Sebastian, 2026-11-03), each a key
   # away from premium again. A development stopgap: removing it is this
   # key, chat.model and the premium alias in
