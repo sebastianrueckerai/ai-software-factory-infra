@@ -337,9 +337,11 @@ risk:
     # protected files: manifests and lockfiles of every common ecosystem,
     # agent instruction files and CODEOWNERS at any depth, and every
     # top-level dot directory or file (.forgejo, .gitea, .github stay
-    # forbidden above)
+    # forbidden above); check and scripts/pg-test.sh are the criteria
+    # runner's entry point, which reports each proof's outcome
     - class: high
       paths: ["k8s/**", "deploy/**", "**/Dockerfile*",
+        "check", "scripts/pg-test.sh",
         "**/go.mod", "**/go.sum", "**/go.work", "**/go.work.sum",
         "**/package.json", "**/package-lock.json", "**/npm-shrinkwrap.json", "**/yarn.lock", "**/pnpm-lock.yaml",
         "**/Cargo.toml", "**/Cargo.lock",
