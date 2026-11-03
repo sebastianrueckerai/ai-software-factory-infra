@@ -66,7 +66,12 @@ budget:
 # credits are 5 EUR, 500 scrapes at 1 credit 2.50 EUR.
 chat:
   monthly_eur: 30
+  # premium for a member's own turns only; a turn an MCP client asks for
+  # on a chat token and one the chat starts itself, a wake or a fund's
+  # resume, run on big (Sebastian, 2026-11-03)
   model: premium
+  mcp_model: big
+  wake_model: big
   tools:
     web_search: {max_requests: 500, max_eur: 5}
     web_scrape: {max_requests: 500, max_eur: 5}
