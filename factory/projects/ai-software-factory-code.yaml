@@ -48,5 +48,19 @@ images:
       - sum.golang.org
       - storage.googleapis.com
       - registry.npmjs.org
+# where a session's commands go, for the metrics page's session time: the
+# first class that matches wins; check and check_changed make the check
+# share, and check holds the full suite's runs, so its median is the full
+# check's
+commands:
+  classes:
+    - name: check_changed
+      match: ['(^|[;&|(\s])(bash\s+(\./)?check|\./check)\s+changed(\s|$)']
+    - name: check_static
+      match: ['(^|[;&|(\s])(bash\s+(\./)?check|\./check)\s+static(\s|$)']
+    - name: check
+      match: ['(^|[;&|(\s])(bash\s+(\./)?check|\./check)(\s|$)', '(^|[;&|(\s])make\s+test(\s|$)']
+    - name: go_test
+      match: ['(^|[;&|(\s])go\s+test(\s|$)']
 queue_cap: 18
 refill_below: 6
