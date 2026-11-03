@@ -151,8 +151,10 @@ editing surface, the console shows it read-only.
   image: a minimal app that passes `bash check` (the repository's one
   check, which CI and the agents run), builds its image and deploys to
   staging as seeded; its `AGENTS.md` names the layout its CI relies on.
-- `schema/`: the JSON Schemas `factoryd schema --out factory/schema`
-  generates from factoryd's Go types. Each YAML file's first line
+- `schema/`: the JSON Schemas `factoryd schema --out factory/schema
+  --commit <sha>` generates from factoryd's Go types, and `commit`, the
+  code commit they come from, which factoryd orders the copies by
+  against its own build. Each YAML file's first line
   references its schema (`# yaml-language-server:
   $schema=schema/policy.schema.json`, `../schema/project.schema.json`
   under `projects/`, `../schema/process.schema.json` under `processes/`), so an editor with the YAML language server
