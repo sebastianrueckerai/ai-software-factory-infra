@@ -111,7 +111,7 @@
         },
         "checkin_time": {
           "type": "string",
-          "description": "CheckinTime is how long one check-in conversation may run before its ask goes to a human; 0 means DefaultCheckinTime.",
+          "description": "CheckinTime is how long one check-in conversation may run before its ask goes to a human; 0 means CheckinCallTime for each of its calls (CheckinTimeCap).",
           "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
         },
         "checkin_share": {
@@ -541,7 +541,9 @@
       },
       "propertyNames": {
         "enum": [
-          "no_write"
+          "no_progress",
+          "no_write",
+          "open_call"
         ]
       }
     },
@@ -619,7 +621,25 @@
       "properties": {
         "model": {
           "type": "string",
-          "description": "Model is the class the project agent calls (purpose operator); the compaction of its threads calls Small.",
+          "description": "Model is the class the project agent calls (purpose operator) in a member's own turn, the one a member typed in the console or answered a card into; the compaction of its threads calls Small.",
+          "enum": [
+            "big",
+            "small",
+            "premium"
+          ]
+        },
+        "mcp_model": {
+          "type": "string",
+          "description": "MCPModel is the class of a turn an MCP client asks for on a chat token. Absent: Model.",
+          "enum": [
+            "big",
+            "small",
+            "premium"
+          ]
+        },
+        "wake_model": {
+          "type": "string",
+          "description": "WakeModel is the class of a turn the chat starts itself, a wake's or a fund's resume. Absent: Model.",
           "enum": [
             "big",
             "small",
@@ -648,6 +668,8 @@
               "card",
               "history",
               "card_history",
+              "card_step",
+              "board_digest",
               "costs",
               "diff",
               "plan",
