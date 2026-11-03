@@ -159,6 +159,65 @@
       ],
       "additionalProperties": false
     },
+    "escalation": {
+      "type": "object",
+      "properties": {
+        "pool": {
+          "type": "object",
+          "properties": {
+            "sessions": {
+              "type": "integer",
+              "description": "Sessions is a count of agent sessions.",
+              "minimum": 1
+            },
+            "agent_time": {
+              "type": "string",
+              "description": "AgentTime is agent working time, such as 30h.",
+              "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+            },
+            "eur": {
+              "type": "number",
+              "description": "EUR is money in EUR.",
+              "minimum": 0
+            }
+          },
+          "description": "Pool is what all rungs together may extend and grant in a project per UTC month. Absent or 0: the part takes policy.yaml's figure, and in policy.yaml 30 sessions, 30h, 60 EUR.",
+          "additionalProperties": false
+        },
+        "card_draw": {
+          "type": "object",
+          "properties": {
+            "sessions": {
+              "type": "integer",
+              "description": "Sessions is a count of agent sessions.",
+              "minimum": 1
+            },
+            "agent_time": {
+              "type": "string",
+              "description": "AgentTime is agent working time, such as 30h.",
+              "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+            },
+            "eur": {
+              "type": "number",
+              "description": "EUR is money in EUR.",
+              "minimum": 0
+            }
+          },
+          "description": "CardDraw is the most the code and the check-in may draw from the pool for one medium card over its whole life: a small card half of it, a large one one and a half times, sessions rounded up. At most the pool in each part. Absent or 0: the part takes policy.yaml's figure, and in policy.yaml 2 sessions, 1h, 4 EUR.",
+          "additionalProperties": false
+        },
+        "judgment": {
+          "type": "string",
+          "description": "Judgment is when the check-in and the factory agent judge a case the code did not resolve. With always they judge it at every autonomy level. With autonomous_and_above they judge it at autonomous and full auto only, and at manual and assisted it goes straight to a human. Absent: always.",
+          "enum": [
+            "always",
+            "autonomous_and_above"
+          ]
+        }
+      },
+      "description": "Escalation bounds what a card's escalation may extend and grant: a pool per project and UTC month, the most one card may draw from it, and when the check-in and the factory agent judge a case. Absent keys take their defaults one by one.",
+      "additionalProperties": false
+    },
     "classes": {
       "type": "object",
       "description": "Classes are the capability classes a task can hold, by name.",
