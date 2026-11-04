@@ -257,7 +257,8 @@ classes:
   # the prover (blind proofs): a report session on main that writes one
   # test per criterion of a plan and files them with file_proofs before the
   # builder writes code. agent_time is its whole run: the session gets it
-  # less the 50 minutes the dry run on main after it may take.
+  # less the 50 minutes the dry run on main after it may take. It has no
+  # escalate: its words reach no human, and its dead ends show as flags.
   prover:
     session: report
     models: [small, big]
@@ -267,7 +268,6 @@ classes:
     tools:
       # the proofs' channel: free, one filing holds every test
       file_proofs: {}
-      escalate: {}
       manual: {}
 
 # Tool prices no provider API reports (USD prices booked 1:1 as EUR, as
