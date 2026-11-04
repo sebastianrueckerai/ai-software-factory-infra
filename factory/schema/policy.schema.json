@@ -588,6 +588,7 @@
           "GateAudit",
           "GateCompanion",
           "TaskConfig",
+          "ProofsAtMain",
           "default"
         ]
       }
@@ -791,6 +792,7 @@
               "attach_analysis",
               "active_threads",
               "chat_search",
+              "inbox",
               "board_view",
               "board_view_reset",
               "watch_card",
