@@ -202,9 +202,6 @@ classes:
       # the delegate tool (roadmap 222, item 6): a small follow-up card on
       # the cheap rung that starts when the caller's card has landed
       delegate: {}
-      # an audit session's filing of its verdict on a red hold-out of the
-      # card (roadmap 289); free
-      file_verdict: {}
       # a tool the sandbox lacks (roadmap 281): a card adds it to one of the
       # project's images and this card restarts on that image; free
       request_tool: {}
