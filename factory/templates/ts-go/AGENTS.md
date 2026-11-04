@@ -9,10 +9,34 @@ happens without green checks.
 
 ## Before you end
 
-Run `bash check`, the repository's checks, which CI runs too. When it
-passes, commit and end. `check` is yours: extend it when the app needs
-more checked, never remove what it runs (the pull request checks go red
-when it no longer names `gosec` and `go test -race`).
+Run `bash check`, the repository's checks, which CI runs too, or `bash
+check changed`, the same checks with the Go tests of only the packages
+your change since `origin/HEAD` reaches. When it passes, commit and end.
+`check` is yours: extend it when the app needs more checked, never remove
+what it runs (the pull request checks go red when it no longer names
+`gosec` and `go test -race`). A change to `check` waits for a human's
+approval before it merges, since the criteria gate reads the reports it
+writes.
+
+`CHECK_REPORT=<file> bash check test <suite> [<name>]` runs one suite, or
+the one named test in it, and writes a JUnit report to the file. A suite
+is a Go package pattern such as `./proofs/size_bound`, or `web` or a path
+under it such as `web/src/proofs/size_bound.test.ts`, which vitest runs.
+A vitest test is named by a `test` at the top level of its file.
+
+## The criteria's proofs
+
+A plan's criteria are proven by tests that a separate session writes on
+main, before the cards build the feature. No workspace holds them until
+the criteria gate has run each one once, on the integration card's head.
+You read every criterion in full, its claim, its inputs and its expected
+numbers, and you write your own tests as usual: CI runs them, and they
+are not the proof. A proof that did not pass that first run comes to you
+as a finding with its code and its output, and its file is in your clone
+at its path. Commit it there and fix what is wrong, the code or the
+test, or ask on the card when the criterion itself cannot hold. From
+then on the gate runs that file at every head. Say in your summary why
+you changed a proof: the review compares it with the original.
 
 ## Layout
 

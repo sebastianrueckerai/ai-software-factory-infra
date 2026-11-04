@@ -3,9 +3,39 @@
 # main. An agent runs `bash check changed` before it ends: the same checks,
 # the Go tests only of the packages the change since origin/HEAD reaches
 # (scripts/affected-packages.sh), without the race detector and two at a
-# time. The agents own this file: extend it with what the app needs checked.
+# time. `CHECK_REPORT=<file> bash check test <suite> [<name>]` runs one suite,
+# or the one named test in it, and writes a JUnit report to the file: the
+# criteria gate's runner reads it. A suite of web or under web/ is a file
+# or directory vitest runs; any other is a Go package pattern gotestsum
+# runs, after the web build the Go tests of /app/ serve.
+# The agents own this file: extend it with what the app needs checked.
 set -euo pipefail
 cd "$(dirname "$0")"
+
+if [ "${1:-}" = test ]; then
+  : "${2:?usage: bash check test <suite> [<name>]}" "${CHECK_REPORT:?bash check test writes its JUnit report to the file CHECK_REPORT names}"
+  case "$CHECK_REPORT" in /*) report=$CHECK_REPORT ;; *) report=$PWD/$CHECK_REPORT ;; esac
+  case "$2" in
+  web | web/* | ./web | ./web/*)
+    filter=${2#./}
+    filter=${filter#web}
+    filter=${filter#/}
+    cd web
+    [ -d node_modules ] || npm ci --ignore-scripts
+    run=(node_modules/.bin/vitest run --reporter=default --reporter=junit --outputFile.junit="$report")
+    [ -n "${3:-}" ] && run+=(-t "^$3\$")
+    exec "${run[@]}" ${filter:+"$filter"}
+    ;;
+  esac
+  # the Go tests of /app/ serve the web build
+  [ -f web/dist/index.html ] || (cd web && npm ci --ignore-scripts && npm run build)
+  # the sandbox images carry gotestsum; elsewhere go run builds it
+  gotestsum=(gotestsum)
+  command -v gotestsum >/dev/null || gotestsum=(go run gotest.tools/gotestsum@v1.13.0)
+  run=("${gotestsum[@]}" --junitfile "$report" -- -count=1)
+  [ -n "${3:-}" ] && run+=(-run "^${3//\//\$/^}\$")
+  exec "${run[@]}" "$2"
+fi
 
 # web first: the Go tests serve the embedded web/dist
 (

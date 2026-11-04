@@ -2,9 +2,9 @@
 
 The confirmed contract of this repository's work: the outcome in a few
 sentences, a glossary that names each component once, then the criteria,
-each named as a check that runs. The planning session drafts into this
-skeleton; the members confirm the spec before the criteria are fixed, and
-the integration card's brief carries it.
+each stated by the fields of its kind. The planning session drafts into
+this skeleton; a human confirms the spec before the criteria are fixed,
+and the integration card's brief carries it.
 
 ## Outcome
 
@@ -19,9 +19,13 @@ the integration card's brief carries it.
 Every project wants these whatever it builds; a plan carries them beside
 the criteria it drafts.
 
-- `all_green` (invariant): go test ./... passes.
+- `all_green` (invariant): suite `./...` stays green.
 
 ## Criteria
 
-<!-- The plan's criteria, one line each: `id` (kind): the check that runs,
-     a test, an invariant, a judgement or a human claim. -->
+<!-- The plan's criteria, one line each: `id` (kind) and the fields of
+     its kind. test: the claim, its inputs and its expected numbers, at
+     the app's surface (the HTTP API through internal/server.New, a
+     command line, the store, a file the feature writes). invariant: the
+     suite. judgement: the claim, what its artifact shows, the prompt.
+     human: the claim and the evidence a human reads. -->
