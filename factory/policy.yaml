@@ -317,8 +317,8 @@ prices:
 # approval that names the paths. requires_approval waits for a human's
 # approval before factory-merge merges.
 # An agent's high-class change merges at full auto when the audit passes
-# (Sebastian, 2026-10-20); forbidden and
-# migration keep a human. A roll, a revert, a template update or a schema copy,
+# (Sebastian, 2026-10-20); forbidden, migration
+# and runner keep a human. A roll, a revert, a template update or a schema copy,
 # which factoryd wrote, merges at full auto on green checks and the merge rule
 # alone, with no class; a GitHub sync follows an agent's rules.
 # migration: true lists the class's paths on the approval card and the pull
@@ -327,6 +327,7 @@ risk:
   classes:
     - {name: forbidden, outcome: forbidden}
     - {name: migration, outcome: requires_approval, migration: true}
+    - {name: runner, outcome: requires_approval}
     - {name: high, outcome: requires_approval}
     - {name: normal, outcome: auto}
   rules:
@@ -334,14 +335,16 @@ risk:
     - {class: migration, paths: ["**/migrations/**", "internal/policy/schema.sql"]}
     # the code repository's internal/policy/risk_test.go mirrors this block
     # (TestInfraRiskIsTheCopy compares them with INFRA_FACTORY_DIR set)
+    # check and scripts/pg-test.sh are the criteria runner's entry point,
+    # which reports each proof's outcome: a change to them needs a person,
+    # with no merge on a passed audit as class high has
+    - {class: runner, paths: ["check", "scripts/pg-test.sh"]}
     # protected files: manifests and lockfiles of every common ecosystem,
     # agent instruction files and CODEOWNERS at any depth, and every
     # top-level dot directory or file (.forgejo, .gitea, .github stay
-    # forbidden above); check and scripts/pg-test.sh are the criteria
-    # runner's entry point, which reports each proof's outcome
+    # forbidden above)
     - class: high
       paths: ["k8s/**", "deploy/**", "**/Dockerfile*",
-        "check", "scripts/pg-test.sh",
         "**/go.mod", "**/go.sum", "**/go.work", "**/go.work.sum",
         "**/package.json", "**/package-lock.json", "**/npm-shrinkwrap.json", "**/yarn.lock", "**/pnpm-lock.yaml",
         "**/Cargo.toml", "**/Cargo.lock",
