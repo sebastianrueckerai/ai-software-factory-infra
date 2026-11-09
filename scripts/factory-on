@@ -87,6 +87,7 @@ for name, ip in sorted(NODES.items()):
         body['firewalls'] = [{'firewall': fw}]
     r = api('POST', '/servers', body)
     server = r['server']
+    wait_action(r['action'], 1800)  # the disk copy from the snapshot; attach and poweron queue behind it
     wait_action(api('POST', f"/servers/{server['id']}/actions/attach_to_network",
                     {'network': net['id'], 'ip': ip})['action'], 300)
     wait_action(api('POST', f"/servers/{server['id']}/actions/poweron")['action'], 300)
