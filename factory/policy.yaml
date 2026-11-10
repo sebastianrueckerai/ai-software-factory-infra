@@ -414,6 +414,9 @@ link_hosts: [aisoftwarefactory.world]
 # command twice (base and head), so its bound is doubled.
 bounds:
   GateReproduction: 1800
+  # a queued pull-request image build takes up to 25 minutes; under the
+  # wait activity's 46-minute start-to-close until waits.checks lands
+  WaitChecks: 2400
   # ModelReview and GateAudit take no bound here: the code derives theirs
   # from supervisor_timeout, three of them and two minutes until the diff
   # is read (20 m at 6 m), then one for each wave of four calls on its
