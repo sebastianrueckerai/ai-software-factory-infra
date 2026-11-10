@@ -6,7 +6,7 @@
 # It works like any build project (roadmap 160, Stage 18 item 3.4): a spec
 # card runs on the plan track, its planned cards on the direct track.
 repository: sf/ai-software-factory-code
-merge_rule: auto
+merge_rule: human
 objects: seed
 agents: coder
 process: spec
@@ -64,3 +64,4 @@ commands:
       match: ['(^|[;&|(\s])go\s+test(\s|$)']
 queue_cap: 18
 refill_below: 6
+work_in_progress: 1
