@@ -36,8 +36,8 @@ autonomy: manual
 chain: {requires: [factory/roll], stall: 24h}
 images:
   chromium:
-    digest: sha256:acaa9de045a0f4ead85edae4f6a2dd6dfa0f554791fb2f23e7f1303e54d7cc61
-    key: k-16107b75dff53d807ec1ffcb
+    digest: sha256:24510a21c6e2bc0c68cfaa033168087b8aa2520f54c8faff811f1d033c94b877
+    key: k-9cfc74dc54af7a302fcd21ef
     tools:
       - chromium
       - fonts-liberation
