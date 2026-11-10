@@ -25,7 +25,7 @@ routines:
     title: Weekly bump of the pinned outside inputs
     schedule:
       - cron: "0 6 * * 1"
-    files: agent
+    files: human
     brief: routines/weekly-bump.md
     while_open: hold
     missed: file-once
