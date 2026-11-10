@@ -164,10 +164,19 @@ spec:
         # and SigNoz's alert Premium served by another model files a card
         # for a person (k8s/platform/signoz/alerts/premium-fallback.json)
         num_retries: 2
+        # the gateway serves a slow class from its twin by naming the twin
+        # (policy routing.twins), so a twin call that fails falls back to
+        # the class's own model. Two hops at most, against LiteLLM's default
+        # five: premium reaches big and then big-alibaba, and a call that
+        # fails on both models of a class ends after the second one's
+        # retries
         fallbacks:
           - big: [big-alibaba]
           - small: [small-alibaba]
           - premium: [big]
+          - big-alibaba: [big]
+          - small-alibaba: [small]
+        max_fallbacks: 2
         # a z.ai model that failed allowed_fails calls within a minute rests
         # cooldown_time seconds, and its Alibaba twin serves the class
         # meanwhile
