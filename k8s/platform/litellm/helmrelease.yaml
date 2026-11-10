@@ -166,9 +166,10 @@ spec:
         num_retries: 2
         # the gateway serves a slow class from its twin by naming the twin
         # (policy routing.twins), so a twin call that fails falls back to
-        # the class's own model. Two hops at most: premium reaches big and
-        # then big-alibaba, and a call both twins fail ends after one
-        # wasted hop instead of LiteLLM's default five
+        # the class's own model. Two hops at most, against LiteLLM's default
+        # five: premium reaches big and then big-alibaba, and a call that
+        # fails on both models of a class ends after the second one's
+        # retries
         fallbacks:
           - big: [big-alibaba]
           - small: [small-alibaba]
