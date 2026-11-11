@@ -1589,7 +1589,7 @@
         "kind": "Panel",
         "spec": {
           "display": {
-            "description": "factory.human.intervention: approve, request_changes and reject on a console merge card, alert_verdict_click, escalation_answer and poster_answer (new comments answering a waiting task, typed in the console or in Forgejo), extra_time (an answer that raised the agent time), summed over the factoryd pods.",
+            "description": "factory.human.intervention: approve, request_changes and reject on a console merge card, escalation_answer and poster_answer (new comments answering a waiting task, typed in the console or in Forgejo), extra_time (an answer that raised the agent time), summed over the factoryd pods.",
             "name": "Human interventions per kind per day"
           },
           "links": [],
