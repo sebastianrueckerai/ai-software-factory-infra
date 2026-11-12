@@ -6,7 +6,7 @@
 # It works like any build project (roadmap 160, Stage 18 item 3.4): a spec
 # card runs on the plan track, its planned cards on the direct track.
 repository: sf/ai-software-factory-code
-merge_rule: human
+merge_rule: auto
 objects: seed
 agents: coder
 process: spec
@@ -25,15 +25,22 @@ routines:
     title: Weekly bump of the pinned outside inputs
     schedule:
       - cron: "0 6 * * 1"
-    files: human
+    files: agent
     brief: routines/weekly-bump.md
     while_open: hold
     missed: file-once
     tell: inbox
-autonomy: manual
+  - name: long-waits
+    title: Cards waiting on a human
+    schedule:
+      - cron: "0 8 * * *"
+    files: report
+    pass: long-waits
+    tell: inbox
+autonomy: autonomous
 # the roll's commit status rides the chain: the head is green only when the
 # run is green and the roll succeeded; 24h covers human approval
-chain: {requires: [factory/roll], stall: 24h}
+chain: {requires: [factory/roll], stall: 24h, test_context: "ci / test (push)"}
 images:
   chromium:
     digest: sha256:9ee168fc7a747bc1e362dc384a4822ecd21178bb8e5b534da089fbcf9b17fdf7
@@ -64,4 +71,5 @@ commands:
       match: ['(^|[;&|(\s])go\s+test(\s|$)']
 queue_cap: 18
 refill_below: 6
-work_in_progress: 1
+work_in_progress: 4
+surge: 2

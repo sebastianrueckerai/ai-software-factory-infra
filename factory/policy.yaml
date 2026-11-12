@@ -44,7 +44,8 @@ budget:
   task_default_eur: 5
   task_max_eur: 15
   day_eur: 150
-  month_eur: 600
+  # Sebastian, 2026-11-11: 1,500 EUR of modelled z.ai spend for Phase 6
+  month_eur: 1500
   # the least free budget a session starts on, by its rung (plan A of the
   # escalation ladder, 2026-10-15): the starved sessions of cards #839 and #854
   # died at 0.15 and 0.07 EUR left
@@ -67,7 +68,9 @@ budget:
 # capped like a class's on the month's chat task: 500 searches at 2
 # credits are 5 EUR, 500 scrapes at 1 credit 2.50 EUR.
 chat:
-  monthly_eur: 30
+  # the one judgment budget (Sebastian, 2026-11-11): it pays rung 2, rung
+  # 1, the check-in's judgment, the brief writer and the human's own turns
+  monthly_eur: 150
   # premium for a member's own turns only; a turn an MCP client asks for
   # on a chat token and one the chat starts itself, a wake or a fund's
   # resume, run on big (Sebastian, 2026-11-03)
@@ -342,6 +345,12 @@ risk:
     - {name: forbidden, outcome: forbidden}
     - {name: migration, outcome: requires_approval, migration: true}
     - {name: runner, outcome: requires_approval}
+    # the policy tree itself: rung 2 must not approve a change to the
+    # factory's own policy tree, so human keeps a person on its merge at full
+    # auto, and no merge on a passed audit as class high has; factoryd's own
+    # mechanical pull requests (schema copy, template update, revert, roll)
+    # carry code reviewed in the code repository and stay automatic
+    - {name: policy, outcome: requires_approval, human: true}
     - {name: high, outcome: requires_approval}
     - {name: normal, outcome: auto}
   rules:
@@ -353,6 +362,7 @@ risk:
     # which reports each proof's outcome: a change to them needs a person,
     # with no merge on a passed audit as class high has
     - {class: runner, paths: ["check", "scripts/pg-test.sh"]}
+    - {class: policy, paths: ["factory/**"]}
     # protected files: manifests and lockfiles of every common ecosystem,
     # agent instruction files and CODEOWNERS at any depth, and every
     # top-level dot directory or file (.forgejo, .gitea, .github stay
@@ -416,14 +426,15 @@ link_hosts: [aisoftwarefactory.world]
 # command twice (base and head), so its bound is doubled.
 bounds:
   GateReproduction: 1800
-  # a queued pull-request image build takes up to 25 minutes; under the
-  # wait activity's 46-minute start-to-close until waits.checks lands
-  WaitChecks: 2400
   # ModelReview and GateAudit take no bound here: the code derives theirs
   # from supervisor_timeout, three of them and two minutes until the diff
   # is read (20 m at 6 m), then one for each wave of four calls on its
   # parts and two minutes, at most 5 h 50 m: ten minutes under the six
   # hours of their attempt.
+
+# a queued pull-request image build takes up to 25 minutes
+waits:
+  checks: 40m
 
 time_zone: Europe/Berlin
 routines:
