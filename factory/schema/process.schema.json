@@ -172,7 +172,7 @@
           },
           "max_returns": {
             "type": "integer",
-            "description": "MaxReturns caps the stage's own returns to the agent before the card; absent: the session cap decides. On a stage whose on_findings is agent only, at least 1."
+            "description": "MaxReturns caps the stage's own returns to the agent before the card; absent: the session cap decides. On a stage whose on_findings is agent only, at least 1, and never on checks."
           }
         },
         "description": "Stage is one named stage of a process and what its findings do.",

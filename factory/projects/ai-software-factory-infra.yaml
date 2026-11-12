@@ -17,3 +17,11 @@ chat: {doc_repo: sf/ai-software-factory}
 # Flux's commit statuses ride the chain (clusters/sf/notifications.yaml): the
 # head is green only when config-check is green and Flux applied it
 chain: {requires: [flux/flux-system, flux/platform]}
+routines:
+  - name: long-waits
+    title: Cards waiting on a human
+    schedule:
+      - cron: "0 8 * * *"
+    files: report
+    pass: long-waits
+    tell: inbox
