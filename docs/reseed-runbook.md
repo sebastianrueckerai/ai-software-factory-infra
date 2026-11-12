@@ -97,8 +97,13 @@ under node memory pressure, and while cilium-envoy restarts the edge's port
 running cluster, apply the same four values with `cilium upgrade --version
 1.20.0 --reuse-values --set envoy.resources.requests.cpu=500m --set
 envoy.resources.limits.cpu=500m --set envoy.resources.requests.memory=512Mi
---set envoy.resources.limits.memory=512Mi`. It restarts cilium-envoy one node
-at a time, and each node's port 443 refuses connections for those seconds.
+--set envoy.resources.limits.memory=512Mi --set k8sServiceHost=localhost --set
+k8sServicePort=7445`. The last two values are needed: without them the CLI
+replaces the KubePrism loopback with the API address of the kubeconfig. Run it
+first with `--dry-run-helm-values` and compare with `helm -n kube-system get
+values cilium`: only the envoy resources may differ. It restarts cilium-envoy
+one node at a time, and each node's port 443 refuses connections for those
+seconds.
 
 Expected: cilium 3/3, cilium-envoy 3/3, operator 1/1, no kube-proxy
 DaemonSet, GatewayClass `cilium` accepted. k8sServiceHost is the KubePrism
