@@ -7,6 +7,7 @@ ok() { if eval "$2"; then pass=$((pass+1)); echo "PASS $1"; else fail=$((fail+1)
 GIB=1048576
 AGE="builder prune -af --filter until=24h;container prune -f --filter until=24h;network prune -f --filter until=24h;"
 SHRINK="builder prune -af;container prune -f --filter until=10m;"
+VOLUMES="volume prune -af;"
 # new PASSES KIB: a daemon at second 100000 with no image and no container
 new() {
   STATE=$(mktemp -d); export STATE
@@ -31,12 +32,16 @@ ok "dind down: the age prune runs at the next check, not an hour on" '[ "$calls"
 new 1 $((24 * GIB - 1)); run
 ok "one KiB under 24 GiB: no size prune" '[ "$calls" = "$AGE-- pass 1;" ] && [ -z "$out" ]'
 new 1 $((24 * GIB)); run
-ok "at 24 GiB: the size prune" '[ "$calls" = "$AGE$SHRINK-- pass 1;" ]'
-ok "at 24 GiB: logged" '[ "$out" = "docker-prune: /var/lib/docker holds 25165824 KiB, over 24 GiB: pruning" ]'
+ok "at 24 GiB and still over: the size prune, then the unused volumes" '[ "$calls" = "$AGE$SHRINK$VOLUMES-- pass 1;" ]'
+ok "at 24 GiB and still over: both logged" '[ "$out" = "docker-prune: /var/lib/docker holds 25165824 KiB, over 24 GiB: pruning
+docker-prune: still 25165824 KiB: removing unused volumes" ]'
+new 1 $((24 * GIB)); echo $((10 * GIB)) > "$STATE/kb.after"; run
+ok "the size prune brings it under: the volumes stay" '[ "$calls" = "$AGE$SHRINK-- pass 1;" ] && [ "$out" = "docker-prune: /var/lib/docker holds 25165824 KiB, over 24 GiB: pruning" ]'
 
 new 1 0; rm "$STATE/kb"; echo 1 > "$STATE/du.rc"; echo "du: /var/lib/docker: No such file or directory" > "$STATE/du.err"; run
-ok "an unreadable size counts as over" '[ "$calls" = "$AGE$SHRINK-- pass 1;" ]'
-ok "an unreadable size: logged as such" '[ "$out" = "docker-prune: /var/lib/docker holds ? KiB, over 24 GiB: pruning" ]'
+ok "an unreadable size counts as over" '[ "$calls" = "$AGE$SHRINK$VOLUMES-- pass 1;" ]'
+ok "an unreadable size: logged as such" '[ "$out" = "docker-prune: /var/lib/docker holds ? KiB, over 24 GiB: pruning
+docker-prune: still ? KiB: removing unused volumes" ]'
 
 new 1 $((10 * GIB)); echo 1 > "$STATE/du.rc"
 echo "du: /var/lib/docker/containerd/daemon/io.containerd.snapshotter.v1.overlayfs/snapshots/80/fs/tmp/x: No such file or directory" > "$STATE/du.err"; run
@@ -63,8 +68,9 @@ X
 echo 'echo "sha256:built ci-runner:test" >> "$STATE/images"; echo "sha256:dang2 <none>" >> "$STATE/images"' > "$STATE/hook2"
 echo "echo $((30 * GIB)) > \"\$STATE/kb\"" > "$STATE/hook3"
 run
-ok "over while a job runs: the size prune in pass 4 only" '[ "$(grep -v "^image rm" "$STATE/calls" | tr "\n" ";")" = "$AGE-- pass 1;-- pass 2;-- pass 3;$SHRINK-- pass 4;" ]'
-ok "over while a job runs: logged" '[ "$out" = "docker-prune: /var/lib/docker holds 31457280 KiB, over 24 GiB: pruning" ]'
+ok "over while a job runs: the size prune in pass 4 only" '[ "$(grep -v "^image rm" "$STATE/calls" | tr "\n" ";")" = "$AGE-- pass 1;-- pass 2;-- pass 3;$SHRINK$VOLUMES-- pass 4;" ]'
+ok "over while a job runs: logged" '[ "$out" = "docker-prune: /var/lib/docker holds 31457280 KiB, over 24 GiB: pruning
+docker-prune: still 31457280 KiB: removing unused volumes" ]'
 ok "the hourly prune takes the dangling image in pass 1" '[ "$(sed -n "1,/-- pass 1/p" "$STATE/calls" | grep "^image rm")" = "image rm sha256:dang" ]'
 ok "over: the dangling image of the job's pass goes, unused images seen before the job too, one whose stopped container went past 10 minutes among them" '[ "$(sed -n "/-- pass 3/,/-- pass 4/p" "$STATE/calls" | grep "^image rm" | sort | tr "\n" ";")" = "image rm sha256:dang2;image rm sha256:old;image rm sha256:stopped;" ]'
 ok "the job's base image, the job's build, an image first seen with the job and one under a just-created container stay" '[ "$(images)" = "sha256:base sha256:built sha256:created sha256:same " ]'
