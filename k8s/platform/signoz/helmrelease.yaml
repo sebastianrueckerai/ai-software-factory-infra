@@ -110,16 +110,21 @@ spec:
         storageClass: local-path
         size: 20Gi
       resources:
-        requests: {cpu: 250m, memory: 1Gi}
-        limits: {cpu: "2", memory: 3Gi}
+        requests: {cpu: 250m, memory: 2Gi}
+        limits: {cpu: "2", memory: 4Gi}
       # No memory profiler, neither the queries' (the profile of users
       # admin and default) nor the server's, which samples each query too:
       # their stacks, one per 4 MiB allocated, were 95 % of trace_log's
       # frames.
       profiles:
         default/memory_profiler_step: "0"
+      # The server fails a query at 3.2 GiB (0.8 of the 4 GiB limit; the
+      # default 0.9 left the kernel's kill 0.2 GiB above the server's own
+      # bound), and runs at most 16 merge tasks (the default is 32).
       settings:
         total_memory_profiler_step: "0"
+        max_server_memory_usage_to_ram_ratio: "0.8"
+        background_pool_size: "8"
       # Hot data on the local-path volume, cold on bucket signoz-cold: the
       # signoz-objects CronJob sets the TTLs that move parts to volume s3.
       # The key pair comes from secret signoz-s3 through include_from, so it
