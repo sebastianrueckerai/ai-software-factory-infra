@@ -1,0 +1,48 @@
+# Holds each node's factory-cache directories to their cap while pods run:
+# setup.sh prunes at a claim only, and a directory grows past the cap
+# between claims. The loop is setup.sh's sweep mode, from the same
+# script the helper pods run, every FACTORY_CACHE_SWEEP_SECONDS (600). It runs
+# as uid 1000, the uid CI and agent pods write the caches as, with no
+# capabilities, no privilege escalation, a read-only root filesystem and no
+# service account token: a symlink a pod plants can steer a deletion only to
+# files that uid could delete anyway. find does not follow symlinks. The
+# script's ConfigMap carries a content hash, so a change rolls the DaemonSet.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: factory-cache-sweep
+  namespace: local-path-storage
+spec:
+  selector:
+    matchLabels: {app: factory-cache-sweep}
+  template:
+    metadata:
+      labels: {app: factory-cache-sweep}
+    spec:
+      automountServiceAccountToken: false
+      tolerations:
+      - operator: Exists
+      containers:
+      - name: sweep
+        image: docker.io/library/busybox:1.38.0@sha256:f97baa533a26513c453a362be331a43eb60214302f449c16571b23cea141dce4
+        command: [sh, /scripts/setup.sh, sweep]
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        resources:
+          requests: {cpu: 5m, memory: 16Mi}
+          limits: {memory: 64Mi}
+        volumeMounts:
+        - {name: scripts, mountPath: /scripts, readOnly: true}
+        - {name: cache, mountPath: /var/lib/factory-cache}
+      volumes:
+      - name: scripts
+        configMap:
+          name: factory-cache-sweep-script
+          items: [{key: setup.sh, path: setup.sh}]
+      - name: cache
+        hostPath: {path: /var/lib/factory-cache, type: DirectoryOrCreate}

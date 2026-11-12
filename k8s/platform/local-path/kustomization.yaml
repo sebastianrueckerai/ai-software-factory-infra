@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - upstream-v0.0.31.yaml
 - factory-cache.yaml
+- factory-cache-sweep.yaml
 patches:
 # The upstream Deployment sets no resources, so the provisioner ran
 # BestEffort, the class Talos's OOM controller kills first under node memory
@@ -70,3 +71,6 @@ configMapGenerator:
   files: [setup=setup.sh]
   options:
     disableNameSuffixHash: true
+- name: factory-cache-sweep-script
+  namespace: local-path-storage
+  files: [setup.sh]

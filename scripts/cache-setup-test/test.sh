@@ -1,6 +1,7 @@
 #!/bin/sh
 # Test of k8s/platform/local-path/setup.sh on a throwaway tree, in the helper pod's image:
 #   docker run --rm -v "$PWD/scripts/cache-setup-test:/t:ro" -v "$PWD/k8s/platform/local-path:/s:ro" busybox sh /t/test.sh
+# and sh scripts/cache-setup-test/keys.sh k8s/platform/local-path (with kubectl): every ConfigMap key a volume names exists in the rendered kustomization
 root=/var/lib/factory-cache other=/var/mnt/local-path-provisioner
 now=$(date +%s) day=86400
 pass=0; fail=0
@@ -68,6 +69,29 @@ mv "$root/.claimed" /tmp/stamps; : > "$root/.claimed"
 claim "$root/cache-err"; rc=$?
 ok "a failing prune (the stamps directory is a file): exit 0" '[ $rc = 0 ]'
 ok "a failing prune: the claim directory is made 0777" '[ "$(stat -c %a "$root/cache-err")" = 777 ]'
+
+# the sweep never removes under go/bin, and does not follow a symlink out of a cache
+mkdir -p "$root/cache-tool/go/bin" "$root/cache-tool/link-home" "$root/cache-victim"
+mib2 "$root/cache-tool/go/bin/tool"; aged "$root/cache-tool/go/bin/tool" 5
+mib2 "$root/cache-tool/old-d"; aged "$root/cache-tool/old-d" 5
+mib2 "$root/cache-victim/old-d"; aged "$root/cache-victim/old-d" 5
+ln -s "$root/cache-victim" "$root/cache-tool/link-home/out"
+FACTORY_CACHE_CAP_MB=3 FACTORY_CACHE_SWEEP_SECONDS=1 timeout 3 sh /s/setup.sh sweep
+ok "the sweep keeps an installed binary idle 5 days, above the cap" '[ -e "$root/cache-tool/go/bin/tool" ]'
+ok "the sweep still removes another file idle 5 days above the cap" '[ ! -e "$root/cache-tool/old-d" ]'
+ok "the sweep does not follow a symlink into another cache" '[ -e "$root/cache-victim/old-d" ] && [ -L "$root/cache-tool/link-home/out" ]'
+
+# the sweep prunes every cache directory without a claim, and a failing pass does not end the loop
+rm -rf "$root"/cache-*; rm -rf "$root/.claimed"; mkdir -p "$root/cache-sw/go-build/dd" "$root/cache-sw2" "$root/.claimed"
+mib2 "$root/cache-sw/go-build/dd/old-d"; hours "$root/cache-sw/go-build/dd/old-d" 30
+mib2 "$root/cache-sw/go-build/dd/new-d"; hours "$root/cache-sw/go-build/dd/new-d" 1
+mib2 "$root/cache-sw2/stale"; aged "$root/cache-sw2/stale" 4
+FACTORY_CACHE_CAP_MB=3 FACTORY_CACHE_SWEEP_SECONDS=1 timeout 4 sh /s/setup.sh sweep; rc=$?
+ok "the sweep keeps running until the timeout ends it (143, SIGTERM)" '[ $rc = 143 ]'
+ok "the sweep prunes a cache above the cap that no claim touched: the oldest build file goes" '[ ! -e "$root/cache-sw/go-build/dd/old-d" ]'
+ok "the sweep keeps a file used within 2 hours" '[ -e "$root/cache-sw/go-build/dd/new-d" ]'
+ok "the sweep leaves a cache under the cap alone" '[ -e "$root/cache-sw2/stale" ]'
+ok "the sweep makes no stamp" '[ -z "$(ls "$root/.claimed")" ]'
 
 echo "pass=$pass fail=$fail"
 [ "$fail" = 0 ]
