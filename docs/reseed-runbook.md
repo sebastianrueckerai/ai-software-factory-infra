@@ -82,9 +82,23 @@ cilium install --version 1.20.0 \
   --set gatewayAPI.enabled=true \
   --set gatewayAPI.hostNetwork.enabled=true \
   --set envoy.securityContext.capabilities.keepCapNetBindService=true \
-  --set 'envoy.securityContext.capabilities.envoy={NET_ADMIN,SYS_ADMIN,NET_BIND_SERVICE}'
+  --set 'envoy.securityContext.capabilities.envoy={NET_ADMIN,SYS_ADMIN,NET_BIND_SERVICE}' \
+  --set envoy.resources.requests.cpu=500m \
+  --set envoy.resources.limits.cpu=500m \
+  --set envoy.resources.requests.memory=512Mi \
+  --set envoy.resources.limits.memory=512Mi
 cilium status --wait
 ```
+
+The envoy resources put the pod in the Guaranteed QoS class. Without them the
+chart's DaemonSet is BestEffort, the class Talos's OOM controller kills first
+under node memory pressure, and while cilium-envoy restarts the edge's port
+443 refuses connections (git.aisoftwarefactory.world, 2026-11-10). On a
+running cluster, apply the same four values with `cilium upgrade --version
+1.20.0 --reuse-values --set envoy.resources.requests.cpu=500m --set
+envoy.resources.limits.cpu=500m --set envoy.resources.requests.memory=512Mi
+--set envoy.resources.limits.memory=512Mi`. It restarts cilium-envoy one node
+at a time, and each node's port 443 refuses connections for those seconds.
 
 Expected: cilium 3/3, cilium-envoy 3/3, operator 1/1, no kube-proxy
 DaemonSet, GatewayClass `cilium` accepted. k8sServiceHost is the KubePrism
