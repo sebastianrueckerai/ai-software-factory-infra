@@ -195,6 +195,10 @@ classes:
       # the workspace, such as a screenshot the session took; it books as a
       # model call on vision_model. Free.
       analyze_image: {}
+      # one text file of the workspace, read by the small model, which
+      # answers the session's ask: only the answer enters the session.
+      # It books as a small call on the card's account. Free.
+      digest: {}
       # the delegate tool (roadmap 222, item 6): a small follow-up card on
       # the cheap rung that starts when the caller's card has landed
       delegate: {}
@@ -227,6 +231,7 @@ classes:
       manual: {}
       deployment_health: {}
       analyze_image: {}
+      digest: {}
   # the plan card's session: reads the repository and the
   # spec, writes nothing, answers a plan as its last message. It runs on
   # big (Sebastian, 2026-11-03); premium in models and session_model is
@@ -250,6 +255,7 @@ classes:
       escalate: {}
       manual: {}
       analyze_image: {}
+      digest: {}
   # the prover (blind proofs): a report session on main that writes one
   # test per criterion of a plan and files them with file_proofs before the
   # builder writes code. agent_time is its whole run: the session gets it
