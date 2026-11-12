@@ -168,7 +168,7 @@ spec:
         # litellm-proxy-budget. A backstop only: 1.25 x the policy's
         # budget.month_eur, so the gateway's month cap stops first
         # (scripts/budget-backstop-check, run by config-check).
-        max_budget: 750
+        max_budget: 1875
         budget_duration: 1mo
     environmentSecrets:
       - litellm-qwen

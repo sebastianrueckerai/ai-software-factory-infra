@@ -114,17 +114,13 @@
           "description": "CheckinTime is how long one check-in conversation may run before its ask goes to a human; 0 means CheckinCallTime for each of its calls (CheckinTimeCap).",
           "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
         },
-        "checkin_share": {
-          "type": "integer",
-          "description": "CheckinShare is the most percent of the card's budget the check-in's calls may spend. Absent: DefaultCheckinShare."
-        },
         "checkin_tail_kib": {
           "type": "integer",
           "description": "CheckinTailKiB is the parent session record's tail cut into the check-in's statement. Absent: DefaultCheckinTailKiB."
         },
         "checkin_handover_chars": {
           "type": "integer",
-          "description": "CheckinHandoverChars is the check-in's handover note cap, matching the session's last-message cut. Absent: DefaultCheckinHandoverChars."
+          "description": "CheckinHandoverChars is the cap of a note that starts a session, a rung's or a human's, matching the session's last-message cut. Absent: DefaultCheckinHandoverChars."
         },
         "checkin_sessions": {
           "type": "integer",
@@ -144,9 +140,14 @@
         },
         "no_push_spend": {
           "type": "integer",
-          "description": "NoPushSpend is the percent of a card's budget spent with nothing pushed at which the session supervisor is called, 1 to 99. Absent: DefaultNoPushSpend.",
+          "description": "NoPushSpend is the percent of what a card had left at a session's start that the session spends with nothing pushed, at which the supervisor is called, 1 to 99. Absent: DefaultNoPushSpend.",
           "minimum": 1,
           "maximum": 99
+        },
+        "gate_reserve_eur": {
+          "type": "number",
+          "description": "GateReserveEUR is the EUR held out of a card's budget for its gates: the whole of a model review and of an audit at the models the gates use, which a card whose sessions spend to the session ceiling still runs without a fund. A session's calls fit the task headroom less this reserve; factoryd's own calls (the review, the audit) keep the full headroom. Absent: DefaultGateReserveEUR.",
+          "minimum": 0
         }
       },
       "description": "Limits bound every task's work: sessions, agent time, supervisor calls.",
@@ -213,9 +214,65 @@
             "always",
             "autonomous_and_above"
           ]
+        },
+        "rung1_runs": {
+          "type": "integer",
+          "description": "Rung1Runs is the most rung 1 conversations one card gets over its life. Absent or 0: 6."
         }
       },
       "description": "Escalation bounds what a card's escalation may extend and grant: a pool per project and UTC month, the most one card may draw from it, and when the check-in and the factory agent judge a case. Absent keys take their defaults one by one.",
+      "additionalProperties": false
+    },
+    "waits": {
+      "type": "object",
+      "properties": {
+        "queued": {
+          "type": "string",
+          "description": "Queued is how long a card may stay queued with its admission reason. Default 2h.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "dependency": {
+          "type": "string",
+          "description": "Dependency is how long a card may wait on the cards it depends on. Default 48h.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "gate": {
+          "type": "string",
+          "description": "Gate is how long a card may wait in review on a gate other than the approval. Default 6h.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "merge_retry": {
+          "type": "string",
+          "description": "MergeRetry is how long a failed merge may wait for its retry. Default 1h.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "provider_backoff": {
+          "type": "string",
+          "description": "ProviderBackoff is how long a card may wait after a provider refused its session. Default 30m.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "run_quiet": {
+          "type": "string",
+          "description": "RunQuiet is how long a running card may go without a step. Default 30m.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "rung_answer": {
+          "type": "string",
+          "description": "RungAnswer is how long a rung may take to answer a case step. Default 35m.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "checks": {
+          "type": "string",
+          "description": "Checks is how long a card may wait on its pull request's checks: CI's own bound, the longest job's timeout plus a margin. Default 50m.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "no_push_sessions": {
+          "type": "integer",
+          "description": "NoPushSessions is how many sessions in a row may end without a push. Default 3.",
+          "minimum": 0
+        }
+      },
+      "description": "Waits bound the waits the AI owns, one bound per wait kind: a wait past its bound opens a case. Each bound lies between 1m and 7 days. Absent or 0: the default.",
       "additionalProperties": false
     },
     "classes": {
@@ -284,7 +341,8 @@
                 "manual",
                 "deployment_health",
                 "analyze_image",
-                "digest"
+                "digest",
+                "task_costs"
               ]
             }
           },
@@ -443,6 +501,10 @@
               "migration": {
                 "type": "boolean",
                 "description": "Migration marks paths whose change needs the human's schema review."
+              },
+              "human": {
+                "type": "boolean",
+                "description": "Human keeps a human on the merge of this class whatever the autonomy: no rung of the ladder approves it."
               }
             },
             "description": "RiskClass is a named class and what it means for the pull request.",
@@ -565,7 +627,6 @@
           "RecordStep",
           "Finish",
           "Reconcile",
-          "Escalate",
           "RecordUsage",
           "GatePolicy",
           "GateMigration",
@@ -715,7 +776,7 @@
         },
         "monthly_eur": {
           "type": "number",
-          "description": "MonthlyEUR is the budget of the project's chat task each UTC month; absent or 0: the policy's.",
+          "description": "MonthlyEUR is the budget of the project's chat task each UTC month, the judgment budget that pays the chat, rung 1, the check-in's judgment and the brief writer; absent or 0: the policy's, in code 10.",
           "minimum": 0
         },
         "confirm": {
@@ -751,7 +812,6 @@
               "settings",
               "policy",
               "project_images",
-              "alert_verdict",
               "promote_resource",
               "release_resource",
               "new_card",
@@ -780,6 +840,7 @@
               "set_pool",
               "read_doc",
               "write_doc",
+              "show_doc",
               "set_autonomy",
               "routines",
               "routine_write",
@@ -907,9 +968,10 @@
           },
           "pass": {
             "type": "string",
-            "description": "Pass names the pass a pull-request routine runs: template.",
+            "description": "Pass names the pass a pull-request routine runs, template, or the list a report routine builds, long-waits.",
             "enum": [
-              "template"
+              "template",
+              "long-waits"
             ]
           },
           "while_open": {
