@@ -86,24 +86,40 @@ cilium install --version 1.20.0 \
   --set envoy.resources.requests.cpu=500m \
   --set envoy.resources.limits.cpu=500m \
   --set envoy.resources.requests.memory=512Mi \
-  --set envoy.resources.limits.memory=512Mi
+  --set envoy.resources.limits.memory=512Mi \
+  --set operator.resources.requests.cpu=50m \
+  --set operator.resources.requests.memory=320Mi
 cilium status --wait
 ```
 
-The envoy resources put the pod in the Guaranteed QoS class. Without them the
-chart's DaemonSet is BestEffort, the class Talos's OOM controller kills first
-under node memory pressure, and while cilium-envoy restarts the edge's port
-443 refuses connections (git.aisoftwarefactory.world, 2026-11-10). On a
-running cluster, apply the same four values with `cilium upgrade --version
-1.20.0 --reuse-values --set envoy.resources.requests.cpu=500m --set
-envoy.resources.limits.cpu=500m --set envoy.resources.requests.memory=512Mi
---set envoy.resources.limits.memory=512Mi --set k8sServiceHost=localhost --set
-k8sServicePort=7445`. The last two values are needed: without them the CLI
-replaces the KubePrism loopback with the API address of the kubeconfig. Run it
-first with `--dry-run-helm-values` and compare with `helm -n kube-system get
-values cilium`: only the envoy resources may differ. It restarts cilium-envoy
-one node at a time, and each node's port 443 refuses connections for those
-seconds.
+The envoy resources put its pods in the Guaranteed QoS class, and the
+operator's requests (twice its 160 MiB peak of 2026-11-12) move it out of
+BestEffort. Without them both run BestEffort, the class Talos's OOM
+controller kills first under node memory pressure, and while cilium-envoy
+restarts, the edge's port 443 refuses connections
+(git.aisoftwarefactory.world, 2026-11-10).
+
+On a running cluster, apply the same resource values with the KubePrism pin:
+
+```sh
+cilium upgrade --version 1.20.0 --reuse-values \
+  --set envoy.resources.requests.cpu=500m \
+  --set envoy.resources.limits.cpu=500m \
+  --set envoy.resources.requests.memory=512Mi \
+  --set envoy.resources.limits.memory=512Mi \
+  --set operator.resources.requests.cpu=50m \
+  --set operator.resources.requests.memory=320Mi \
+  --set k8sServiceHost=localhost \
+  --set k8sServicePort=7445
+```
+
+The last two values are needed: without them the CLI replaces the KubePrism
+loopback with the API address of the kubeconfig. Run the line first with
+`--dry-run-helm-values` and compare with `helm -n kube-system get values
+cilium`: only the envoy and operator resources may differ, and the dry run's
+last line is a restart warning that the stored values lack. The upgrade
+restarts cilium-envoy one node at a time, and each node's port 443 refuses
+connections for those seconds.
 
 Expected: cilium 3/3, cilium-envoy 3/3, operator 1/1, no kube-proxy
 DaemonSet, GatewayClass `cilium` accepted. k8sServiceHost is the KubePrism
@@ -137,6 +153,8 @@ kubectl apply --server-side -f k8s/platform/cnpg/operator.yaml
 #  conflicts on the deployment/webhooks it had created]
 kubectl -n cnpg-system wait --for=condition=Available deployment/cnpg-controller-manager --timeout=420s
 kubectl apply --server-side -f k8s/platform/cnpg/plugin-barman-cloud.yaml   # after cert-manager (README)
+# The plugin runs BestEffort until Flux applies k8s/platform, whose patch
+# gives it its memory request.
 kubectl apply -f k8s/platform/cnpg/objectstore.yaml
 kubectl apply -f k8s/platform/cnpg/cluster.yaml    # recovery; ~10 min to healthy
 kubectl apply -f k8s/platform/cnpg/databases.yaml
