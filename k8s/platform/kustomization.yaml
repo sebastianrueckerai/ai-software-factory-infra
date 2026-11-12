@@ -25,3 +25,21 @@ resources:
 - gvisor-runtimeclass.yaml
 - cluster-facts/configmap.yaml
 - factoryd-reader.yaml
+patches:
+# The plugin's upstream Deployment sets no resources, so it ran BestEffort,
+# the class Talos's OOM controller kills first under node memory pressure,
+# and with it the database backups. 128Mi is twice its 61 MiB peak of
+# 2026-11-12; no limit, so no new kill at its own bound.
+- patch: |-
+    kind: Deployment
+    apiVersion: apps/v1
+    metadata:
+      name: barman-cloud
+      namespace: cnpg-system
+    spec:
+      template:
+        spec:
+          containers:
+          - name: barman-cloud
+            resources:
+              requests: {cpu: 10m, memory: 128Mi}

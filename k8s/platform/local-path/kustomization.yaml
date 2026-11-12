@@ -4,6 +4,22 @@ resources:
 - upstream-v0.0.31.yaml
 - factory-cache.yaml
 patches:
+# The upstream Deployment sets no resources, so the provisioner ran
+# BestEffort, the class Talos's OOM controller kills first under node memory
+# pressure. 96Mi is twice its 48 MiB peak of 2026-11-12; no limit.
+- patch: |-
+    kind: Deployment
+    apiVersion: apps/v1
+    metadata:
+      name: local-path-provisioner
+      namespace: local-path-storage
+    spec:
+      template:
+        spec:
+          containers:
+          - name: local-path-provisioner
+            resources:
+              requests: {cpu: 10m, memory: 96Mi}
 - patch: |-
     kind: ConfigMap
     apiVersion: v1
