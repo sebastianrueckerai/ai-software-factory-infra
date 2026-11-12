@@ -8,7 +8,9 @@
 # filesystem, hard links once), and from MAX_GIB on all that no running job
 # needs goes: build cache no build holds, stopped containers older than a
 # job's create-to-start gap, dangling images, and unused images seen before
-# the oldest running container. An unreadable size counts as over. Every
+# the oldest running container. If that leaves it over, the volumes no
+# container uses go too: main's test job keeps its Go caches in named
+# volumes, which grow each run. An unreadable size counts as over. Every
 # CHECK seconds with no job running, a buildkitd a cancelled image job left
 # goes too. Retries each check while dind is down; exits on SIGTERM.
 trap 'exit 0' TERM INT
@@ -47,6 +49,13 @@ stale() {
     { t[$1] = $2; if ($1 in up && $2 < oldest) oldest = $2 }
     END { for (id in t) if (id ~ /^sha256:/ && t[id] < oldest) print id }'
 }
+# the volume as the kubelet measures it; du exits 1 over files a build
+# removes mid-walk, and its total stands, as the kubelet skips them too
+over() {
+  kb=$(du -skx /var/lib/docker 2>/dev/null | cut -f1)
+  case $kb in *[!0-9]*) kb= ;; esac
+  [ -z "$kb" ] || [ "$kb" -ge $((MAX_GIB * 1048576)) ]
+}
 while :; do
   now=$(date +%s)
   sight
@@ -58,16 +67,17 @@ while :; do
     dangling | rmi
     next=$((now + EVERY))
   fi
-  # du exits 1 over files a build removes mid-walk; its total stands, as
-  # the kubelet skips them too
-  kb=$(du -skx /var/lib/docker 2>/dev/null | cut -f1)
-  case $kb in *[!0-9]*) kb= ;; esac
-  if [ -z "$kb" ] || [ "$kb" -ge $((MAX_GIB * 1048576)) ]; then
+  if over; then
     echo "docker-prune: /var/lib/docker holds ${kb:-?} KiB, over $MAX_GIB GiB: pruning"
     docker builder prune -af >/dev/null
     docker container prune -f --filter until=10m >/dev/null
     # the daemon refuses an image a container uses, a running job's base
     { dangling; stale; } | rmi
+    # the Go caches go last: a warm one shortens main's test job
+    if over; then
+      echo "docker-prune: still ${kb:-?} KiB: removing unused volumes"
+      docker volume prune -af >/dev/null
+    fi
   fi
   sleep "$CHECK" & wait $!
 done

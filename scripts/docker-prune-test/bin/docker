@@ -8,7 +8,9 @@ keep() { awk "$1" "$STATE/$2" > "$STATE/$2.t" && mv "$STATE/$2.t" "$STATE/$2"; }
 case "$*" in
   "image ls -q --no-trunc") cut -d' ' -f1 "$STATE/images" ;;
   "ps -q --no-trunc") awk '$3 == "running" { print $1 }' "$STATE/containers" ;;
-  "builder prune -af"|"builder prune -af --filter until="*|"network prune -f --filter until="*) echo "$*" >> "$STATE/calls" ;;
+  "builder prune -af --filter until="*|"network prune -f --filter until="*|"volume prune -af") echo "$*" >> "$STATE/calls" ;;
+  # after the size prune the size is $STATE/kb.after, if set
+  "builder prune -af") echo "$*" >> "$STATE/calls"; [ ! -e "$STATE/kb.after" ] || mv "$STATE/kb.after" "$STATE/kb" ;;
   "container prune -f --filter until="*)
     echo "$*" >> "$STATE/calls"
     u=${5#until=}; case $u in *h) s=$((${u%h} * 3600)) ;; *m) s=$((${u%m} * 60)) ;; *) exit 98 ;; esac
