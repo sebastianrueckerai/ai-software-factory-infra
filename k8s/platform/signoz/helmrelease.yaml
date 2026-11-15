@@ -110,15 +110,21 @@ spec:
         storageClass: local-path
         size: 20Gi
       resources:
-        requests: {cpu: 250m, memory: 2Gi}
-        limits: {cpu: "2", memory: 4Gi}
+        # Resident runs at 2.9 GiB at steady state; background merges of
+        # still-hot old parts spike past 4 GiB and the cgroup kill (exit
+        # 137, restarts every few minutes) took the query API down with
+        # them. 6 GiB holds the spikes; once the TTL mover catches up
+        # (its CronJob runs green once the pod stops dying) the old parts
+        # go cold and the merge pressure falls.
+        requests: {cpu: 250m, memory: 3Gi}
+        limits: {cpu: "2", memory: 6Gi}
       # No memory profiler, neither the queries' (the profile of users
       # admin and default) nor the server's, which samples each query too:
       # their stacks, one per 4 MiB allocated, were 95 % of trace_log's
       # frames.
       profiles:
         default/memory_profiler_step: "0"
-      # The server fails a query at 3.2 GiB (0.8 of the 4 GiB limit; the
+      # The server fails a query at 4.8 GiB (0.8 of the 6 GiB limit; the
       # default 0.9 left the kernel's kill 0.2 GiB above the server's own
       # bound).
       settings:
