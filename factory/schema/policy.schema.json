@@ -261,6 +261,16 @@
           "description": "RungAnswer is how long a rung may take to answer a case step. Default 35m.",
           "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
         },
+        "provider_recheck": {
+          "type": "string",
+          "description": "ProviderRecheck is how long the gateway's provider-limit hold may hold the class before a call must probe the provider again. Default 15m.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
+        "provider_limit": {
+          "type": "string",
+          "description": "ProviderLimit is how long a provider-limit freeze may hold a card before it speaks up. Default 24h.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
         "checks": {
           "type": "string",
           "description": "Checks is how long a card may wait on its pull request's checks: CI's own bound, the longest job's timeout plus a margin. Default 50m.",
@@ -385,6 +395,10 @@
             },
             "description": "Time overrides limits.agent_time and limits.check_in for tasks of this class; a process or project's Time wins over it.",
             "additionalProperties": false
+          },
+          "provider": {
+            "type": "string",
+            "description": "Provider is the provider at provider_limits whose limit words the class's calls carry: the gateway reads a dated refusal of the class in the entry's zone and patterns. Absent: the gateway reads nothing for the class."
           }
         },
         "description": "Class is a capability class a task can hold: the model aliases it may call through the gateway and its tools with per-task caps, and the aliases factoryd calls on the task's account, which the agent may not.",
@@ -907,6 +921,28 @@
     "time_zone": {
       "type": "string",
       "description": "TimeZone is the IANA zone of every routine's cron schedule, such as Europe/Berlin. Absent: UTC."
+    },
+    "provider_limits": {
+      "type": "object",
+      "description": "ProviderLimits are the providers' limit readings, one entry per provider: the zone its naive stamps live in and an optional pattern set that replaces the gateway's default set for that provider.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "tz": {
+            "type": "string",
+            "description": "TZ is the IANA zone the provider's naive stamps live in, such as Asia/Singapore. Absent: UTC."
+          },
+          "patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Patterns are Go regular expressions that REPLACE the gateway's default pattern set for this provider. Each names the datetime in its first capture group."
+          }
+        },
+        "description": "ProviderLimit is one provider's limit reading: how its words become a moment.",
+        "additionalProperties": false
+      }
     },
     "routines": {
       "type": "array",
