@@ -130,6 +130,12 @@ spec:
       settings:
         total_memory_profiler_step: "0"
         max_server_memory_usage_to_ram_ratio: "0.8"
+        # Sixteen background merge threads on a 2-CPU pod starved the
+        # server until the liveness probe died (connection reset on /ping,
+        # exit 137 after grace, restarts at 00:03 and 00:29 with resident
+        # well under the 6 GiB limit). Two merges leave the HTTP handler
+        # its CPU; the backlog drains slower but the pod stays alive.
+        background_pool_size: "2"
       # Hot data on the local-path volume, cold on bucket signoz-cold: the
       # signoz-objects CronJob sets the TTLs that move parts to volume s3.
       # The key pair comes from secret signoz-s3 through include_from, so it
