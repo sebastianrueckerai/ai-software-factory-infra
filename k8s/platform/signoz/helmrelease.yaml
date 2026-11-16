@@ -54,6 +54,14 @@ spec:
             patch: |
               - {op: remove, path: /spec/configuration/users/admin~1password}
               - {op: add, path: /spec/configuration/users/admin~1k8s_secret_password, value: signoz-clickhouse/password}
+              # The operator's built-in probe (3s period, 1s timeout, 10
+              # failures) killed the server under merge load: thirty
+              # seconds of a busy HTTP handler and the kubelet restarts a
+              # healthy pod (exit 137 after grace, 00:03/00:29; then the
+              # pool cap of PR #308 broke startup entirely, exit 36).
+              # Own probe on the template so the operator's default steps
+              # aside: five-minute patience with a five-second timeout.
+              - {op: add, path: /spec/templates/podTemplates/0/livenessProbe, value: {httpGet: {path: /ping, port: 8123}, periodSeconds: 10, timeoutSeconds: 5, failureThreshold: 30}}
           - target: {kind: Deployment, name: signoz-otel-collector}
             patch: |
               apiVersion: apps/v1
@@ -130,12 +138,6 @@ spec:
       settings:
         total_memory_profiler_step: "0"
         max_server_memory_usage_to_ram_ratio: "0.8"
-        # Sixteen background merge threads on a 2-CPU pod starved the
-        # server until the liveness probe died (connection reset on /ping,
-        # exit 137 after grace, restarts at 00:03 and 00:29 with resident
-        # well under the 6 GiB limit). Two merges leave the HTTP handler
-        # its CPU; the backlog drains slower but the pod stays alive.
-        background_pool_size: "2"
       # Hot data on the local-path volume, cold on bucket signoz-cold: the
       # signoz-objects CronJob sets the TTLs that move parts to volume s3.
       # The key pair comes from secret signoz-s3 through include_from, so it
