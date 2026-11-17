@@ -855,6 +855,8 @@
               "grant_session",
               "fund",
               "set_dependency",
+              "hold_card",
+              "release_hold",
               "replan",
               "set_pool",
               "read_doc",
