@@ -398,6 +398,11 @@
           "description": "Checks is how long a card may wait on its pull request's checks: CI's own bound, the longest job's timeout plus a margin. Default 50m.",
           "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
         },
+        "at_human": {
+          "type": "string",
+          "description": "AtHuman is how long a card may wait at the human with no live ask before the heal pass asks again. Default 5m.",
+          "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$"
+        },
         "no_push_sessions": {
           "type": "integer",
           "description": "NoPushSessions is how many sessions in a row may end without a push. Default 3.",
