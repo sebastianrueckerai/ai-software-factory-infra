@@ -22,8 +22,8 @@ tokens: {read: forgejo-ci-registrar, actions: forgejo-ci-registrar, merge: forge
 chat: {doc_repo: sf/ai-software-factory}
 routines:
   - name: weekly-bump
-    title: Weekly bump of the pinned outside inputs
-    why: The pinned outside inputs miss upstream fixes until someone bumps them, so each week an agent bumps them and the checks prove the bump.
+    title: Update the fixed versions of outside software every week
+    why: Outside software held at one version misses its makers' fixes, so each week an agent updates it and the checks prove the update.
     schedule:
       - cron: "0 6 * * 1"
     files: agent
