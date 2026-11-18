@@ -20,6 +20,7 @@ chain: {requires: [flux/flux-system, flux/platform]}
 routines:
   - name: long-waits
     title: Cards waiting on a human
+    why: A card that waits days on a human holds up its work, so each morning the factory lists the cards that wait longest.
     schedule:
       - cron: "0 8 * * *"
     files: report

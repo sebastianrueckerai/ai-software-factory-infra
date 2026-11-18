@@ -23,6 +23,7 @@ chat: {doc_repo: sf/ai-software-factory}
 routines:
   - name: weekly-bump
     title: Weekly bump of the pinned outside inputs
+    why: The pinned outside inputs miss upstream fixes until someone bumps them, so each week an agent bumps them and the checks prove the bump.
     schedule:
       - cron: "0 6 * * 1"
     files: agent
@@ -32,6 +33,7 @@ routines:
     tell: inbox
   - name: long-waits
     title: Cards waiting on a human
+    why: A card that waits days on a human holds up its work, so each morning the factory lists the cards that wait longest.
     schedule:
       - cron: "0 8 * * *"
     files: report
