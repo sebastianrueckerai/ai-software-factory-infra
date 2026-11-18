@@ -1,70 +1,44 @@
 #!/usr/bin/env python3
 # Switches the factory off and stops the main cost: one last backup round
-# into S3 (CNPG base backup, WAL switch, OpenBao raft snapshot, Forgejo
-# dump), then every node shuts down, gets a disk snapshot, and only the
-# servers are deleted. Network, firewall, the three primary IPv4s and the
-# S3 buckets stay; scripts/factory-on rebuilds the nodes from the snapshots
-# with the same addresses. A stopped server still bills in full, so the
-# delete is what saves the EUR 9.55 a day. Tokens and keys come from
-# terraform.tfvars and ~/repos/ai-software-factory/.env.* and are never
-# printed. Run from the repo: scripts/factory-off
-import json, os, re, subprocess, sys, time, urllib.error, urllib.request
+# into S3 (CNPG base backup, OpenBao raft snapshot, Forgejo dump), a wait
+# until no Forgejo Actions run is open, a WAL switch, then every node shuts
+# down, gets a disk snapshot, and only the servers are deleted. Network,
+# firewall, the three primary IPv4s and the S3 buckets stay;
+# scripts/factory-on rebuilds the nodes from the snapshots with the same
+# addresses. A stopped server still bills in full, so the delete is what
+# saves the EUR 9.55 a day. Run from the repo: scripts/factory-off
+import os, sys, time
 from datetime import datetime, timezone
-from pathlib import Path
 
-API = 'https://api.hetzner.cloud/v1'
-ROOT = Path(__file__).resolve().parent.parent
-SEED = Path.home() / 'repos/ai-software-factory'
-NODES = ('sf-0', 'sf-1', 'sf-2')
+from factory_switch import NODES, PREFIX, SEED, api, env_file_vars, run, unseal_openbao, wait_action
+
 BUCKET = 'aisoftwarefactory-backups'
-PREFIXES = ('sf-pause-', 'factory-off-')  # factory-on takes the newest per node
+RUNS_WAIT = 5400  # the longest CI run of the week to 2026-11-18 took 71 minutes
 
-tok = re.search(r'hcloud_token\s*=\s*"([^"]+)"',
-                (ROOT / 'terraform.tfvars').read_text()).group(1)
 stamp = datetime.now(timezone.utc).strftime('%Y%m%dt%H%M')  # k8s names need lowercase
 
 
-def run(args, **kw):
-    r = subprocess.run(args, capture_output=True, text=True, **kw)
-    if r.returncode:
-        sys.exit(f"{' '.join(args[:4])}... failed: {(r.stderr or r.stdout).strip()[:300]}")
-    return r.stdout.strip()
+def primary():
+    return run(['kubectl', '-n', 'platform', 'get', 'cluster', 'sf-cluster',
+                '-o', 'jsonpath={.status.currentPrimary}'])
 
 
-def api(method, path, body=None):
-    headers = {'Authorization': 'Bearer ' + tok}
-    data = None
-    if body is not None:
-        headers['Content-Type'] = 'application/json'  # without it Hetzner reads form data
-        data = json.dumps(body).encode()
-    req = urllib.request.Request(API + path, method=method, headers=headers, data=data)
-    try:
-        with urllib.request.urlopen(req) as r:
-            raw = r.read()
-            return json.loads(raw) if raw else None
-    except urllib.error.HTTPError as e:
-        sys.exit(f'{method} {path}: HTTP {e.code} {e.read().decode()[:300]}')
+def open_runs():
+    return run(['kubectl', '-n', 'platform', 'exec', primary(), '-c', 'postgres', '--',
+                'psql', '-U', 'postgres', '-d', 'forgejo', '-tAc',
+                "SELECT r.owner_name || '/' || r.name || ' run ' || a.index || ' (' ||"
+                " CASE a.status WHEN 5 THEN 'waiting' WHEN 6 THEN 'running' ELSE 'blocked' END || ')'"
+                ' FROM action_run a JOIN repository r ON r.id = a.repo_id'
+                ' WHERE a.status IN (5, 6, 7) ORDER BY a.id'])  # Forgejo's StatusWaiting, StatusRunning, StatusBlocked
 
 
-def wait_action(action, timeout):
+def wait_off(sid, timeout):
     t0 = time.time()
     while time.time() - t0 < timeout:
-        a = api('GET', f"/actions/{action['id']}")['action']
-        if a['status'] == 'success':
-            return
-        if a['status'] == 'error':
-            sys.exit(f"action {a['command']} failed: {a['error']}")
+        if api('GET', f'/servers/{sid}')['server']['status'] == 'off':
+            return True
         time.sleep(10)
-    sys.exit(f"action {action['command']} timed out")
-
-
-def env_file_vars(path):
-    out = {}
-    for line in path.read_text().splitlines():
-        m = re.match(r'^([A-Z0-9_]+)=(.*)$', line)
-        if m:
-            out[m.group(1)] = m.group(2).strip()
-    return out
+    return False
 
 
 # --- backup round: needs the cluster up, so it runs first
@@ -72,18 +46,6 @@ def env_file_vars(path):
 ready = run(['kubectl', 'get', 'nodes', '--no-headers']).splitlines()
 if len(ready) != 3 or not all(' Ready ' in l for l in ready):
     sys.exit(f'nodes not 3x Ready, refusing to switch off:\n{ready}')
-
-primary = run(['kubectl', '-n', 'platform', 'get', 'cluster', 'sf-cluster',
-               '-o', 'jsonpath={.status.currentPrimary}'])
-active = run(['kubectl', '-n', 'platform', 'exec', primary, '-c', 'postgres', '--',
-              'psql', '-U', 'postgres', '-d', 'forgejo', '-tAc',
-              "SELECT r.owner_name || '/' || r.name || ' run ' || a.index || ' (' ||"
-              " CASE a.status WHEN 5 THEN 'waiting' WHEN 6 THEN 'running' ELSE 'blocked' END || ')'"
-              ' FROM action_run a JOIN repository r ON r.id = a.repo_id'
-              ' WHERE a.status IN (5, 6, 7) ORDER BY a.id'])  # Forgejo's StatusWaiting, StatusRunning, StatusBlocked
-if active:
-    sys.exit(f'{active}\nForgejo Actions runs are not done, refusing to switch off: wait for them'
-             ' or cancel them in Forgejo, then run scripts/factory-off again')
 
 run(['kubectl', 'apply', '-f', '-'], input=f'''apiVersion: postgresql.cnpg.io/v1
 kind: Backup
@@ -97,35 +59,22 @@ run(['kubectl', '-n', 'platform', 'wait', '--for=jsonpath={.status.phase}=comple
      f'backup/factory-off-{stamp}', '--timeout=1800s'])
 print(f'CNPG backup factory-off-{stamp} completed', flush=True)
 
-run(['kubectl', '-n', 'platform', 'exec', primary, '-c', 'postgres', '--',
-     'psql', '-U', 'postgres', '-tAc', 'SELECT pg_switch_wal()'])
-time.sleep(45)  # let the archiver ship the switched WAL to S3
-print(f'WAL switched on {primary}', flush=True)
-
-if 'Sealed true' in run(['kubectl', '-n', 'platform', 'exec', 'openbao-0', '--',
-                         'bao', 'status']):
-    key = env_file_vars(SEED / '.env.seed')['OPENBAO_UNSEAL_KEY']
-    key += '=' * (-len(key) % 4)  # the seed file keeps it unpadded
-    run(['kubectl', 'exec', '-i', '-n', 'platform', 'openbao-0', '--',
-         'sh', '-c', 'k="$(cat)"; bao operator unseal "$k"'], input=key)
-    print('OpenBao unsealed', flush=True)
-
+unseal_openbao(60)
 token = env_file_vars(SEED / '.env.seed')['OPENBAO_ROOT_TOKEN']
-snap_pod = f'/tmp/openbao-{stamp}.snap'
-snap_local = snap_pod
+snap = f'/tmp/openbao-{stamp}.snap'
 run(['kubectl', 'exec', '-i', '-n', 'platform', 'openbao-0', '--', 'sh', '-c',
-     't="$(cat)"; BAO_TOKEN="$t" bao operator raft snapshot save ' + snap_pod],
+     't="$(cat)"; BAO_TOKEN="$t" bao operator raft snapshot save ' + snap],
     input=token)  # the pod loses its token file on restart, the exec must bring one
-run(['kubectl', '-n', 'platform', 'cp', f'openbao-0:/tmp/openbao-{stamp}.snap', snap_local])
-run(['kubectl', '-n', 'platform', 'exec', 'openbao-0', '--', 'rm', f'/tmp/openbao-{stamp}.snap'])
+run(['kubectl', '-n', 'platform', 'cp', f'openbao-0:{snap}', snap])
+run(['kubectl', '-n', 'platform', 'exec', 'openbao-0', '--', 'rm', snap])
 tools = env_file_vars(SEED / '.env.tools')
 aws_env = {**os.environ,
            'AWS_ACCESS_KEY_ID': tools['HETZNER_S3_ACCESS_KEY_ID'],
            'AWS_SECRET_ACCESS_KEY': tools['HETZNER_S3_SECRET_ACCESS_KEY']}
 s3key = f's3://{BUCKET}/openbao/openbao-{stamp}.snap'
 run(['aws', '--endpoint-url', 'https://fsn1.your-objectstorage.com',
-     's3', 'cp', snap_local, s3key], env=aws_env)
-os.remove(snap_local)
+     's3', 'cp', snap, s3key], env=aws_env)
+os.remove(snap)
 print(f'OpenBao raft snapshot at {s3key}', flush=True)
 
 run(['kubectl', '-n', 'forgejo', 'create', 'job', '--from=cronjob/forgejo-dump',
@@ -135,6 +84,23 @@ run(['kubectl', '-n', 'forgejo', 'wait', '--for=condition=complete',
 dump_log = run(['kubectl', '-n', 'forgejo', 'logs', f'job/factory-off-dump-{stamp}',
                 '-c', 'upload', '--tail=2'])
 print(f'Forgejo dump: {dump_log}', flush=True)
+
+# a shutdown kills a run's runner, so open runs end first, also those the
+# backup round's minutes let start
+t0, shown = time.time(), None
+while runs := open_runs():
+    if time.time() - t0 > RUNS_WAIT:
+        sys.exit(f'{runs}\nForgejo Actions runs still open after {RUNS_WAIT // 60} minutes, the servers'
+                 ' still run: cancel the runs in Forgejo, then run scripts/factory-off again')
+    if runs != shown:
+        print(f'waiting for Forgejo Actions runs to end:\n{runs}', flush=True)
+        shown = runs
+    time.sleep(30)
+
+run(['kubectl', '-n', 'platform', 'exec', primary(), '-c', 'postgres', '--',
+     'psql', '-U', 'postgres', '-tAc', 'SELECT pg_switch_wal()'])
+time.sleep(45)  # let the archiver ship the switched WAL to S3
+print('WAL switched', flush=True)
 
 # --- substrate: shut down, snapshot, delete only the servers
 
@@ -148,11 +114,19 @@ if set(NODES) - set(sv):
 for name in NODES:
     if sv[name]['status'] != 'off':
         print(f'{name}: shutdown', flush=True)
-        wait_action(api('POST', f"/servers/{sv[name]['id']}/actions/shutdown")['action'], 900)
+        wait_action(api('POST', f"/servers/{sv[name]['id']}/actions/shutdown")['action'], 300)
+for name in NODES:  # the shutdown action succeeds once the ACPI request is sent, not once the server is off
+    sid = sv[name]['id']
+    if not wait_off(sid, 900):
+        print(f'{name}: still running 15 minutes after the shutdown, power off', flush=True)
+        wait_action(api('POST', f'/servers/{sid}/actions/poweroff')['action'], 300)
+        if not wait_off(sid, 120):
+            sys.exit(f'{name} is not off after the power off, keeping the servers')
+    print(f'{name}: off', flush=True)
 
 descs = {}
 for name in NODES:  # snapshot only once every node is off, so etcd stops at one point
-    desc = f'factory-off-{name}-{stamp}'
+    desc = f'{PREFIX}{name}-{stamp}'
     print(f'{name}: snapshot {desc}', flush=True)
     r = api('POST', f"/servers/{sv[name]['id']}/actions/create_image",
             {'type': 'snapshot', 'description': desc})
@@ -170,12 +144,10 @@ for name in NODES:
     api('DELETE', f"/servers/{sv[name]['id']}")
 
 for name in NODES:  # the snapshot this run made replaces the older ones
-    mine = sorted(d for d in imgs if d.startswith(tuple(f'{p}{name}-' for p in PREFIXES))
-                  and d != descs[name])
-    for d in mine:
+    for d in sorted(d for d in imgs if d.startswith(f'{PREFIX}{name}-') and d != descs[name]):
         print(f'delete superseded snapshot {d}', flush=True)
         api('DELETE', f"/images/{imgs[d]['id']}")
 
 left = sorted(s['name'] for s in api('GET', '/servers')['servers'])
 print(f'off. servers left: {left or "none"}')
-print('back on with: scripts/factory-on, then the OpenBao unseal')
+print('back on with: scripts/factory-on')

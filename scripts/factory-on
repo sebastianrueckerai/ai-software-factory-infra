@@ -1,60 +1,18 @@
 #!/usr/bin/env python3
 # Switches the factory back on: one server per node from its newest
-# factory-off (or sf-pause) snapshot, created off, given its old private
-# address and its old primary IPv4, then powered on. kubeconfig,
-# talosconfig and the dynamic-DNS records keep working because no address
-# changes. Afterwards OpenBao needs its one hand step, the unseal: the
-# seed env's OPENBAO_UNSEAL_KEY is unpadded base64, and the exact pipe
-# lives in docs/factory-off-runbook.md. tofu state is stale after this:
-# the next tofu apply is only ever part of a full re-seed (README
-# "Rebuild"), never of a switch-on. The token comes from terraform.tfvars
-# and is never printed. Run from the repo: scripts/factory-on
-import json, re, subprocess, sys, time, urllib.error, urllib.request
-from pathlib import Path
+# factory-off snapshot, created off, given its old private address and its
+# old primary IPv4, then powered on. kubeconfig, talosconfig and the
+# dynamic-DNS records keep working because no address changes. Once the
+# nodes are Ready it deletes the shutdown's leftover pods and unseals
+# OpenBao with the seed env's key. tofu state is stale after this: the next
+# tofu apply is only ever part of a full re-seed (README "Rebuild"), never
+# of a switch-on. Run from the repo: scripts/factory-on
+import json, subprocess, sys, time
 
-API = 'https://api.hetzner.cloud/v1'
-ROOT = Path(__file__).resolve().parent.parent
-NODES = {'sf-0': '10.0.1.10', 'sf-1': '10.0.1.11', 'sf-2': '10.0.1.12'}
+from factory_switch import NODES, PREFIX, api, run, unseal_openbao, wait_action
+
 SERVER_TYPE = 'cpx42'
 LOCATION = 'fsn1'
-PREFIXES = ('factory-off-', 'sf-pause-')
-
-tok = re.search(r'hcloud_token\s*=\s*"([^"]+)"',
-                (ROOT / 'terraform.tfvars').read_text()).group(1)
-
-
-def run(args, **kw):
-    r = subprocess.run(args, capture_output=True, text=True, **kw)
-    if r.returncode:
-        sys.exit(f"{' '.join(args[:4])}... failed: {(r.stderr or r.stdout).strip()[:300]}")
-    return r.stdout.strip()
-
-
-def api(method, path, body=None):
-    headers = {'Authorization': 'Bearer ' + tok}
-    data = None
-    if body is not None:
-        headers['Content-Type'] = 'application/json'  # without it Hetzner reads form data
-        data = json.dumps(body).encode()
-    req = urllib.request.Request(API + path, method=method, headers=headers, data=data)
-    try:
-        with urllib.request.urlopen(req) as r:
-            raw = r.read()
-            return json.loads(raw) if raw else None
-    except urllib.error.HTTPError as e:
-        sys.exit(f'{method} {path}: HTTP {e.code} {e.read().decode()[:300]}')
-
-
-def wait_action(action, timeout):
-    t0 = time.time()
-    while time.time() - t0 < timeout:
-        a = api('GET', f"/actions/{action['id']}")['action']
-        if a['status'] == 'success':
-            return
-        if a['status'] == 'error':
-            sys.exit(f"action {a['command']} failed: {a['error']}")
-        time.sleep(10)
-    sys.exit(f"action {action['command']} timed out")
 
 
 net = next(n for n in api('GET', '/networks')['networks'] if n['name'] == 'sf')
@@ -74,7 +32,7 @@ for name, ip in sorted(NODES.items()):
         print(f'{name}: exists, network {ip} and power ensured', flush=True)
         continue
     mine = [i for i in imgs if i['description'] and i['description'].startswith(
-        tuple(f'{p}{name}-' for p in PREFIXES)) and i['status'] == 'available']
+        f'{PREFIX}{name}-') and i['status'] == 'available']
     if not mine:
         sys.exit(f'no switch-off snapshot for {name}, this is a re-seed, not a switch-on')
     if name not in pips:
@@ -113,4 +71,5 @@ for pod in json.loads(run(['kubectl', 'get', 'pods', '-A', '-o', 'json']))['item
             o['kind'] == 'Job' for o in m.get('ownerReferences', [])):
         run(['kubectl', '-n', m['namespace'], 'delete', 'pod', m['name'], '--ignore-not-found'])
         print(f"deleted leftover pod {m['namespace']}/{m['name']}", flush=True)
-print('unseal OpenBao next, if it is sealed: docs/factory-off-runbook.md')
+unseal_openbao(600)
+print('on')
