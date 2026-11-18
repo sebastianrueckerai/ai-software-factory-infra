@@ -166,6 +166,7 @@ supervisor:
 classes:
   coder:
     session: code
+    provider: zai
     # the two model classes (2026-10-20): small the start rung, big the
     # stronger; each class is its z.ai model and nothing behind it
     # (k8s/platform/litellm/helmrelease.yaml)
@@ -224,6 +225,7 @@ classes:
   # trips and half-way check-in call the supervisor model.
   analyzer:
     session: report
+    provider: zai
     models: [small, big]
     supervisor_model: big
     vision_model: vision
@@ -242,6 +244,7 @@ classes:
   # its stronger model, off for now.
   planner:
     session: plan
+    provider: zai
     models: [small, big]
     session_model: big
     supervisor_model: big
@@ -267,6 +270,7 @@ classes:
   # escalate: its words reach no human, and its dead ends show as flags.
   prover:
     session: report
+    provider: zai
     models: [small, big]
     session_model: big
     supervisor_model: big
@@ -438,6 +442,11 @@ waits:
   checks: 40m
 
 time_zone: Europe/Berlin
+# a provider's dated limit freezes the classes that name it until the
+# reset; z.ai words its reset without a zone, in Singapore's time
+provider_limits:
+  zai:
+    tz: Asia/Singapore
 routines:
   - name: template-pass
     title: Template update
