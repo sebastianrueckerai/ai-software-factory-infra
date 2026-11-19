@@ -516,7 +516,6 @@
               "deny_merge",
               "rerun_checks",
               "answer_criteria",
-              "set_summary",
               "set_accent",
               "invite",
               "github_export",
@@ -626,6 +625,10 @@
           "title": {
             "type": "string",
             "description": "Title is the filed card's title."
+          },
+          "why": {
+            "type": "string",
+            "description": "Why is the routine's why line: one sentence that says why it runs, which its card and the cards it files show."
           },
           "schedule": {
             "type": "array",
