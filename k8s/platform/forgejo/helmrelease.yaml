@@ -41,6 +41,15 @@ spec:
     resources:
       requests: {memory: 768Mi}
       limits: {memory: 2560Mi}
+    # Talos's OOM controller ranks a pod's cgroup by memory in use unless the
+    # cgroup has a memory limit, and the kubelet sets one only when every
+    # container has a limit, init containers included. Without limits here the
+    # pod's cgroup, full of git page cache, was the first one killed whenever
+    # node memory pressure rose (exit 137, not OOMKilled).
+    initContainers:
+      resources:
+        requests: {cpu: 100m, memory: 128Mi}
+        limits: {memory: 512Mi}
     persistence:
       enabled: true
       size: 10Gi

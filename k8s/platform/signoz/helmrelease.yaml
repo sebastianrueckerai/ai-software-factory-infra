@@ -62,6 +62,11 @@ spec:
               # Own probe on the template so the operator's default steps
               # aside: five-minute patience with a five-second timeout.
               - {op: add, path: /spec/templates/podTemplates/0/livenessProbe, value: {httpGet: {path: /ping, port: 8123}, periodSeconds: 10, timeoutSeconds: 5, failureThreshold: 30}}
+              # The udf init container has no limit in the chart, so the pod's cgroup
+              # has no memory limit and Talos's OOM controller ranks it by its memory in
+              # use, page cache included: the cgroup kills (exit 137, 42 restarts) were
+              # its. A limit on every container exempts the pod.
+              - {op: add, path: /spec/templates/podTemplates/0/spec/initContainers/0/resources, value: {requests: {cpu: 10m, memory: 32Mi}, limits: {memory: 64Mi}}}
           - target: {kind: Deployment, name: signoz-otel-collector}
             patch: |
               apiVersion: apps/v1
