@@ -417,9 +417,11 @@ if "factory-registry-read" not in logins: sys.exit("team factory-registry-read: 
 print("team factory-registry-read member: factory-registry-read")'
   fj "$FJ/teams/$rtid/repos?limit=50" | python3 -c 'import json,sys
 for r in json.load(sys.stdin): print("team factory-registry-read: repository %s (left alone; the team needs none)" % r["full_name"])'
+  minted=
   if kubectl -n $A get secret forgejo-registry-read >/dev/null 2>&1; then
     echo "$A/forgejo-registry-read: exists"
   else
+    minted=1
     for id in $(fj "$FJ/users/factory-registry-read/tokens?sudo=factory-registry-read" | python3 -c 'import json,sys; print(" ".join(str(t["id"]) for t in json.load(sys.stdin) if t["name"]=="factory-registry-read"))'); do
       fj -o /dev/null -w "factory-registry-read revoke token $id: %{http_code}\n" -X DELETE "$FJ/users/factory-registry-read/tokens/$id?sudo=factory-registry-read"
     done
@@ -430,18 +432,6 @@ for r in json.load(sys.stdin): print("team factory-registry-read: repository %s 
     echo "$A/forgejo-registry-read: created (${#tok} chars)"
     unset tok
   fi
-  # Org upstream is the store of the outside images (the code repository's
-  # upstream-images.txt, roadmap 203): public, since a build's ADD and wget
-  # carry no login (Sebastian, 2026-10-16); its copies hold only
-  # digest-pinned public bytes. The code repository's main CI copies into
-  # it as factory-admin, its owner.
-  if [ "$(fj -o /dev/null -w '%{http_code}' "$FJ/orgs/upstream")" != 200 ]; then
-    fj -o /dev/null -w 'org upstream: %{http_code}\n' -X POST "$FJ/orgs" \
-      -d '{"username":"upstream","visibility":"public","description":"Copies of the outside images the factory uses (upstream-images.txt of the code repository)"}'
-  fi
-  vis=$(fj "$FJ/orgs/upstream" | jq -r .visibility)
-  [ "$vis" = public ] || { echo "org upstream: visibility $vis, want public"; exit 1; }
-  echo "org upstream: public"
   # Image pulls (pull secret forgejo-registry: in factory, which factoryd
   # copies into every CI and agent namespace, in the namespaces whose pods
   # run the store's copies, and in flux-system, where the OCI charts come
@@ -459,6 +449,32 @@ for r in json.load(sys.stdin): print("team factory-registry-read: repository %s 
     kubectl -n flux-system create secret generic forgejo-charts --from-literal=username=factory-registry-read --from-literal=password="$rtok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
     echo "flux-system/forgejo-charts: written for factory-registry-read"
   fi
+  for n in $A $P $F k8s-infra flux-system; do
+    pull=$(kubectl -n $n get secret forgejo-registry -o 'jsonpath={.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | jq -c '[.auths[] | .username, .password]' 2>/dev/null || true)
+    if [ "$pull" = "$(jq -nc --arg t "$rtok" '["factory-registry-read", $t]')" ]; then
+      echo "$n/forgejo-registry: exists"
+    else
+      kubectl -n $n create secret docker-registry forgejo-registry --docker-server=git.aisoftwarefactory.world --docker-username=factory-registry-read --docker-password="$rtok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+      echo "$n/forgejo-registry: written for factory-registry-read"
+    fi
+  done
+  put_secret $IR REGISTRY_USER factory-registry-read || exit 1
+  put_secret $IR REGISTRY_PASSWORD "$rtok" || exit 1
+  [ -z "$minted" ] || echo "factory-registry-read: minted anew; the nodes still hold the old login, run: sh talos/registry-mirrors.sh <node address>..."
+  unset rtok pull minted
+  # Org upstream is the store of the outside images (the code repository's
+  # upstream-images.txt, roadmap 203): public, since a build's ADD and wget
+  # carry no login (Sebastian, 2026-10-16); its copies hold only
+  # digest-pinned public bytes. The code repository's main CI copies into
+  # it as factory-admin, its owner.
+  if [ "$(fj -o /dev/null -w '%{http_code}' "$FJ/orgs/upstream")" != 200 ]; then
+    fj -o /dev/null -w 'org upstream: %{http_code}\n' -X POST "$FJ/orgs" \
+      -d '{"username":"upstream","visibility":"public","description":"Copies of the outside images the factory uses (upstream-images.txt of the code repository)"}'
+  fi
+  vis=$(fj "$FJ/orgs/upstream" | jq -r .visibility)
+  [ "$vis" = public ] || { echo "org upstream: visibility $vis, want public"; exit 1; }
+  echo "org upstream: public"
+  unset vis
   # forgejo-commit-status (flux-system): Flux posts its Kustomizations'
   # results on this repository's commits with it (clusters/sf/notifications.yaml),
   # the statuses the infra project's chain requires. The controller's
@@ -476,18 +492,6 @@ for r in json.load(sys.stdin): print("team factory-registry-read: repository %s 
     echo "flux-system/forgejo-commit-status: created (${#tok} chars)"
     unset tok
   fi
-  for n in $A $P $F k8s-infra flux-system; do
-    pull=$(kubectl -n $n get secret forgejo-registry -o 'jsonpath={.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | jq -c '[.auths[] | .username, .password]' 2>/dev/null || true)
-    if [ "$pull" = "$(jq -nc --arg t "$rtok" '["factory-registry-read", $t]')" ]; then
-      echo "$n/forgejo-registry: exists"
-    else
-      kubectl -n $n create secret docker-registry forgejo-registry --docker-server=git.aisoftwarefactory.world --docker-username=factory-registry-read --docker-password="$rtok" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
-      echo "$n/forgejo-registry: written for factory-registry-read"
-    fi
-  done
-  put_secret $IR REGISTRY_USER factory-registry-read || exit 1
-  put_secret $IR REGISTRY_PASSWORD "$rtok" || exit 1
-  unset rtok pull vis
 fi
 # forgejo-pat (flux-system) is a copy of Flux's bootstrap token, factory-admin's; runner-init and forgejo-ci-* are minted after Forgejo is up (see the infra README); CronJob console-oauth makes console-oauth.
 for n in $P $F $A; do echo "$n: $(kubectl -n "$n" get secret -o name | wc -l) secrets"; done
