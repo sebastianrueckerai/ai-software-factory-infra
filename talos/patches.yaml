@@ -104,12 +104,18 @@ config:
   # DiskPressure line; unused images go 10 points before it, not at it
   imageGCHighThresholdPercent: 75
   imageGCLowThresholdPercent: 65
-  # ephemeral-storage keeps out of allocatable what lives on EPHEMERAL
+  # ephemeral-storage: keeps out of allocatable what lives on EPHEMERAL
   # outside any pod (the factory caches, the images in use, the system)
   # and the 5 % between the imagefs and nodefs thresholds
+  # memory: the pods' cgroup (kubepods) may use the node's memory less this,
+  # and containerd, the kubelet and apid (the podruntime and system cgroups,
+  # 1.9 GiB on average, 6.7 to 7.8 GiB at peak with cache) live in the
+  # rest. At 512Mi pods filled the node and those cgroups stalled in reclaim,
+  # which fired Talos's OOM controller; 2560Mi leaves them their average and
+  # room.
   systemReserved:
     cpu: 50m
-    memory: 512Mi
+    memory: 2560Mi
     pid: "100"
     ephemeral-storage: 40Gi
 ---
