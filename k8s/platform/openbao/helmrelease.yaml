@@ -44,6 +44,10 @@ spec:
         requests:
           cpu: 100m
           memory: 256Mi
+        # a limit on its one container gives the pod's cgroup a memory limit,
+        # which Talos's OOM controller ranks 0.0; 197 MiB is its peak
+        limits:
+          memory: 1Gi
       ha:
         enabled: true
         replicas: 1
