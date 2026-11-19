@@ -59,9 +59,11 @@ spec:
               # seconds of a busy HTTP handler and the kubelet restarts a
               # healthy pod (exit 137 after grace, 00:03/00:29; then the
               # pool cap of PR #308 broke startup entirely, exit 36).
-              # Own probe on the template so the operator's default steps
-              # aside: five-minute patience with a five-second timeout.
-              - {op: add, path: /spec/templates/podTemplates/0/livenessProbe, value: {httpGet: {path: /ping, port: 8123}, periodSeconds: 10, timeoutSeconds: 5, failureThreshold: 30}}
+              # Own probe on the clickhouse container, the template's first:
+              # five-minute patience with a five-second timeout. A probe on the
+              # pod template itself is outside the resource's schema, so the
+              # upgrade failed and its rollback brought back the pool cap.
+              - {op: add, path: /spec/templates/podTemplates/0/spec/containers/0/livenessProbe, value: {httpGet: {path: /ping, port: http}, initialDelaySeconds: 60, periodSeconds: 10, timeoutSeconds: 5, failureThreshold: 30}}
               # The udf init container has no limit in the chart, so the pod's cgroup
               # has no memory limit and Talos's OOM controller ranks it by its memory in
               # use, page cache included: the cgroup kills (exit 137, 42 restarts) were
