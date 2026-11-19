@@ -106,7 +106,9 @@ config:
   imageGCLowThresholdPercent: 65
   # ephemeral-storage: keeps out of allocatable what lives on EPHEMERAL
   # outside any pod (the factory caches, the images in use, the system)
-  # and the 5 % between the imagefs and nodefs thresholds
+  # and the 5 % between the imagefs and nodefs thresholds; sized for the
+  # 200 GB EPHEMERAL above: a node still on a 100 GB one keeps Talos's
+  # 256Mi, since 40Gi there leaves less than the CI runner's 50Gi request
   # memory: the pods' cgroup (kubepods) may use the node's memory less this,
   # and containerd, the kubelet and apid (the podruntime and system cgroups,
   # 1.9 GiB on average, 6.7 to 7.8 GiB at peak with cache) live in the
