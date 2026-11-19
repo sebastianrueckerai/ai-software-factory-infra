@@ -166,3 +166,24 @@ endpoints:
 machine:
   sysctls:
     user.max_user_namespaces: "11255"
+---
+# Talos 1.14's default trigger fires on pressure inside the System and
+# Podruntime cgroups (their summed 10 s average above 5 %), which short
+# memory stalls reach with 4 to 10 GiB of the node's memory still reclaimable
+# (the 150 recorded triggers of 2026-11-09 to 11-18: the whole machine's
+# full pressure was 0 at the kills of Forgejo and at most 14.5 % at any
+# of them). The kernel's own OOM killer still guards each pod's limit; this
+# controller exists to kill before the whole machine stalls, so it fires only
+# on sustained full pressure of the whole machine. The ranking is the
+# default's, and also gives a static pod (kube-apiserver, controller manager,
+# scheduler: a 32-hex uid without dashes in the cgroup path, no limit
+# possible from the cluster) the rank 0.0, which no kill reaches. A pod with
+# a memory limit already ranks 0.0.
+apiVersion: v1alpha1
+kind: OOMConfig
+triggerExpression: |
+  memory_full_avg10 > 30.0 && memory_full_avg60 > 15.0 && time_since_trigger > duration("30s")
+cgroupRankingExpression: |
+  memory_max.hasValue() || path.matches("/pod[0-9a-f]{32}$") ? 0.0 :
+  {Besteffort: 1.0, Burstable: 0.5, Guaranteed: 0.0, Podruntime: 0.0, System: 0.0}[class] *
+  double(memory_current.orValue(0u))
