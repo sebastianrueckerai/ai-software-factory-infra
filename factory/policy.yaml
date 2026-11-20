@@ -40,13 +40,15 @@ version: 1
 # October ledger at the cap (543.73) plus headroom, lifts the stop at
 # once and covers November at October's whole-month pace.
 # The day cap 100 (Sebastian, 2026-11-20), lowered from 300: a sensible
-# day; 300 only kept the cards going.
+# day; a human resets the day's count in the console's status panel when a
+# day needs more.
 budget:
   task_default_eur: 5
   task_max_eur: 15
   day_eur: 100
-  # Sebastian, 2026-11-11: 1,500 EUR of modelled z.ai spend for Phase 6
-  month_eur: 1500
+  # Sebastian, 2026-11-20: 800 EUR, a sensible month; a human resets the
+  # month's count in the console's status panel when a month needs more
+  month_eur: 800
   # the least free budget a session starts on, by its rung (plan A of the
   # escalation ladder, 2026-10-15): the starved sessions of cards #839 and #854
   # died at 0.15 and 0.07 EUR left
