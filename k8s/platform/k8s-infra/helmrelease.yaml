@@ -4,10 +4,10 @@
 # hostPath mounts, which the cluster's baseline Pod Security forbids in
 # platform. It also takes one stream in: its own node's kernel log, with
 # Talos's own lines in it (the memory guard's kills), which Talos sends to
-# the agent's hostPort. Log files never read: the agent sandboxes (factory-agents-*,
-# an agent's transcript), the trusted runner (it echoes every job step's
-# output, already kept in Forgejo), SigNoz and these collectors themselves
-# (every insert would log lines that are inserted next).
+# the agent's hostPort. Log files never read: the agent sandboxes
+# (factory-agents-*, an agent's transcript), the trusted runner (it echoes
+# every job step's output, already kept in Forgejo), SigNoz and these
+# collectors themselves (every insert would log lines that are inserted next).
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata: {name: k8s-infra, namespace: platform}

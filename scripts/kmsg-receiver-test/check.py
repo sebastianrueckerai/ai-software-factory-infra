@@ -20,4 +20,5 @@ for (res, r), want, ns in zip(records, lines.LINES, lines.EXPECTED_NS):
     attrs = {a["key"]: a["value"] for a in r["attributes"]}
     assert attrs["facility"]["stringValue"] == want["facility"], attrs
     assert "msg" not in attrs, attrs
+    assert "stringValue" not in attrs["seq"] and int(float(next(iter(attrs["seq"].values())))) == want["seq"], attrs["seq"]
 print("PASS both lines arrive with the line as body, talos-time as time and service.name talos-kmsg")
