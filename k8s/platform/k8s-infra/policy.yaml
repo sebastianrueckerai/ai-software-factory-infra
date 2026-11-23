@@ -1,7 +1,8 @@
-# Egress of the two collectors, nothing else: DNS, the API server (pod and
-# node metadata, the cluster receiver, events), SigNoz's collector on its
-# OTLP HTTP port for these two (4319), and for the agent its own node's
-# kubelet. Neither takes ingress.
+# Egress of the two collectors: DNS, the API server (pod and node metadata,
+# the cluster receiver, events), SigNoz's collector on its OTLP HTTP port for
+# these two (4319), and for the agent its own node's kubelet. Ingress: the
+# deployment takes none; the agent takes its own node's host on 5170 alone,
+# where Talos sends the kernel log.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata: {name: otel-agent, namespace: k8s-infra}
@@ -9,7 +10,9 @@ spec:
   endpointSelector:
     matchLabels: {app.kubernetes.io/component: otel-agent}
   ingress:
-    - {}
+    - fromEntities: [host]
+      toPorts:
+        - ports: [{port: "5170", protocol: TCP}]
   egress:
     - toEndpoints:
         - matchLabels:

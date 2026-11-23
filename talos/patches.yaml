@@ -195,3 +195,14 @@ cgroupRankingExpression: |
   memory_max.hasValue() || path.matches("/pod[0-9a-f]{32}$") ? 0.0 :
   {Besteffort: 1.0, Burstable: 0.5, Guaranteed: 0.0, Podruntime: 0.0, System: 0.0}[class] *
   double(memory_current.orValue(0u))
+---
+# Each node's kernel log, Talos's own lines in it (the OOM controller's
+# "Sending SIGKILL to cgroup"), as JSON lines to the otel-agent on the same
+# node: 127.0.0.1:5170 is the agent's hostPort, which Cilium's kube-proxy
+# replacement serves on the loopback (k8s/platform/k8s-infra). Talos retries
+# a line every second until the agent takes it and keeps its place in the
+# ring buffer meanwhile, so a boot before the agent runs loses nothing.
+apiVersion: v1alpha1
+kind: KmsgLogConfig
+name: otel-agent
+url: tcp://127.0.0.1:5170/

@@ -574,8 +574,15 @@ which the cluster's baseline profile forbids elsewhere):
   `/var/mnt/local-path-provisioner/.statfs` mounted read-only, so it sees
   no claim's data), kubelet stats (node, pod, container and volume, node
   network and filesystem included) and container log lines, read from `/var/log/pods` as uid 0
-  without capabilities. It receives nothing (no OTLP receiver, no host
-  port). Its ClusterRole reads pods, namespaces, nodes, volumes,
+  without capabilities. It receives one stream: its node's kernel log,
+  Talos's own lines included (the memory guard's `Sending SIGKILL to
+  cgroup`, the kernel's `oom-kill:`). Talos's `KmsgLogConfig`
+  (`talos/patches.yaml`) sends it as JSON lines to `127.0.0.1:5170`, the
+  agent's hostPort, which Cilium serves on the loopback. The records carry
+  resource `service.name` `talos-kmsg` and `k8s.node.name`, the line as
+  body, `talos-time` as their time, and `facility`, `priority`, `seq`,
+  `clock` and `talos-level` as attributes. No OTLP receiver, no other host
+  port. Its ClusterRole reads pods, namespaces, nodes, volumes,
   ReplicaSets and Jobs, and the kubelet's `nodes/stats` and `nodes/pods`;
   no `nodes/proxy`, which would allow exec into any pod on the node.
   Log files it never opens:
@@ -594,7 +601,8 @@ which the cluster's baseline profile forbids elsewhere):
 
 CiliumNetworkPolicies `otel-agent` and `otel-deployment` admit their
 egress only to DNS, the API server, SigNoz's collector on 4319 and, for
-the agent, its own node's kubelet (10250); neither admits ingress.
+the agent, its own node's kubelet (10250); `otel-deployment` admits no
+ingress, `otel-agent` only its own node's host on 5170.
 
 Every other sender (the projects' apps, factoryd, the gateway) sends OTLP
 to the collector's 4317 or 4318, whose pipelines may not keep the

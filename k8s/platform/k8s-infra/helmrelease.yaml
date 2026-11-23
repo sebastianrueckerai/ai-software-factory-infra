@@ -2,7 +2,9 @@
 # metrics, kubelet stats, container logs) and the otel-deployment (cluster
 # metrics and Kubernetes events). Its own namespace because the agent needs
 # hostPath mounts, which the cluster's baseline Pod Security forbids in
-# platform. Log files never read: the agent sandboxes (factory-agents-*,
+# platform. It also takes one stream in: its own node's kernel log, with
+# Talos's own lines in it (the memory guard's kills), which Talos sends to
+# the agent's hostPort. Log files never read: the agent sandboxes (factory-agents-*,
 # an agent's transcript), the trusted runner (it echoes every job step's
 # output, already kept in Forgejo), SigNoz and these collectors themselves
 # (every insert would log lines that are inserted next).
@@ -85,22 +87,38 @@ spec:
         readOnlyRootFilesystem: true
         capabilities: {drop: [ALL]}
         seccompProfile: {type: RuntimeDefault}
-      # The agent receives nothing: no OTLP receiver, no host port.
+      # The agent receives one stream: its own node's kernel log, which
+      # Talos's KmsgLogConfig (talos/patches.yaml) sends from the host to
+      # 127.0.0.1:5170; Cilium's kube-proxy replacement serves a hostPort on
+      # the loopback. No OTLP receiver, no other host port.
       ports:
         otlp: {enabled: false, hostPort: null}
         otlp-http: {enabled: false, hostPort: null}
         metrics: {enabled: false, hostPort: null}
         health-check: {hostPort: null}
+        kmsg: {enabled: true, containerPort: 5170, servicePort: 5170, hostPort: 5170, protocol: TCP}
       # The chart adds a SigNoz Cloud access-token header from an unset
       # SIGNOZ_API_KEY; the self-hosted collector takes none.
       config:
-        receivers: {otlp: null}
+        receivers:
+          otlp: null
+          # Talos's JSON line: msg becomes the body; facility, priority, seq,
+          # clock, talos-level and talos-time stay attributes; talos-time is
+          # the record's time. The logs pipeline's resourcedetection adds
+          # k8s.node.name and host.name.
+          tcplog/kmsg:
+            listen_address: 0.0.0.0:5170
+            resource: {service.name: talos-kmsg}
+            operators:
+              - type: json_parser
+                timestamp: {parse_from: 'attributes["talos-time"]', layout_type: gotime, layout: '2006-01-02T15:04:05.999999999Z07:00'}
+              - {type: move, from: attributes.msg, to: body}
         exporters: {otlphttp: {headers: null}}
         service:
           pipelines:
             traces: {receivers: []}
             metrics: {receivers: []}
-            logs: {receivers: []}
+            logs: {receivers: [tcplog/kmsg]}
       extraVolumes:
         - name: local-path-statfs
           hostPath: {path: /var/mnt/local-path-provisioner/.statfs, type: DirectoryOrCreate}

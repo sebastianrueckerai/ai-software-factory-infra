@@ -64,7 +64,13 @@ lives under /var/lib/factory-cache on EPHEMERAL, which is not noexec, since
 its caches hold executables. The RegistryMirrorConfig documents pull
 outside images from the factory's store first; the store's login is no
 part of these files, `registry-mirrors.sh` patches it into the running
-nodes (the root README, "The store of outside images").
+nodes (the root README, "The store of outside images"). The KmsgLogConfig
+document sends each node's kernel log, the memory guard's kills included, to
+the otel-agent on the same node. A running node takes a document without a
+reboot: put only that document in a file and run `talosctl patch mc
+--mode=no-reboot --patch @file` per node, first with `--dry-run` and its
+output filtered to the new document (an unfiltered diff prints the registry
+token).
 
 Run from this directory, with tofu initialised in the repo root.
 
