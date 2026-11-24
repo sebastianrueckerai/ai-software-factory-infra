@@ -45,8 +45,8 @@ autonomy: autonomous
 chain: {requires: [factory/roll], stall: 24h, test_context: "ci / test (push)"}
 images:
   chromium:
-    digest: sha256:9ee168fc7a747bc1e362dc384a4822ecd21178bb8e5b534da089fbcf9b17fdf7
-    key: k-146ec83bb9f313b739fd697a
+    digest: sha256:cc2e68b15d07c302d728f342cd9f90285eb44cb391cae0783f473c6a01110d79
+    key: k-765a99b7ab953eaedfcb5b51
     tools:
       - chromium
       - fonts-liberation
