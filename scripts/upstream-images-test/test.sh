@@ -46,7 +46,7 @@ if listfile:
             url, hexd = f[0].rsplit("@sha256:", 1)
             name = url.rsplit("/", 1)[1]
             (archives if f[1] == "helm" else files)[name] = (url, hexd)
-        elif f[1:] == ["bootstrap"]:
+        elif f[1:2] == ["bootstrap"]:
             image, digest = f[0].split("@")
             name, tag = image.rsplit(":", 1)
             boot[(name, digest)] = tag
