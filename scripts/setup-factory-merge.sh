@@ -114,7 +114,9 @@ for k, v in want.items():
 # 3. infra main: only its push and merge whitelists; the rest
 # (no approvals, apply_to_admins) stays as it is. factory-agent merges the
 # imager's pin pull requests, which factoryd merges only when they change a
-# project file's images block and nothing else (Sebastian, 2026-10-22)
+# project file's images block and nothing else (Sebastian, 2026-10-22), and
+# factoryd's own schema copies, which it merges only when they change the
+# schema files to the build's bytes and nothing else (Sebastian, 2026-11-24)
 protect $I '{"push_whitelist_usernames": ["sebastian", "controller"], "merge_whitelist_usernames": ["sebastian", "controller", "factory-agent"]}'
 c "$F/repos/$I/branch_protections/main" | python3 -c 'import json,sys
 d = json.load(sys.stdin)
