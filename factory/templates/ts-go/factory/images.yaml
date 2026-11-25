@@ -4,12 +4,16 @@ images:
   default:
     upstream:
       - name: go
+        # pin file go
         url: https://go.dev/dl/go1.25.14.linux-amd64.tar.gz
+        # pin file go
         sha256: a21ae5633a269bcd7e90cf767e48225633795e99d831742cbf3397064fee7712
         to: /usr/local
         strip: 0
       - name: node
+        # pin file node
         url: https://nodejs.org/dist/v24.21.0/node-v24.21.0-linux-x64.tar.xz
+        # pin file node
         sha256: fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6
         to: /usr/local
         strip: 1

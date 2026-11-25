@@ -1,9 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- upstream-v0.0.31.yaml
+# pin copy local-path-manifest
+- local-path-storage.yaml
 - factory-cache.yaml
 - factory-cache-sweep.yaml
+# Pinned by digest at the upstream: local-path serves the volumes Forgejo
+# runs on, so it cannot start from the store.
+images:
+# pin docker.io/rancher/local-path-provisioner
+- {name: rancher/local-path-provisioner, newName: docker.io/rancher/local-path-provisioner, newTag: "v0.0.31@sha256:5fb0394abf87407a27cc56db94334eb0c92d0b5de2636683a7ec51f38143dfc9"}
 patches:
 # The upstream Deployment sets no resources, so the provisioner ran
 # BestEffort, the class Talos's OOM controller kills first under node memory
@@ -50,6 +56,10 @@ patches:
                         }
                 }
         }
+      # The helper pod's image lives in a string the images transformer does
+      # not read, so it stands here on one marked line.
+      # pin docker.io/library/busybox
+      helperPod.yaml: "apiVersion: v1\nkind: Pod\nmetadata:\n  name: helper-pod\nspec:\n  priorityClassName: system-node-critical\n  tolerations:\n    - key: node.kubernetes.io/disk-pressure\n      operator: Exists\n      effect: NoSchedule\n  containers:\n  - name: helper-pod\n    image: docker.io/library/busybox:1.38.0@sha256:f97baa533a26513c453a362be331a43eb60214302f449c16571b23cea141dce4\n    imagePullPolicy: IfNotPresent"
 - patch: |-
     apiVersion: storage.k8s.io/v1
     kind: StorageClass

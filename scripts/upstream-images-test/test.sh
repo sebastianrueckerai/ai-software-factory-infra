@@ -7,12 +7,12 @@
 # by an OCIRepository of the store at its digest or by the store's Helm
 # repository at an exact version; a project template's bases by their
 # copies; a bootstrap line's registry through the nodes' mirror of the
-# store (talos/patches.yaml); the runbook's hand installs by a line's
-# digest. And every credential comes from a Secret, never from the tree or
-# a chart's default: no container env named like one and no ClickHouse
-# user's password holds a literal in a manifest, a HelmRelease's values or
-# a chart's render, where a HelmRelease's valuesFrom renders as
-# valuesFrom-Secret. Builds k8s/platform and Flux's components
+# store (talos/patches.yaml); the runbook's hand installs read their digests
+# from files, so no digest stands in its prose. And every credential comes
+# from a Secret, never from the tree or a chart's default: no container env
+# named like one and no ClickHouse user's password holds a literal in a
+# manifest, a HelmRelease's values or a chart's render, where a
+# HelmRelease's valuesFrom renders as valuesFrom-Secret. Builds k8s/platform and Flux's components
 # with kubectl kustomize and renders every HelmRelease's chart with helm,
 # from the repository root:
 #   sh scripts/upstream-images-test/test.sh [upstream-images.txt]
@@ -129,8 +129,8 @@ def scan(docs):
         pods(d.get("spec"), where)
         if d.get("kind") == "Cluster" and d.get("apiVersion", "").startswith("postgresql.cnpg.io/"):
             found.append((where + " imageName", d["spec"].get("imageName", "(the operator's default)")))
-        if d.get("kind") == "Secret" and "SIDECAR_IMAGE" in (d.get("data") or {}):
-            found.append((where + " SIDECAR_IMAGE", base64.b64decode(d["data"]["SIDECAR_IMAGE"]).decode().strip()))
+        if d.get("kind") == "Secret" and "SIDECAR_IMAGE" in (d.get("stringData") or {}):
+            found.append((where + " SIDECAR_IMAGE", d["stringData"]["SIDECAR_IMAGE"].strip()))
         if d.get("kind") == "ConfigMap" and "helperPod.yaml" in (d.get("data") or {}):
             pods(yaml.safe_load(d["data"]["helperPod.yaml"]), where + " helperPod")
 docs = [d for f in ("platform.yaml", "flux.yaml") for d in yaml.safe_load_all(open(os.path.join(tmp, f))) if d]
@@ -227,10 +227,8 @@ for df in sorted(glob.glob("factory/templates/*/Dockerfile")):
             found.append((df, m.group(1).replace("${UPSTREAM}", upstream or "${UPSTREAM}")))
 for where, img in sorted(set(found)):
     check(pinned(img), "%s: %s, the store's copy of a line or a bootstrap line by its digest" % (where, img))
-if listfile:
-    listed = open(listfile).read()
-    for dg in sorted(set(re.findall(r"sha256:[0-9a-f]{64}", open("docs/reseed-runbook.md").read()))):
-        check(dg in listed, "docs/reseed-runbook.md: %s, a line's digest" % dg)
+check(not re.search(r"sha256:[0-9a-f]{64}", open("docs/reseed-runbook.md").read()),
+      "docs/reseed-runbook.md holds no digest: a digest in prose cannot follow its line")
 mirrors = {d["name"]: d["endpoints"] for d in yaml.safe_load_all(open("talos/patches.yaml"))
            if d and d.get("kind") == "RegistryMirrorConfig"}
 for reg in sorted({name.split("/")[0] for name, _ in boot}):

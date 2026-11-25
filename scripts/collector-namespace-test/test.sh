@@ -12,6 +12,7 @@
 # code repository's upstream-images.txt. On a host with docker:
 #   scripts/collector-namespace-test/test.sh
 set -euo pipefail
+# pin docker.io/alpine/k8s
 TOOLS=docker.io/alpine/k8s:1.36.1@sha256:51865f04b31c2f1d18db2c0964f4186d359007beedb9e478d342a7e504c0a3f3
 net=collector-ns-test-$$ subnet=172.31.247
 t=$(cd "$(dirname "$0")" && pwd)

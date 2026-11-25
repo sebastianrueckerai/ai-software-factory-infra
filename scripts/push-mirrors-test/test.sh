@@ -1,5 +1,6 @@
 #!/bin/sh
 # Offline test of k8s/platform/forgejo/push-mirrors.sh against a stub curl, in the CronJob image:
+# pin docker.io/alpine/k8s
 #   docker run --rm --user 1000:1000 -v "$PWD/scripts/push-mirrors-test:/t:ro" -v "$PWD/k8s/platform/forgejo:/s:ro" --entrypoint sh alpine/k8s:1.36.1@sha256:692239d739589247c4a791205ed9619c28ae85a21286e19a6211c04a62c56668 /t/test.sh
 # recorded: AUTH is GitHub's stderr for a bad token (git push, 2026-09-29) in
 # Forgejo 15.0.9's "push failed: %w - %s" with "exit status N - " stripped;

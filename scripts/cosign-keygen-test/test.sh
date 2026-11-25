@@ -10,8 +10,10 @@ t=$(mktemp -d)
 mkdir -p "$t/tmp" "$t/code/k8s"
 cp "$code/Dockerfile.runner" "$t/code/"
 export TMPDIR=$t/tmp PATH="$here/bin:$PATH" BAO_CONTAINER=cosign-keygen-test-$$
+# pin quay.io/openbao/openbao
+bao_image=quay.io/openbao/openbao:2.6.3@sha256:a60afafda36337abe833c4a63894bf1095098f29abea4091e7e555a33dd52889
 docker run -d --rm --name "$BAO_CONTAINER" -e BAO_DEV_ROOT_TOKEN_ID=root-test -e BAO_ADDR=http://127.0.0.1:8200 \
-  quay.io/openbao/openbao:2.6.3@sha256:a60afafda36337abe833c4a63894bf1095098f29abea4091e7e555a33dd52889 server -dev >/dev/null
+  $bao_image server -dev >/dev/null
 trap 'docker stop "$BAO_CONTAINER" >/dev/null; rm -r "$t"' EXIT
 until docker exec "$BAO_CONTAINER" bao status >/dev/null 2>&1; do sleep 1; done
 bao() { docker exec -i -e BAO_TOKEN=root-test "$BAO_CONTAINER" bao "$@"; }

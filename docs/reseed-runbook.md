@@ -65,10 +65,12 @@ kubectl apply --server-side -f k8s/platform/gateway-api/crds.yaml
 # the images by the linux/amd64 digests of the code repository's
 # upstream-images.txt, which the store's copies carry (the chart's
 # defaults are the multi-arch indexes, which the store does not hold)
+list=~/repos/ai-software-factory-code/upstream-images.txt
+digest() { sed -n "s|^$1:[^@]*@\(sha256:[0-9a-f]*\) .*|\1|p" "$list"; }
 cilium install --version 1.20.0 \
-  --set image.digest=sha256:9a9fc73bb594bf2497955a481996c7a4ad146ee2e142152c3890dea10ad6d3c5 \
-  --set operator.image.genericDigest=sha256:79e630e3f5e2344a2c352d341a619c1cb7fbe874cadcfe244edf032d62d037c2 \
-  --set envoy.image.digest=sha256:070017873c423cf294b094eef9794f3670cac8df1872bd30a98f142dd6897e18 \
+  --set image.digest=$(digest quay.io/cilium/cilium) \
+  --set operator.image.genericDigest=$(digest quay.io/cilium/operator-generic) \
+  --set envoy.image.digest=$(digest quay.io/cilium/cilium-envoy) \
   --set ipam.mode=kubernetes \
   --set kubeProxyReplacement=true \
   --set k8sServiceHost=localhost \
@@ -132,9 +134,10 @@ connectivity suite is optional (known failure: node-to-node DNS).
 kubectl apply -f k8s/platform/namespaces.yaml
 kubectl apply -k k8s/platform/local-path
 kubectl -n local-path-storage wait --for=condition=Available deployment/local-path-provisioner --timeout=180s
-# v1.21.2 from its upstream by the digest of the code repository's
-# upstream-images.txt: the store cannot serve before Forgejo runs
-helm install cert-manager oci://quay.io/jetstack/charts/cert-manager@sha256:634dce9c13b56677a2c05e2ab76c312d0be2664022d5dd05815da67e1fd5f610 -n platform \
+# from its upstream by the digest the OCIRepository names: the store cannot
+# serve before Forgejo runs
+digest=$(sed -n 's/^  ref: {digest: "\(sha256:[0-9a-f]*\)"}.*/\1/p' k8s/platform/cert-manager/helmrelease.yaml)
+helm install cert-manager oci://quay.io/jetstack/charts/cert-manager@$digest -n platform \
   --set crds.enabled=true --set config.gatewayAPI.enabled=true
 kubectl -n platform wait --for=condition=Available deployment/cert-manager --timeout=300s
 kubectl -n platform wait --for=condition=Available deployment/cert-manager-webhook --timeout=300s
@@ -147,14 +150,12 @@ Seed pass 1 ends with `platform: 15 secrets / forgejo: 8 / factory: 12`; the
 OpenBao and Forgejo passes skip (`run this script again after step 6/7`).
 
 ```sh
-kubectl apply --server-side -f k8s/platform/cnpg/operator.yaml
+kubectl apply --server-side -k k8s/platform/cnpg/operator
 # [trap, 2026-10-13: plain apply fails "metadata.annotations: Too long" on the
 #  CRDs; if a plain apply already ran, re-apply server-side and ignore field
 #  conflicts on the deployment/webhooks it had created]
 kubectl -n cnpg-system wait --for=condition=Available deployment/cnpg-controller-manager --timeout=420s
-kubectl apply --server-side -f k8s/platform/cnpg/plugin-barman-cloud.yaml   # after cert-manager (README)
-# The plugin runs BestEffort until Flux applies k8s/platform, whose patch
-# gives it its memory request.
+kubectl apply --server-side -k k8s/platform/cnpg/barman   # after cert-manager (README)
 kubectl apply -f k8s/platform/cnpg/objectstore.yaml
 kubectl apply -f k8s/platform/cnpg/cluster.yaml    # recovery; ~10 min to healthy
 kubectl apply -f k8s/platform/cnpg/databases.yaml
@@ -173,9 +174,9 @@ import yaml
 docs = list(yaml.safe_load_all(open('k8s/platform/forgejo/helmrelease.yaml')))
 hr = [d for d in docs if d['kind']=='HelmRelease'][0]
 yaml.safe_dump(hr['spec']['values'], open('/tmp/forgejo-values.yaml','w'))"
-# 17.1.7 from its upstream by the digest of the code repository's
-# upstream-images.txt, as cert-manager above
-helm install forgejo oci://code.forgejo.org/forgejo-helm/forgejo@sha256:f5044e73361f5991978f1bc281a570bf893fd0f468e7d76274a7853eb27428cf \
+# from its upstream by the digest the OCIRepository names, as cert-manager above
+digest=$(sed -n 's/^  ref: {digest: "\(sha256:[0-9a-f]*\)"}.*/\1/p' k8s/platform/forgejo/helmrelease.yaml)
+helm install forgejo oci://code.forgejo.org/forgejo-helm/forgejo@$digest \
   -n forgejo -f /tmp/forgejo-values.yaml
 ```
 

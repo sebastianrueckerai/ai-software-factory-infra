@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: signoz
+      # pin chart signoz
       version: 0.143.0
       sourceRef: {kind: HelmRepository, name: upstream, namespace: flux-system}
   # SigNoz creates its root user from these at boot, so self-registration is
@@ -112,12 +113,14 @@ spec:
       storageClass: local-path
       imagePullSecrets: [forgejo-registry]
     clickhouse:
+      # pin docker.io/clickhouse/clickhouse-server
       image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: clickhouse/clickhouse-server, tag: "25.12.5@sha256:10f54f04de6c61b756c4eaf9f1d17464a4ac3e1f94b5b410e0dec92a24dbeda8"}
       # The histogramQuantile function's binary from the store, the one
       # layer its copy adds to alpine (the list's line pins the archive by
       # sha256), not downloaded from GitHub at each start.
       initContainers:
         udf:
+          # pin image-of histogram-quantile_linux_amd64.tar.gz
           image: {registry: git.aisoftwarefactory.world/upstream, repository: files/histogram-quantile_linux_amd64.tar.gz, tag: "33997073eb6d@sha256:72b27cf84d625ae61559978fb66788856ac87656a389ff9fa01301b69cc3d3cb"}
           command: [cp, /histogram-quantile, /var/lib/clickhouse/user_scripts/histogramQuantile]
       persistence:
@@ -216,11 +219,13 @@ spec:
       additionalVolumeMounts:
         - {name: signoz-s3, mountPath: /etc/clickhouse-server/secrets, readOnly: true}
       clickhouseOperator:
+        # pin docker.io/altinity/clickhouse-operator
         image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: altinity/clickhouse-operator, tag: "0.21.2@sha256:f972ef4aec9959313a4d4407a83803c75f0be215af4a6811b3f2b890c15ba893"}
         resources:
           requests: {cpu: 10m, memory: 32Mi}
           limits: {cpu: 200m, memory: 128Mi}
         metricsExporter:
+          # pin docker.io/altinity/metrics-exporter
           image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: altinity/metrics-exporter, tag: "0.21.2@sha256:084a75d8ab0ba5c31ed9d923d301745d24f0e8a3cadf54cdbfe298443eda8da9"}
           resources:
             requests: {cpu: 10m, memory: 16Mi}
@@ -242,6 +247,7 @@ spec:
         asynchronousMetricLog: {ttl: 3}
       zookeeper:
         enabled: true
+        # pin docker.io/signoz/zookeeper
         image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: signoz/zookeeper, tag: "3.7.1@sha256:1e6c92e8656c299818acfaf72f11e59d68a92bfe39fc1b1137cd78d6ab6741aa"}
         # One ClickHouse replica keeps a few MB in ZooKeeper; the chart's
         # 1024 MB heap only reserved memory.
@@ -250,6 +256,7 @@ spec:
           requests: {cpu: 50m, memory: 384Mi}
           limits: {cpu: 500m, memory: 640Mi}
     signoz:
+      # pin docker.io/signoz/signoz
       image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: signoz/signoz, tag: "v0.143.0@sha256:c0ffe2e61d8152f87be0637b5e66d775fe155920ffe80f0a2422f48d9c1c1bf6"}
       replicaCount: 1
       env:
@@ -262,6 +269,7 @@ spec:
         requests: {cpu: 50m, memory: 128Mi}
         limits: {cpu: "1", memory: 768Mi}
     otelCollector:
+      # pin docker.io/signoz/signoz-otel-collector
       image: {registry: git.aisoftwarefactory.world/upstream/docker.io, repository: signoz/signoz-otel-collector, tag: "v0.144.11@sha256:c9fe68529e7a035dac786cb755d901049d475347567e3080fa87e8092369fa48"}
       replicaCount: 1
       resources:

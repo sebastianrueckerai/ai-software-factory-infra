@@ -7,6 +7,7 @@ spec:
   # repository's upstream-images.txt, roadmap 203); the re-seed installs it
   # from its upstream before the store serves (docs/reseed-runbook.md)
   url: oci://git.aisoftwarefactory.world/upstream/code.forgejo.org/forgejo-helm/forgejo
+  # pin code.forgejo.org/forgejo-helm/forgejo
   ref: {digest: "sha256:f5044e73361f5991978f1bc281a570bf893fd0f468e7d76274a7853eb27428cf"}
   secretRef: {name: forgejo-registry}
   layerSelector:
@@ -36,7 +37,13 @@ spec:
     # Pinned by digest at the upstream: Forgejo serves the factory's store,
     # so it cannot start from it (the code repository's upstream-images.txt
     # marks it bootstrap).
-    image: {tag: "17.0.1", digest: "sha256:b76f32add7267b2a791ea04014a441cf9d086050e7c0250feec9fb7066e9828f"}
+    image:
+      # The chart labels the pods with the version of its tag; the image is
+      # fullOverride, which the chart takes as it stands.
+      # pin code.forgejo.org/forgejo/forgejo
+      tag: "17.0.1"
+      # pin code.forgejo.org/forgejo/forgejo
+      fullOverride: "code.forgejo.org/forgejo/forgejo:17.0.1-rootless@sha256:b76f32add7267b2a791ea04014a441cf9d086050e7c0250feec9fb7066e9828f"
     replicaCount: 1
     resources:
       requests: {memory: 768Mi}

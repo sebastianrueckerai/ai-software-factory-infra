@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+# pin copy cnpg-manifest
+- manifest.yaml
+# Pinned by digest at the upstream: Forgejo serves the factory's store, so
+# the database under it cannot start from it.
+images:
+# pin ghcr.io/cloudnative-pg/cloudnative-pg
+- {name: ghcr.io/cloudnative-pg/cloudnative-pg, newTag: "1.30.1@sha256:b0f9805bd5f98592e7320b5ea624dd10a7a6ef8e477df5650655c94f0b242497"}
+# The images transformer leaves env values alone, and the operator starts
+# its instance managers from OPERATOR_IMAGE_NAME.
+patches:
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: cnpg-controller-manager
+      namespace: cnpg-system
+    spec:
+      template:
+        spec:
+          containers:
+          - name: manager
+            env:
+            - name: OPERATOR_IMAGE_NAME
+              # pin ghcr.io/cloudnative-pg/cloudnative-pg
+              value: ghcr.io/cloudnative-pg/cloudnative-pg:1.30.1@sha256:b0f9805bd5f98592e7320b5ea624dd10a7a6ef8e477df5650655c94f0b242497
