@@ -23,10 +23,11 @@ chat: {doc_repo: sf/ai-software-factory}
 routines:
   - name: weekly-bump
     title: Update the fixed versions of outside software every week
-    why: Outside software held at one version misses its makers' fixes, so each week an agent updates it and the checks prove the update.
+    why: Outside software held at one version misses its makers' fixes, so each week a program moves it and an agent fixes what the checks find.
     schedule:
       - cron: "0 6 * * 1"
-    files: agent
+    files: pull-request
+    pass: bump
     brief: routines/weekly-bump.md
     while_open: hold
     missed: file-once
