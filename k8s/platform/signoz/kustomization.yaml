@@ -19,7 +19,7 @@ configMapGenerator:
 # issue on this repository.
 - name: signoz-alerts
   namespace: platform
-  files: [alerts/job-failed.json, alerts/node-disk.json, alerts/local-path-disk.json, alerts/chain-poll-age.json, alerts/premium-fallback.json]
+  files: [alerts/job-failed.json, alerts/helmrelease-failed.json, alerts/node-disk.json, alerts/local-path-disk.json, alerts/chain-poll-age.json, alerts/premium-fallback.json]
 # The platform's rules as the infra repository's project rules:
 # signoz-objects binds each to its ConfigMap's namespace and
 # routes it to factoryd, which files a human-lane issue on this repository.

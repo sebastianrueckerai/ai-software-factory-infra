@@ -13,7 +13,15 @@ sync path `clusters/sf`:
 - `clusters/sf/flux-system/` — Flux components and the flux-system sync,
   written by `flux bootstrap`.
 - `clusters/sf/platform.yaml` — the Kustomization that owns the platform
-  tree; `clusters/sf/kustomization.yaml` is the sync build root.
+  tree; `clusters/sf/kustomization.yaml` is the sync build root. `platform`
+  and `factory` set `wait: true`: each is Ready, and `platform` posts its
+  commit status `flux/platform`, only once every object it applied is
+  healthy by kstatus, the HelmReleases included. `platform`'s timeout of
+  20 minutes leaves its slowest HelmRelease its own 15 (SigNoz, Forgejo);
+  past it the Kustomization reads False and tries again at its next
+  interval. `factory` waits for `platform` to be Ready, so while a
+  HelmRelease upgrades or has failed, what the code repository ships to
+  `factory` waits too.
 - `clusters/sf/factory.yaml` — the GitRepository `factory-code` (the code
   repo, secret `forgejo-pat`) and the Kustomization `factory` that applies
   the code repo's `k8s/` tree (namespace `factory`, prune on, after
@@ -404,6 +412,25 @@ reads the store with `REGISTRY_USER` and `REGISTRY_PASSWORD`, checks
 every reference is in it and renders the charts from it, as
 `config-check` does on every push to main, with `scripts/helmrelease-check`.
 
+Each reference here sits under a marker, a comment line directly above the
+line that holds it: `# pin <name>` names the image or chart line of the
+list by its reference without tag and digest, and the program that follows
+the list rewrites the marked line (tag and digest, the digest alone, or a
+chart's version, by the shape of the value). Where one name has several
+lines the marker carries the whole tag with `*` for a run of digits, for
+example `# pin docker.io/library/golang:1.25-bookworm`. `# pin chart <name>`
+marks a chart's `version` of the store's Helm repository, `# pin image-of
+<archive>` the image the store made of a file, and `# pin file <package>`
+a version, URL or sha256 of `upstream-files.txt` in an `images.yaml`. A
+vendored manifest (the CNPG operator, the Barman plugin, local-path) is the
+maker's file unedited under a name without a version, listed under
+`# pin copy <package>`; its images are kustomize `images:` entries and every
+other local change a kustomize patch, never an edit of the copy. Forgejo's
+image is `image.fullOverride` for the same reason: one marked line holds
+tag and digest, and `image.tag` stays only for the chart's version label.
+No digest stands in prose: the runbook reads its digests from the files
+that hold them.
+
 A bump: the code repository's list first (its main CI copies the new
 digests), then the references here; a reference whose copy is missing
 leaves its pod in ImagePullBackOff. The copies live where the other
@@ -699,6 +726,12 @@ then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
   Job holds its promotion for those 15 minutes). The rule routes by
   notification policy (`usePolicy`), because SigNoz refuses a rule that
   routes to its thresholds' channels when they list none.
+- Alert rule `HelmRelease failed or went back`: helm-controller's Warning
+  event `InstallFailed`, `UpgradeFailed`, `RollbackFailed` or
+  `UninstallFailed`, or its Normal event `RollbackSucceeded` (the release
+  went back to the one before), on a HelmRelease at least once in the last
+  15 minutes, per namespace and HelmRelease name. It is a platform rule
+  like `Job failed` and clears by itself 15 minutes after the last event.
 - Alert rules `Node disk above 80 %` and `Local-path volume above 80 %`,
   one per filesystem of a node: they read what no namespace holds, so no
   bound rule can; the label `namespace: platform` in their files routes
