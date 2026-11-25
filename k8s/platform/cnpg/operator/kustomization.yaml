@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-# pin copy cnpg-manifest
+# pin copy cnpg-operator
 - manifest.yaml
 # Pinned by digest at the upstream: Forgejo serves the factory's store, so
 # the database under it cannot start from it.
