@@ -678,11 +678,12 @@
           },
           "pass": {
             "type": "string",
-            "description": "Pass names the pass a pull-request routine runs: template, policy.yaml's over every project, or bump, a project's own lookup of the newest releases of its pinned outside inputs, whose pull request is an agent card; or the list a report routine builds, long-waits.",
+            "description": "Pass names the pass a pull-request routine runs: template, policy.yaml's over every project, or bump, a project's own lookup of the newest releases of its pinned outside inputs, whose pull request is an agent card, or follow, a program's move of one part of the project's parts to the upstream lists, whose pull request no agent answers; or the list a report routine builds, long-waits.",
             "enum": [
               "template",
               "long-waits",
-              "bump"
+              "bump",
+              "follow"
             ]
           },
           "while_open": {
@@ -844,6 +845,44 @@
         "classes"
       ],
       "additionalProperties": false
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name is the part's name, which its branch and its card carry."
+          },
+          "lane": {
+            "type": "string",
+            "description": "Lane is how the part's pull request lands: alone, human or hand."
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Paths are files or directories of the repository; every marker under them belongs to the part. A hand part may have none."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes is the https address of the maker's release notes, which the part's pull request and card link."
+          },
+          "after": {
+            "type": "string",
+            "description": "After is what a human does once the part's move merged, in words for the card."
+          }
+        },
+        "description": "Part is a group of files of the project's repository that moves as one pull request.",
+        "required": [
+          "name",
+          "lane"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Parts are the groups of files the follow pass moves, one pull request each, in the order of their moves. Absent: none."
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",
