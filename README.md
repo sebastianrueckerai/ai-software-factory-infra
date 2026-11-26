@@ -431,9 +431,32 @@ tag and digest, and `image.tag` stays only for the chart's version label.
 No digest stands in prose: the runbook reads its digests from the files
 that hold them.
 
-A bump: the code repository's list first (its main CI copies the new
-digests), then the references here; a reference whose copy is missing
-leaves its pod in ImagePullBackOff. The copies live where the other
+A bump: the code repository's lists first (the bump's copy fills the
+store before its checks run). The factory then copies both lists to the
+root of this repository, and the routine `follow-bump` of this project
+moves the references here, one part for each run. The parts and their
+lanes are `parts:` in `factory/projects/ai-software-factory-infra.yaml`:
+
+- `alone`: the factory opens the pull request and merges it.
+- `human`: the factory opens the pull request and files a card. A human
+  merges it there.
+- `hand`: a human moves the part by the runbook and moves its line of the
+  list in the same change. The list holds such a line with the word
+  `hold`, and the weekly bump's text names the newer version.
+
+Before a pull request opens, the factory checks that the store holds each
+reference it wrote. After the merge it judges the move: the statuses
+`flux/flux-system` and `flux/platform` are success on the merge commit or
+a later one, the probes of the factory's dependencies answer, one model
+call on the small class answers, and no alert of the platform fires for
+10 minutes. A failed move is reverted by the factory, and one card tells a
+human what failed. A failed version gets no second try by itself. The next
+version of the part does.
+
+`factoryd follow .` prints what is behind, and `factoryd follow check .`
+is the check of the markers that `config-check` runs.
+
+The store's copies live where the other
 packages do: their blobs in bucket `aisoftwarefactory-forgejo`, their
 rows in Forgejo's database, so a rebuild that restores both keeps them
 (the dump skips package data; the CNPG recovery brings the rows). A

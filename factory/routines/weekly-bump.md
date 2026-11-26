@@ -8,6 +8,6 @@ You work on this card only because a check of the pull request failed. Fix what 
 - A pin the lookup could not resolve stays as it was. Leave it, unless a check fails on it.
 - Your sandbox reaches no registry and no release page, so you cannot look up a version, a digest or a sha256. When a fix needs one, say so in your summary and do not guess.
 
-A line of `upstream-images.txt` may carry a word after its kind: `patch` keeps it in its minor, `hold` never moves it, `with <name>` gives it the version of that image's line, and `hold with <name>` never moves it while the text says when that line moves. Change a word only when a check shows the rule is wrong for that line, and say why in your summary.
+A line of `upstream-images.txt` may carry a word after its kind, and a line of `upstream-files.txt` after its sha256: `patch` keeps it in its minor, `hold` never moves it, `with <name>` gives it the version of that image's line, and `hold with <name>` never moves it while the text says when that line moves. Change a word only when a check shows the rule is wrong for that line, and say why in your summary.
 
-The infra repository's references move to the new lines after the merge, as their own work; that is not this card's.
+The cluster follows the new lines after the merge by the infra project's routine `follow-bump`. That is not this card's work.

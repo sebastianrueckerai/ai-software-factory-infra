@@ -36,6 +36,8 @@ jobs:
           docker cp "$id:/usr/local/bin/factoryd" ./factoryd
           docker rm "$id" >/dev/null
       - run: ./factoryd config check factory
+      - name: every reference has its marker, and each marked value is a line of the lists or behind it
+        run: ./factoryd follow check .
       - name: every HelmRelease retries and waits its timeout, every image and chart is in the store
         # scripts/upstream-images-test without a list reads the store with
         # the registry login; the tree goes into the dind on stdin

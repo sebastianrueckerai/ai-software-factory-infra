@@ -17,6 +17,111 @@ chat: {doc_repo: sf/ai-software-factory}
 # Flux's commit statuses ride the chain (clusters/sf/notifications.yaml): the
 # head is green only when config-check is green and Flux applied it
 chain: {requires: [flux/flux-system, flux/platform]}
+# The parts of the cluster that follow the upstream lists, in the order of
+# moves. A marker `# pin ...` above a reference names its line of the lists,
+# and every marker lies in one part. alone: the factory merges. human: a human
+# merges what the factory prepared. hand: a human moves it by the runbook, and
+# the list holds its lines.
+parts:
+  - name: k8s-infra
+    lane: alone
+    paths: [k8s/platform/k8s-infra]
+    notes: https://github.com/SigNoz/charts/releases
+  - name: job-images
+    lane: alone
+    paths:
+      - k8s/platform/build-cache/gc.yaml
+      - k8s/platform/cronjobs/forgejo-dump.yaml
+      - k8s/platform/forgejo/push-mirrors.yaml
+      - k8s/platform/forgejo/console-oauth.yaml
+      - k8s/platform/signoz/objects.yaml
+      - .forgejo/workflows/config-check.yml
+      - scripts/cosign-keygen.sh
+      - scripts/collector-namespace-test
+      - scripts/kmsg-receiver-test
+      - scripts/push-mirrors-test
+      - scripts/console-oauth-test
+    notes: https://github.com/alpine-docker/k8s/releases
+  - name: ts-go-template
+    lane: alone
+    paths: [factory/templates/ts-go]
+    notes: https://nodejs.org/en/blog/release
+  - name: build-cache
+    lane: alone
+    paths: [k8s/platform/build-cache/registry.yaml]
+    notes: https://github.com/distribution/distribution/releases
+  - name: local-path
+    lane: alone
+    paths: [k8s/platform/local-path]
+    notes: https://github.com/rancher/local-path-provisioner/releases
+  - name: litellm
+    lane: alone
+    paths: [k8s/platform/litellm]
+    notes: https://github.com/BerriAI/litellm/releases
+    after: LiteLLM's database migration does not go back. After a return the old version runs on the newer schema.
+  - name: signoz
+    lane: human
+    paths: [k8s/platform/signoz/helmrelease.yaml]
+    notes: https://github.com/SigNoz/signoz/releases
+    after: factoryd reads the webhook of one SigNoz version. Send one test alert through the new version and check that factoryd files it.
+  - name: cert-manager
+    lane: human
+    paths: [k8s/platform/cert-manager]
+    notes: https://github.com/cert-manager/cert-manager/releases
+    after: Check that the edge certificate and the Barman certificates are Ready. Forgejo's address and the database backups depend on them.
+  - name: temporal
+    lane: human
+    paths: [k8s/platform/temporal]
+    notes: https://github.com/temporalio/temporal/releases
+    after: Check that factoryd started. It stops without Temporal, and the schema moves one way.
+  - name: openbao
+    lane: human
+    paths: [k8s/platform/openbao, scripts/cosign-keygen-test]
+    notes: https://github.com/openbao/openbao/releases
+    after: The pod keeps the old image until it is deleted. Delete openbao-0, then unseal it by hand. It seals at every restart.
+  - name: forgejo
+    lane: human
+    paths: [k8s/platform/forgejo/helmrelease.yaml]
+    notes: https://codeberg.org/forgejo/forgejo/releases
+    after: Check that git.aisoftwarefactory.world answers and that Flux fetches this repository.
+  - name: cnpg-operator
+    lane: human
+    paths: [k8s/platform/cnpg/operator]
+    notes: https://github.com/cloudnative-pg/cloudnative-pg/releases
+    after: Check that sf-cluster is Ready and that the instances run the new instance manager.
+  - name: postgres
+    lane: human
+    paths: [k8s/platform/cnpg/cluster.yaml]
+    notes: https://www.postgresql.org/docs/release/
+    after: CNPG restarts the three instances one by one and switches the primary. Check that sf-cluster is Ready with three instances and that Forgejo and factoryd connect again.
+  - name: barman-plugin
+    lane: human
+    paths: [k8s/platform/cnpg/barman]
+    notes: https://github.com/cloudnative-pg/plugin-barman-cloud/releases
+    after: Check that the next base backup and the WAL archive still succeed.
+  - name: talos
+    lane: hand
+    paths: [main.tf, talos]
+    notes: https://github.com/siderolabs/talos/releases
+  - name: kubernetes
+    lane: hand
+    notes: https://github.com/kubernetes/kubernetes/releases
+  - name: cilium
+    lane: hand
+    paths: [docs/reseed-runbook.md]
+    notes: https://github.com/cilium/cilium/releases
+  - name: flux
+    lane: hand
+    paths: [clusters/sf/flux-system]
+    notes: https://github.com/fluxcd/flux2/releases
+  - name: runner
+    lane: hand
+    paths: [k8s/platform/forgejo/runner-helmrelease.yaml, k8s/platform/forgejo/runner-chart, scripts/docker-prune-test]
+    notes: https://code.forgejo.org/forgejo/runner/releases
+  - name: gateway-api
+    lane: hand
+    paths: [k8s/platform/gateway-api]
+    notes: https://github.com/kubernetes-sigs/gateway-api/releases
 routines:
   - name: long-waits
     title: Cards waiting on a human
@@ -25,4 +130,12 @@ routines:
       - cron: "0 8 * * *"
     files: report
     pass: long-waits
+    tell: inbox
+  - name: follow-bump
+    title: The cluster follows the upstream lists
+    why: A fix in a new version helps only when the cluster runs it, so each week a program moves one part of the cluster and the factory judges the move.
+    schedule:
+      - cron: "0 5 * * 2"
+    files: pull-request
+    pass: follow
     tell: inbox
