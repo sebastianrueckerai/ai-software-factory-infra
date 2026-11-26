@@ -2,7 +2,7 @@
 # digests; the build logs in with the job's token.
 ARG UPSTREAM=git.aisoftwarefactory.world/upstream/
 # pin docker.io/library/node:24-bookworm-slim
-FROM ${UPSTREAM}docker.io/library/node:24-bookworm-slim@sha256:5cbc7caba8c2c0f0bca675d1b61b9f2857e1cf1853c6164ee9dd409501a936e7 AS web
+FROM ${UPSTREAM}docker.io/library/node:24-bookworm-slim@sha256:e0e989b967dacc279681ed81774b2ce9eeebbb0efb8e0c427573235bebf1eda1 AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -19,7 +19,7 @@ COPY --from=web /src/web/dist ./web/dist
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
 
 # pin docker.io/library/debian
-FROM ${UPSTREAM}docker.io/library/debian:bookworm-slim@sha256:f3034a6ec3c1205360777c4aae76234998866ad18806ae62b63a3f84ccad782b
+FROM ${UPSTREAM}docker.io/library/debian:bookworm-slim@sha256:311f7a192fd9a92b165a86b32fa3aae9005b11849bfb1db2d4fd784559ee464f
 RUN groupadd --system --gid 65532 app && useradd --system --uid 65532 --gid app app && mkdir -p /data && chown app:app /data
 ENV DATA_DIR=/data
 COPY --from=build /out/server /usr/local/bin/server

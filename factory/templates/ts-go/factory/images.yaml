@@ -12,9 +12,9 @@ images:
         strip: 0
       - name: node
         # pin file node
-        url: https://nodejs.org/dist/v24.21.0/node-v24.21.0-linux-x64.tar.xz
+        url: https://nodejs.org/dist/v24.22.3/node-v24.22.3-linux-x64.tar.xz
         # pin file node
-        sha256: fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6
+        sha256: 4f2b175a6d53a5c617a80dba2676238a0688cef28c6da4eba35c7d844e66fcfb
         to: /usr/local
         strip: 1
     env:
