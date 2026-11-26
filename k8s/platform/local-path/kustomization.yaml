@@ -9,7 +9,7 @@ resources:
 # runs on, so it cannot start from the store.
 images:
 # pin docker.io/rancher/local-path-provisioner
-- {name: rancher/local-path-provisioner, newName: docker.io/rancher/local-path-provisioner, newTag: "v0.0.31@sha256:5fb0394abf87407a27cc56db94334eb0c92d0b5de2636683a7ec51f38143dfc9"}
+- {name: rancher/local-path-provisioner, newName: docker.io/rancher/local-path-provisioner, newTag: "v0.0.37@sha256:c3f2c60ee2490eb83ac00101d7e239fd8c20a5b8b4038e2dfc36a7e66fe99c08"}
 patches:
 # The upstream Deployment sets no resources, so the provisioner ran
 # BestEffort, the class Talos's OOM controller kills first under node memory
