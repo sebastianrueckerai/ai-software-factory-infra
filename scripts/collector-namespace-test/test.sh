@@ -13,7 +13,7 @@
 #   scripts/collector-namespace-test/test.sh
 set -euo pipefail
 # pin docker.io/alpine/k8s
-TOOLS=docker.io/alpine/k8s:1.36.1@sha256:51865f04b31c2f1d18db2c0964f4186d359007beedb9e478d342a7e504c0a3f3
+TOOLS=docker.io/alpine/k8s:1.36.6@sha256:2b33c17a9e7fa4a7bc25b3194fefbc3363c863e6c073a5a81bf07fb00b99d92b
 net=collector-ns-test-$$ subnet=172.31.247
 t=$(cd "$(dirname "$0")" && pwd)
 w=$(mktemp -d)
