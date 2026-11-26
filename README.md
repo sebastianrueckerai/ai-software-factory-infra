@@ -755,6 +755,12 @@ then `apk add sqlite && sqlite3 /proc/1/root/var/lib/signoz/signoz.db
   went back to the one before), on a HelmRelease at least once in the last
   15 minutes, per namespace and HelmRelease name. It is a platform rule
   like `Job failed` and clears by itself 15 minutes after the last event.
+- Alert rule `Volume claim not provisioned`: a provisioner's Warning event
+  `ProvisioningFailed` on a PersistentVolumeClaim at least once in the last
+  15 minutes, per namespace and claim name. The pod that names the claim
+  stays Pending, so a CI run or a session does not start. It is a platform
+  rule like `Job failed` and clears by itself 15 minutes after the last
+  event.
 - Alert rules `Node disk above 80 %` and `Local-path volume above 80 %`,
   one per filesystem of a node: they read what no namespace holds, so no
   bound rule can; the label `namespace: platform` in their files routes

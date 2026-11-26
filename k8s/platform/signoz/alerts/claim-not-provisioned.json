@@ -1,0 +1,79 @@
+{
+  "alert": "Volume claim not provisioned",
+  "alertType": "LOGS_BASED_ALERT",
+  "condition": {
+    "compositeQuery": {
+      "panelType": "graph",
+      "queries": [
+        {
+          "spec": {
+            "aggregations": [
+              {
+                "expression": "count()"
+              }
+            ],
+            "disabled": false,
+            "filter": {
+              "expression": "attribute.k8s.event.reason = 'ProvisioningFailed' AND resource.k8s.object.kind = 'PersistentVolumeClaim'"
+            },
+            "groupBy": [
+              {
+                "fieldContext": "attribute",
+                "fieldDataType": "string",
+                "name": "k8s.namespace.name",
+                "signal": ""
+              },
+              {
+                "fieldContext": "resource",
+                "fieldDataType": "string",
+                "name": "k8s.object.name",
+                "signal": ""
+              }
+            ],
+            "legend": "",
+            "name": "A",
+            "signal": "logs",
+            "source": "",
+            "stepInterval": 60
+          },
+          "type": "builder_query"
+        }
+      ],
+      "queryType": "builder"
+    },
+    "selectedQueryName": "A",
+    "thresholds": {
+      "kind": "basic",
+      "spec": [
+        {
+          "channels": [],
+          "matchType": "1",
+          "name": "warning",
+          "op": "1",
+          "recoveryTarget": null,
+          "target": 0,
+          "targetUnit": ""
+        }
+      ]
+    }
+  },
+  "description": "A provisioner refused a volume claim within the last 15 minutes: its Warning event ProvisioningFailed. The pod that names the claim stays Pending, so a CI run or a session that needs the volume does not start. It clears by itself 15 minutes after the last such event. The label event marks the failure as an event: factoryd closes no card when the alert clears.",
+  "disabled": false,
+  "evaluation": {
+    "kind": "rolling",
+    "spec": {
+      "evalWindow": "15m",
+      "frequency": "1m"
+    }
+  },
+  "labels": {
+    "event": "true",
+    "severity": "warning"
+  },
+  "notificationSettings": {
+    "usePolicy": true
+  },
+  "ruleType": "threshold_rule",
+  "schemaVersion": "v2alpha1",
+  "version": "v5"
+}
