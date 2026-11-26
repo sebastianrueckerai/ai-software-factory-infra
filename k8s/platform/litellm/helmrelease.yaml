@@ -7,7 +7,7 @@ spec:
   # repository's upstream-images.txt, roadmap 203)
   url: oci://git.aisoftwarefactory.world/upstream/ghcr.io/berriai/litellm-helm
   # pin ghcr.io/berriai/litellm-helm
-  ref: {digest: "sha256:04a85376f8d921d66515b04e0200330e3cb363ba58983577c249a276801a01da"}
+  ref: {digest: "sha256:4fe3ffcf630497e72a55429ef27134516bc3a2bacfe8c51ee23a9a42c071ea5f"}
   secretRef: {name: forgejo-registry}
   layerSelector:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
@@ -37,7 +37,7 @@ spec:
     image:
       repository: git.aisoftwarefactory.world/upstream/ghcr.io/berriai/litellm
       # pin ghcr.io/berriai/litellm
-      tag: "1.108.17@sha256:b2e660aa1746283f51f185a5eed26b2883da543e8a3ac7df94131f4817e5fd78"
+      tag: "1.102.4@sha256:76ea408529343acce6a359f31fa4fe910e9fdda82d0c9fc1b0441ccf9cef0ec3"
     imagePullSecrets: [{name: forgejo-registry}]
     replicaCount: 1
     masterkeySecretName: litellm-master-key
