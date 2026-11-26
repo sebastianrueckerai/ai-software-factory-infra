@@ -1,7 +1,7 @@
 #!/bin/sh
 # Offline test of k8s/platform/forgejo/console-oauth.sh against stub curl and kubectl, in the CronJob image:
 # pin docker.io/alpine/k8s
-#   docker run --rm --user 1000:1000 -v "$PWD/scripts/console-oauth-test:/t:ro" -v "$PWD/k8s/platform/forgejo:/s:ro" --entrypoint sh alpine/k8s:1.36.1@sha256:692239d739589247c4a791205ed9619c28ae85a21286e19a6211c04a62c56668 /t/test.sh
+#   docker run --rm --user 1000:1000 -v "$PWD/scripts/console-oauth-test:/t:ro" -v "$PWD/k8s/platform/forgejo:/s:ro" --entrypoint sh alpine/k8s:1.36.6@sha256:2b33c17a9e7fa4a7bc25b3194fefbc3363c863e6c073a5a81bf07fb00b99d92b /t/test.sh
 export PATH="/t/bin:$PATH" FORGEJO_USER=u FORGEJO_PASSWORD=p
 pass=0; fail=0
 APP='[{"id":7,"name":"factory-console","client_id":"c1"}]'

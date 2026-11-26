@@ -36,7 +36,7 @@ spec:
           initContainers:
             - name: dump
               # pin docker.io/alpine/kubectl
-              image: git.aisoftwarefactory.world/upstream/docker.io/alpine/kubectl:1.36.1@sha256:2d03606ac3a584cc425218e563f4d1ea109eeccd9229c24e9f2eedaeda8f5c23
+              image: git.aisoftwarefactory.world/upstream/docker.io/alpine/kubectl:1.36.4@sha256:8c43e5a81f279abdcb795516afd0c4f6012fdf41e92568b04fa2b08b14be00e5
               securityContext:
                 runAsNonRoot: true
                 runAsUser: 1000
@@ -56,7 +56,7 @@ spec:
           containers:
             - name: upload
               # pin docker.io/amazon/aws-cli
-              image: git.aisoftwarefactory.world/upstream/docker.io/amazon/aws-cli:2.28.5@sha256:990624088b305b99f55ee777e3a2c4964a57cb811e78f7f1d6b59e03215b4965
+              image: git.aisoftwarefactory.world/upstream/docker.io/amazon/aws-cli:2.42.3@sha256:7de3a12f38e98c0ffee4dff402c9cd82d7e0f524c8e69f3c667d68c6831c5ba9
               securityContext:
                 runAsNonRoot: true
                 runAsUser: 1000
