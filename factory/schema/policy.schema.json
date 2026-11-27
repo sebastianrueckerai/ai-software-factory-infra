@@ -524,6 +524,13 @@
               "human": {
                 "type": "boolean",
                 "description": "Human keeps a human on the merge of this class whatever the autonomy: no rung of the ladder approves it."
+              },
+              "approvers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Approvers, when set, are the only approvers of a project who may approve a merge of this class. It needs human: true."
               }
             },
             "description": "RiskClass is a named class and what it means for the pull request.",
