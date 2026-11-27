@@ -358,6 +358,9 @@ risk:
     # mechanical pull requests (schema copy, template update, revert, roll)
     # carry code reviewed in the code repository and stay automatic
     - {name: policy, outcome: requires_approval, human: true}
+    # the prompts and the writing guide of the code repository, every text
+    # that enters an agent's context: only Sebastian approves their merge
+    - {name: prompts, outcome: requires_approval, human: true, approvers: [sebastian]}
     - {name: high, outcome: requires_approval}
     - {name: normal, outcome: auto}
   rules:
@@ -370,6 +373,7 @@ risk:
     # with no merge on a passed audit as class high has
     - {class: runner, paths: ["check", "scripts/pg-test.sh"]}
     - {class: policy, paths: ["factory/**"]}
+    - {class: prompts, paths: ["internal/prompts/**", "internal/writingguide/**"]}
     # protected files: manifests and lockfiles of every common ecosystem,
     # agent instruction files and CODEOWNERS at any depth, and every
     # top-level dot directory or file (.forgejo, .gitea, .github stay
