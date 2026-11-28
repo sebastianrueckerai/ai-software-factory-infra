@@ -3,7 +3,7 @@
 # main. An agent runs `bash check changed` before it ends: the same checks,
 # the Go tests only of the packages the change since origin/HEAD reaches
 # (scripts/affected-packages.sh), without the race detector and two at a
-# time. `CHECK_REPORT=<file> bash check test <suite> [<name>]` runs one suite,
+# time, and no Go test when nothing changed. `CHECK_REPORT=<file> bash check test <suite> [<name>]` runs one suite,
 # or the one named test in it, and writes a JUnit report to the file: the
 # criteria gate's runner reads it. A suite of web or under web/ is a file
 # or directory vitest runs; any other is a Go package pattern gotestsum
@@ -56,6 +56,7 @@ if [ "${1:-}" = changed ]; then
     exit 1
   }
   pkgs=$(bash scripts/affected-packages.sh "$base")
+  [ -n "$pkgs" ] || exit 0
   go test -p 2 $pkgs
   exit
 fi

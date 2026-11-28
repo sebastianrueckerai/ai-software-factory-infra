@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/affected-packages.sh <base> prints the Go packages a change since
-# base reaches, on one line, or ./... for the whole suite; why goes to
-# stderr. The change is the work tree's, untracked files included: a
+# base reaches, on one line, ./... for the whole suite, or nothing when
+# nothing changed; why goes to stderr. The change is the work tree's, untracked files included: a
 # sandbox's uncommitted work counts, and a CI checkout's work tree is its
 # HEAD. pr.yml runs the base's copy, bash check changed the work tree's.
 # One rule covers every input the package walk cannot see — workflows,
@@ -15,7 +15,7 @@ full() { echo "$1: full suite" >&2; echo "./..."; exit 0; }
 changed=$({ git diff --name-only "$base"; git ls-files --others --exclude-standard; } | sort -u) || full "cannot diff against $base"
 echo "changed files:" >&2
 echo "$changed" >&2
-[ -n "$changed" ] || full "empty diff"
+[ -n "$changed" ] || { echo "empty diff: nothing to test" >&2; exit 0; }
 if echo "$changed" | grep -qvE '\.go$'; then full "a non-Go input changed"; fi
 mapfile -t dirs < <(echo "$changed" | while IFS= read -r f; do dirname "$f"; done | sort -u)
 for d in "${dirs[@]}"; do
